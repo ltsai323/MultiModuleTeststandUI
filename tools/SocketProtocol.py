@@ -15,11 +15,12 @@ def handle_client(theCONF,socket_send, addr, mainFUNC):
             try:
                 #mainFUNC(theCONF,input_data, **mainARGS)
                 mesg = mainFUNC(theCONF,input_data)
-                socket_send.sendall(('['+mesg+']']).encode('utf-8'))
+                socket_send.sendall(('['+mesg+']').encode('utf-8'))
             except ValueError as e:
                 LOG('Ignore', theCONF.name,e)
 
-                socket_send.sendall(('[ERROR - '+e+']').encode('utf-8'))
+                out_err = f'[ERROR - {e}]'.encode('utf-8')
+                socket_send.sendall(out_err)
 class SocketProtocol:
     def __init__(self, usedCONF, mainFUNC):
         self.conf = usedCONF
