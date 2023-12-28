@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-import ruamel.yaml as yaml
+#import ruamel.yaml as yaml
+import yaml
 
 
 ### used functions
@@ -27,25 +28,6 @@ def test_merge_dict():
     print( deep_merge_dicts(dict1,dict2, ignoreNEWkey=False) )
 
 
-
-
-
-class YamlLoader_:
-    '''
-    read 2 yaml file and set configurations.
-    defaultCONFIG : All available options listed on it.
-    custom_CONFIG : Customized options overwrite the default options.
-    '''
-
-    def __init__(self, defaultCONFIG:str, custom_CONFIG:str):
-        oldconfigs = get_content(defaultCONFIG, False)
-        newconfigs = get_content(custom_CONFIG, True)
-        self.configs = deep_merge_dicts(oldconfigs,newconfigs)
-
-def tester_YamlLoader_():
-    a = YamlLoader_('input.defaults.yaml', 'input.yaml')
-    print(a.configs)
-
 class YamlLoader:
     '''
     read 2 yaml file and set configurations.
@@ -57,7 +39,7 @@ class YamlLoader:
         self.configs = get_content(defaultCONFIG, False)
     def LoadNewFile(self, customCONFIG:str, ignoreFILEnotFOUND:bool=True, ignoreNEWkey:bool = False):
         ''' Load New configs. ignoreNEWkey is an option for checking conifg. '''
-        newconfigs = get_content(defaultCONFIG, ignoreFILEnotFOUND)
+        newconfigs = get_content(customCONFIG, ignoreFILEnotFOUND)
 
         self.configs = deep_merge_dicts(self.configs,newconfigs, ignoreNEWkey)
 def tester_YamlLoader():
