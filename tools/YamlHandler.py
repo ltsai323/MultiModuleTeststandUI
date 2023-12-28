@@ -10,17 +10,27 @@ def get_content(configNAME:str, ignoreFILEnotFOUND:bool):
     except OSError as e:
         if ignoreFILEnotFOUND: return {}
         raise OSError(e)
-def deep_merge_dicts(dict1, dict2):
+def deep_merge_dicts(dict1,dict2,ignoreNEWkey=False):
+    ''' note this code cannot handle list '''
+    ''' if a list inside, new list will replace old list. '''
     merged_dict = dict1.copy()
     for key, value in dict2.items():
+        if ignoreNEWkey and key not in dict1.keys(): continue
         if key in merged_dict and isinstance(merged_dict[key], dict) and isinstance(value, dict):
             merged_dict[key] = deep_merge_dicts(merged_dict[key], value)
         else:
             merged_dict[key] = value
     return merged_dict
+def test_merge_dict():
+    dict1={ 'aa':1, 'bb':2, }
+    dict2={ 'aa':9, 'cc':3, }
+    print( deep_merge_dicts(dict1,dict2, ignoreNEWkey=False) )
 
 
-class YamlLoader:
+
+
+
+class YamlLoader_:
     '''
     read 2 yaml file and set configurations.
     defaultCONFIG : All available options listed on it.
@@ -32,8 +42,28 @@ class YamlLoader:
         newconfigs = get_content(custom_CONFIG, True)
         self.configs = deep_merge_dicts(oldconfigs,newconfigs)
 
+def tester_YamlLoader_():
+    a = YamlLoader_('input.defaults.yaml', 'input.yaml')
+    print(a.configs)
+
+class YamlLoader:
+    '''
+    read 2 yaml file and set configurations.
+    defaultCONFIG : All available options listed on it.
+    custom_CONFIG : Customized options overwrite the default options.
+    '''
+
+    def __init__(self, defaultCONFIG:str):
+        self.configs = get_content(defaultCONFIG, False)
+    def LoadNewFile(self, customCONFIG:str, ignoreFILEnotFOUND:bool=True, ignoreNEWkey:bool = False):
+        ''' Load New configs. ignoreNEWkey is an option for checking conifg. '''
+        newconfigs = get_content(defaultCONFIG, ignoreFILEnotFOUND)
+
+        self.configs = deep_merge_dicts(self.configs,newconfigs, ignoreNEWkey)
 def tester_YamlLoader():
-    a = YamlLoader('input.defaults.yaml', 'input.yaml')
+    a = YamlLoader('input.defaults.yaml')
+    #a.LoadNewFile
+    # 'input.yaml')
     print(a.configs)
 
 def YamlGenerator(outFILE:str, recDICT:dict):
@@ -55,5 +85,7 @@ def tester_YamlGernator():
             }
     YamlGenerator('out.yaml', thedict)
 if __name__ == "__main__":
-    tester_YamlGernator()
+    #tester_YamlGernator()
+    #tester_YamlLoader_()
+    test_merge_dict()
 

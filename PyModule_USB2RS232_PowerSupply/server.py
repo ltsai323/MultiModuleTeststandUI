@@ -52,8 +52,11 @@ def SendCMD(theCONF, socketINPUT:str, nothing=''):
 
 if __name__ == "__main__":
     from tools.YamlHandler import YamlLoader
-    yaml_connections = YamlLoader('config/connections.defaults.yaml', 'config/connections.yaml')
-    yaml_hardware = YamlLoader('config/hardware.defaults.yaml', 'config/hardware.yaml')
+    yaml_connections = YamlLoader('config/connections.defaults.yaml')
+    yaml_connections.LoadNewFile('config/connections.yaml', ignoreNEWkey=True)
+
+    yaml_hardware = YamlLoader('config/hardware.defaults.yaml')
+    yaml_hardware.LoadNewFile('config/hardware.yaml')
 
     the_config = Configurations(name='PowerSupply',
             port=yaml_connections.configs['port'],

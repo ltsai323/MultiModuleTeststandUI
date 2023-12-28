@@ -1,4 +1,4 @@
-# Multimodule Teststand GUI
+# Multimodule Teststand Controller
 24 modules IV testing at the same time will be required for HGCal production.
 This repository aims to control every individual equipment at one control panel.
 
@@ -13,3 +13,8 @@ The mini database receives every readout from unit commander.
 Unit commander directly communicates with equipment like power supply via USB port / RS232 port / ethernet port.
 Yaml configuration files records every parameter used in the code.
 Very few parameters would be modified from WebUI to simplify complexity during operation.
+
+### To do list
+* [ ] Create a general yaml file to define connection port and ip address.
+ - 1st option: Create a connection_ID = PyModule001 for identify. And ROOT/general_configs/connections.yaml defines connection_ID and properties.
+ - 2nd option: Create a ROOT/general_configs/connections.yaml and use 'ln -s' to force all modules sharing values.
