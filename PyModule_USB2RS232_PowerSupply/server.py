@@ -69,4 +69,6 @@ if __name__ == "__main__":
 
     from tools.SocketProtocol import SocketProtocol
     connections = SocketProtocol(the_config, SendCMD)
+
+    LOG('Service Activated', the_config.name,f'Activate Socket@{the_config.ip}:{the_config.port}')
     connections.MultithreadListening()
