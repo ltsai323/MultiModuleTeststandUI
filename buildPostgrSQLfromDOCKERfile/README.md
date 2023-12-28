@@ -14,4 +14,5 @@ sudo docker ps -a
 sudo docker stop 69557927de34
 
 sudo docker start 69557927de34 # or you can use container name
+sudo docker restart 69557927de34 ## stop and start
 ```
