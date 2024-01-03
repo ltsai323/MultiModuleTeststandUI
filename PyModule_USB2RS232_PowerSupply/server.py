@@ -9,13 +9,14 @@ class Configurations:
     port:int
     mesg_length:int
     ip:str
-    resource:str
 
     output_voltage:float
+    resource:str
 
 
+import sys
 def LOG(info,name,mesg):
-    print(f'[{info} - LOG] ({name}) {mesg}')
+    print(f'[{info} - LOG] ({name}) {mesg}', file=sys.stderr)
 
 # Create a PyVISA resource manager
 def COMMAND_POOL(theCONF,cmdIDX:str ) -> tuple:
@@ -52,18 +53,19 @@ def SendCMD(theCONF, socketINPUT:str, nothing=''):
 
 if __name__ == "__main__":
     from tools.YamlHandler import YamlLoader
-    yaml_connections = YamlLoader('config/connections.defaults.yaml')
-    yaml_connections.LoadNewFile('config/connections.yaml', ignoreNEWkey=True)
+    yaml_connections = YamlLoader('config/socket_connections.defaults.yaml')
+    yaml_connections.LoadNewFile('config/socket_connections.yaml', ignoreNEWkey=True)
 
     yaml_hardware = YamlLoader('config/hardware.defaults.yaml')
     yaml_hardware.LoadNewFile('config/hardware.yaml')
+    LOG('config loaded', 'main', 'yaml files loaded')
 
     the_config = Configurations(name='PowerSupply',
             port=yaml_connections.configs['port'],
             mesg_length=yaml_connections.configs['mesg_length'],
             ip=yaml_connections.configs['ip'],
-            resource = yaml_connections.configs['resource'],
 
+            resource = yaml_hardware.configs['resource'],
             output_voltage = yaml_hardware.configs['output_voltage'],
             )
 

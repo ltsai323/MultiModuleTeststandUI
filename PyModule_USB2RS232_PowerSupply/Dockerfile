@@ -8,8 +8,8 @@ WORKDIR /app
 COPY . /app
 
 # Install any needed packages specified in requirements.txt
-RUN pip install --trusted-host pypi.python.org pyvisa
-RUn pip install pyyaml psutil zeroconf
+RUN pip install -U pyvisa-py
+RUN pip install pyyaml psutil zeroconf pyserial pyusb 
 
 
 # Make port 80 available to the world outside this container

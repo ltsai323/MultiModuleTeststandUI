@@ -1,4 +1,4 @@
 mesg_length: 1024
-port: 1234
+port: 2234
 ip: '0.0.0.0'
 resource: 'ASRL/dev/ttyUSB0::INSTR'

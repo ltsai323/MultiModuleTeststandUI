@@ -1,7 +1,8 @@
 import socket
 import threading
+import sys
 def LOG(info,name,mesg):
-    print(f'[{info} - LOG] (SocketProtocol-{name}) {mesg}')
+    print(f'[{info} - LOG] (SocketProtocol-{name}) {mesg}', file=sys.stderr)
 
 def handle_client(theCONF,socket_send, addr, mainFUNC):
     with socket_send:
@@ -15,6 +16,7 @@ def handle_client(theCONF,socket_send, addr, mainFUNC):
             try:
                 #mainFUNC(theCONF,input_data, **mainARGS)
                 mesg = mainFUNC(theCONF,input_data)
+                LOG('Send Mesg', 'handle_client()', mesg)
                 socket_send.sendall(('['+mesg+']').encode('utf-8'))
             except ValueError as e:
                 LOG('Ignore', theCONF.name,e)
