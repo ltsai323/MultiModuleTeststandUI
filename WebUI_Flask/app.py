@@ -1,54 +1,55 @@
-#!/usr/bin/env python3
-# app.py
-from flask import Flask, render_template
-import psycopg2
-import plotly.express as px
+from flask import Flask, render_template, request, jsonify
+from dataclasses import dataclass
+import socket
 
 app = Flask(__name__)
-db_params_1_user = {
-    'host':'localhost',
-    'port':5423,
-    'user':'test1',
-    'password':'testPWD',
-    'database':'TESTDB'
-    }
-db_params_1_root = {
-        'dbname':"TESTDB",
-        'user':"root",
-        'password':"myROOTpasswd_",
-        'host':"localhost",
-        'port':5423
-        }
 
 @app.route('/')
 def index():
-    # Connect to PostgreSQL
-    #db_param = db_params_1_root
-    db_param = db_params_1_user
-    connection = psycopg2.connect(**db_param)
+    return render_template('index.html')
 
-    # Execute SQL query
-    cursor = connection.cursor()
-    cursor.execute("SELECT * FROM public.cpu_usage;")
-    records = cursor.fetchall()
+@app.route('/buttonClick_hub', methods=['POST'])
+def buttonClick_hub():
+    button_id = request.form.get('button_id')
 
-    # Extract data for plotting
-    injection_times, usages = zip(*records)
+    mesg = 'nothing'
+    if   button_id == 'btn1':
+        mesg = 'Power Supply Activated'
+        sendCMDTo(app.conn_power_supply, '1')
+    elif button_id == 'btn2':
+        mesg = 'Power Supply Deactivated'
+        sendCMDTo(app.conn_power_supply, '0')
+    elif button_id == 'btn3':
+        mesg = 'Nothing Happened'
+    else:
+        mesg = f'[Invalid buttonID] "{button_id}" not found'
 
-    # Create a Plotly line chart
-    fig = px.line(x=injection_times, y=usages, labels={'x': 'Injection Time', 'y': 'Usage'},
-                  title='Usage Over Time')
+    print('btn pressed')
 
-    # Save the plot as HTML
-    plot_html = fig.to_html(full_html=False)
+    # Return a JSON response (optional)
+    return jsonify({'status': mesg})
 
-    # Close connections
-    cursor.close()
-    connection.close()
+def sendCMDTo(destnation, message):
+    target_addr = destnation.ip
+    target_port = destnation.port
 
-    return render_template('index_plotly.html', plot_html=plot_html)
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.connect((target_addr, target_port))
+        s.sendall(message.encode())
 
+@dataclass
+class ConnectConfigs:
+    ip:str
+    port:int
 if __name__ == '__main__':
+    # connection in docker
+    app.conn_power_supply = ConnectConfigs(ip='172.17.0.1',port=2235)
+    #app.conn_ssh_hexactrl = ConnectConfigs(ip='172.17.0.1',port=2234)
+    #app.conn_power_supply = ConnectConfigs(ip='127.0.0.1',port=7992)
+
+    # connection directly executed
+    #app.conn_power_supply = ConnectConfigs(ip='127.0.0.1',port=2234)
+    #app.conn_ssh_hexactrl = ConnectConfigs(ip='127.0.0.1',port=2234)
     #app.run(debug=True)
-    app.run(host='0.0.0.0',port=5000, debug=True)
+    app.run(host='0.0.0.0', port=8888, threaded=True)
 

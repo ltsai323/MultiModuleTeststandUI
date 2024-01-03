@@ -20,8 +20,10 @@ def status_off_powersupply():
 
 def send_socket_message(message):
     #target_address = '127.0.0.1'
-    target_address = '172.17.0.1'
-    target_port = 7992 ## if use docker : the port follows docker run.
+    #target_address = '172.17.0.1'
+    #target_port = 2000 ## if use docker : the port follows docker run.
+    target_address = '127.0.0.1'
+    target_port = 2234 ## if use docker : the port follows docker run.
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((target_address, target_port))

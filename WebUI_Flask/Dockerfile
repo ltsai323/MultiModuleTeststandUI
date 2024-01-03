@@ -17,4 +17,5 @@ EXPOSE 8888
 ENV NAME World
 
 # Run app.py when the container launches
-CMD ["python", "app.button_send_cmd_via_socket.py"]
+# CMD ["python", "app.button_send_cmd_via_socket.py"]
+CMD ["python", "app.py"]
