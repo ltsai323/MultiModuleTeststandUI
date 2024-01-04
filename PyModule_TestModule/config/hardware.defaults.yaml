@@ -1,0 +1,3 @@
+resource: 'ASRL/dev/ttyUSB0::INSTR'
+output_voltage: 3.5
+
