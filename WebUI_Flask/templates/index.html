@@ -8,11 +8,30 @@
 <body>
 
 <!-- Button 1 -->
-<div id='messageBox'>Orig</div>
-<button id="btn1" onclick="clickBTN_disableMe('btn1',['btn1','btn2','btn3'])">Click me</button>
-<button id="btn2" onclick="clickBTN_disableMe('btn2',['btn1','btn2','btn3'])">Click me</button>
-<button id="btn3" onclick="clickBTN_disableMe('btn3',['btn1','btn2','btn3'])">Click me</button>
+<div></div> <div style='display: inline'>Power Supply : </div>
+<button id="btnPowerSupply1" onclick="DisableMe('btnPowerSupply1',['btnPowerSupply1','btnPowerSupply0'])">ON</button>
+<button id="btnPowerSupply0" onclick="DisableMe('btnPowerSupply0',['btnPowerSupply1','btnPowerSupply0'])" disabled>OFF</button>
+<div style='display: inline' id='mesgPowerSupply'>Initialized</div>
 
+<div></div> <div style='display: inline'>Hexa Controller : </div>
+<button id="btnHexaControllerTT" class="HexaController0" onclick="DisableMe('btnHexaControllerTT',['btnHexaControllerTT','btnHexaControllerh1'])">TestBTN</button>
+<button id="btnHexaControllerhI" class="HexaController0" onclick="DisableMyGroup('btnHexaControllerhI',['HexaController0','HexaController1'])">Connect</button>
+<button id="btnHexaControllerh0" class="HexaController1" onclick="DisableMe('btnHexaControllerh0',['btnHexaControllerh0','btnHexaControllerh1'])" disabled> Activate Hexa Controller</button>
+<button id="btnHexaControllerh1" class="HexaController1" onclick="DisableMe('btnHexaControllerh1',['btnHexaControllerh0','btnHexaControllerh1'])" disabled>Deactivate Hexa Controller</button>
+<button id="btnHexaControllerhC" class="HexaController1" onclick="DisableMyGroup('btnHexaControllerhC',['HexaController0','HexaController1'])" disabled>Disconnect</button>
+<div style='display: inline' id='mesgHexaController'>Initialized</div>
+
+<div></div> <div>Command PC Connection</div>
+<button id="btnCommandPCAI" class="CommandPCA0" onclick="DisableMyGroup('btnCommandPCAI',['CommandPCA0','CommandPCA1'])">Connect</button>
+<button id="btnCommandPCA1" class="CommandPCA1" onclick="DisableMe('btnCommandPCA1',['btnCommandPCA1'])" disabled>Activate DAQ Client</button>
+<button id="btnCommandPCAC" class="CommandPCA1" onclick="DisableMyGroup('btnCommandPCAC',['CommandPCA0','CommandPCA1'])" disabled>Disconnect</button>
+<div style='display: inline' id='mesgCommandPCA'>Initialized</div>
+
+<div></div> <div>Command PC Connection2</div>
+<button id="btnCommandPCBI" class="CommandPCB0" onclick="DisableMyGroup('btnCommandPCBI',['CommandPCB0','CommandPCB1'])">Connect</button>
+<button id="btnCommandPCB1" class="CommandPCB1" onclick="DisableMe('btnCommandPCB1',['btnCommandPCB1'])" disabled>Take Data</button>
+<button id="btnCommandPCBC" class="CommandPCB1" onclick="DisableMyGroup('btnCommandPCBC',['CommandPCB0','CommandPCB1'])" disabled>Disconnect</button>
+<div style='display: inline' id='mesgCommandPCB'>Initialized</div>
 
 <script>
     function send_cmd(btnID) {
@@ -30,13 +49,14 @@
             // Handle the response if needed
             console.log(data);
             //alert(data.status);
-            showMessage(data.status);
+            //showMessage(data.status);
+            showMessage2(data.indicator,data.message);
         })
         .catch(error => {
             console.error('Error:', error);
         });
     }
-    function clickBTN_disableMe(clickedBUTTONid, connectedBUTTONs) {
+    function DisableMe(clickedBUTTONid, connectedBUTTONs) {
         // Disable the clicked button
         document.getElementById(clickedBUTTONid).disabled = true;
 
@@ -51,8 +71,32 @@
         // Add your additional logic here based on the clicked button
         console.log(clickedBUTTONid + " was clicked!");
     }
+
+	function DisableMyGroup(clickedBUTTONid, correlatedGROUPs) { //asdf
+        var classes = document.getElementById(clickedBUTTONid).classList;
+
+        classes.forEach(function(my_group) {
+            correlatedGROUPs.forEach(function(corr_group) {
+                // Enable all buttons in group2
+                var group2Buttons = document.getElementsByClassName(corr_group);
+                if (corr_group !== my_group) {
+                    for (var i = 0; i < group2Buttons.length; i++) {
+                        group2Buttons[i].disabled = false;
+                    }
+                } else {
+                    for (var i = 0; i < group2Buttons.length; i++) {
+                        group2Buttons[i].disabled = true;
+                    }
+                }
+            });
+        });
+        send_cmd(clickedBUTTONid);
+    }
     function showMessage(mesg) {
         document.getElementById('messageBox').innerText = mesg;
+    }
+    function showMessage2(theID,mesg) {
+        document.getElementById('mesg'+theID).innerText = mesg;
     }
 </script>
 
