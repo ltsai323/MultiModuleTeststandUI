@@ -1,6 +1,9 @@
 import pyvisa
 import codecs
 from dataclasses import dataclass
+from tools.MesgHub import MesgEncoder
+INDICATOR = 'PowerSupply'
+def MESG(mesg): return MesgEncoder(INDICATOR,mesg)
 
 @dataclass
 class Configurations:
@@ -20,9 +23,9 @@ def LOG(info,name,mesg):
 
 # Create a PyVISA resource manager
 def COMMAND_POOL(theCONF,cmdIDX:str ) -> tuple:
-    if cmdIDX=='0': return ('OUTPUT:STATE OFF', 'Disable the output')
-    if cmdIDX=='1': return ('OUTPUT:STATE ON' ,  'Enable the output')
-    if cmdIDX=='2': return (f'VOLTAGE {theCONF.output_voltage}', f'Power supply turned on and voltage {theCONF.output_voltage} set.')
+    if cmdIDX=='0': return ('OUTPUT:STATE OFF', MESG('Disabled'))
+    if cmdIDX=='1': return ('OUTPUT:STATE ON' , MESG('Enabled'))
+    if cmdIDX=='2': return (f'VOLTAGE {theCONF.output_voltage}', MESG(f'Power supply turned on and voltage {theCONF.output_voltage} set.'))
 
     raise ValueError(f'undefined input index "{cmdIDX}"')
 
@@ -30,7 +33,6 @@ def SendCMD(theCONF, socketINPUT:str, nothing=''):
     cmd, mesg = COMMAND_POOL(theCONF, socketINPUT)
 
     rm = pyvisa.ResourceManager()
-    mesg=''
     try:
         # Open the connection to the power supply
         power_supply = rm.open_resource(theCONF.resource)
@@ -48,6 +50,7 @@ def SendCMD(theCONF, socketINPUT:str, nothing=''):
     finally:
         rm.close()
 
+    LOG('content', 'SendCMD', mesg)
     return mesg
 
 
