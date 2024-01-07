@@ -1,0 +1,10 @@
+hexacontroller:
+  host: '192.168.50.152'
+  user: 'root'
+  password: 'centos'
+  port: 22
+control_pc:
+  host: '192.168.50.140'
+  user: 'ntucms'
+  password: '9ol.1qaz5tgb'
+  port: 22
