@@ -18,3 +18,4 @@ Very few parameters would be modified from WebUI to simplify complexity during o
 * [ ] Create a general yaml file to define connection port and ip address.
  - 1st option: Create a connection_ID = PyModule001 for identify. And ROOT/general_configs/connections.yaml defines connection_ID and properties.
  - 2nd option: Create a ROOT/general_configs/connections.yaml and use 'ln -s' to force all modules sharing values.
+* [ ] Think a method to tell dockerfile using ../tools packages.
