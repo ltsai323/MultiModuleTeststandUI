@@ -1,6 +1,8 @@
 import socket
 import threading
 import sys
+from tools.MesgHub import MesgEncoder
+from tools.LogTool import LOG
 def LOG(info,name,mesg):
     print(f'[{info} - LOG] (SocketProtocol-{name}) {mesg}', file=sys.stderr)
 
@@ -17,12 +19,12 @@ def handle_client(theCONF,socket_send, addr, mainFUNC):
                 #mainFUNC(theCONF,input_data, **mainARGS)
                 mesg = mainFUNC(theCONF,input_data)
                 LOG('Send Mesg', 'handle_client()', mesg)
-                socket_send.sendall(('['+mesg+']').encode('utf-8'))
+                socket_send.sendall(mesg.encode('utf-8'))
             except ValueError as e:
                 LOG('Ignore', theCONF.name,e)
 
-                out_err = f'[ERROR - {e}]'.encode('utf-8')
-                socket_send.sendall(out_err)
+                out_err = MesgEncoder('ERROR',e)
+                socket_send.sendall(out_err.encode('utf-8'))
 class SocketProtocol:
     def __init__(self, usedCONF, mainFUNC):
         self.conf = usedCONF
