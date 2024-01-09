@@ -14,6 +14,3 @@ RUN pip install pyyaml psutil zeroconf
 # Make port 80 available to the world outside this container
 EXPOSE 2000
 
-# Run your_app.py when the container launches
-CMD ["python", "server.py"]
-
