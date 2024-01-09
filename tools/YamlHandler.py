@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 #import ruamel.yaml as yaml
 import yaml
+from tools.LogTool import LOG
 
 
 ### used functions
@@ -30,9 +31,10 @@ def test_merge_dict():
 
 class YamlLoader:
     '''
-    read 2 yaml file and set configurations.
-    defaultCONFIG : All available options listed on it.
-    custom_CONFIG : Customized options overwrite the default options.
+    read yaml file and set configurations.
+    contrustructor reads default configurations and you can either use LoadNewFile or AdditionalUpdate updates the configuration.
+    LoadNewFile : Additional yaml file loaded.
+    AdditionalUpdate : input a configured string like "confM/confD:val"
     '''
 
     def __init__(self, defaultCONFIG:str):
@@ -42,6 +44,30 @@ class YamlLoader:
         newconfigs = get_content(customCONFIG, ignoreFILEnotFOUND)
 
         self.configs = deep_merge_dicts(self.configs,newconfigs, ignoreNEWkey)
+    def AdditionalUpdate(self, updatedSTR:str):
+        '''
+        arg1 : updateSTR like 'key:val' or 'keyMother/keyDaughter:val' means the secondary layer configuration
+        '''
+        if ':' not in updatedSTR: raise IOError(f'YamlLoader::AdditionalUpdate() : An invalid argument "updatedSTR"')
+        keys = updatedSTR.split(':')[0].split('/')
+        val  = updatedSTR.split(':')[1]
+        nested_dict = self.configs
+
+        def check_key(key,the_dict):
+            if key not in the_dict:
+                LOG('Invalid Conf', 'YamlLoader::AdditionalUpdate()', f'additional configuration "{updatedSTR}" has an invalid key "{key}"')
+                return False
+            return True
+        for key in keys[:-1]:
+            if check_key(key,nested_dict) == False:
+                return None
+            nested_dict = nested_dict[key]
+
+        if check_key(keys[-1],nested_dict) == False:
+            return None
+        nested_dict[keys[-1]] = val
+        LOG('Conf Updated', 'YamlLoader::AdditionalUpdate()', f'new configuration is {self.configs}')
+
 def tester_YamlLoader():
     a = YamlLoader('input.defaults.yaml')
     #a.LoadNewFile
