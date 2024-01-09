@@ -31,7 +31,13 @@ class SocketProtocol:
         self.main_func = mainFUNC
     def MultithreadListening(self):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as socket_listen:
-            socket_listen.bind((self.conf.ip, self.conf.port))
+            #socket_listen.bind((self.conf.ip, self.conf.port))
+            # the connection IP is a default value.
+            # For direct running, it is a debug mode. Such as all of the running procedure is set the same ip address.
+            # But if you want to activate multiple process. I'm putting it into docker container, which remap the 2000 port to 
+            # another port in the 'docker run -p ' option.
+            socket_listen.bind(('0.0.0.0', 2000))
+
             socket_listen.listen()
 
             while True:
