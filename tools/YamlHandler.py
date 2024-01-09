@@ -29,6 +29,33 @@ def test_merge_dict():
     print( deep_merge_dicts(dict1,dict2, ignoreNEWkey=False) )
 
 
+def update_string_analyzer(updatedSTR:str):
+    if ':' not in updatedSTR: raise IOError(f'YamlLoader::AdditionalUpdate() : An invalid argument "updatedSTR"')
+    sepIdx = updatedSTR.find(':')
+
+    keys = updatedSTR[:sepIdx].split('/')
+    val  = updatedSTR[sepIdx+1:]
+    return (keys,val)
+def pass_key_check(key,the_dict):
+    if key not in the_dict:
+        LOG('Invalid Conf', 'YamlLoader::AdditionalUpdate()', f'additional configuration "{updatedSTR}" has an invalid key "{key}"')
+        return False
+    return True
+def set_dict_value__nested(inDICT:dict = {}, keys:list = [], value = None, keyCONFIRMATION:bool=False):
+    if value == None: raise IOError('YamlLoader : set_dict_value__nested() failed to get value from argument')
+
+    nestedDICT = inDICT
+    for key in keys[:-1]:
+        if keyCONFIRMATION:
+            if pass_key_check(key,nestedDICT) == False:
+                return False
+        nestedDICT = nestedDICT[key]
+
+    if pass_key_check(keys[-1],nestedDICT) == False:
+        return False
+    nestedDICT[keys[-1]] = value
+    LOG('Conf Updated', 'YamlLoader::AdditionalUpdate()', f'"{keys}" updated the configuration "{value}"')
+    return True
 class YamlLoader:
     '''
     read yaml file and set configurations.
@@ -44,35 +71,29 @@ class YamlLoader:
         newconfigs = get_content(customCONFIG, ignoreFILEnotFOUND)
 
         self.configs = deep_merge_dicts(self.configs,newconfigs, ignoreNEWkey)
-    def AdditionalUpdate(self, updatedSTR:str):
+
+    def AdditionalUpdate(self, updatedSTR:str, keyCONFIRMATION:bool=True):
         '''
         arg1 : updateSTR like 'key:val' or 'keyMother/keyDaughter:val' means the secondary layer configuration
         '''
-        if ':' not in updatedSTR: raise IOError(f'YamlLoader::AdditionalUpdate() : An invalid argument "updatedSTR"')
-        keys = updatedSTR.split(':')[0].split('/')
-        val  = updatedSTR.split(':')[1]
-        nested_dict = self.configs
+        keys,val = update_string_analyzer(updatedSTR)
 
-        def check_key(key,the_dict):
-            if key not in the_dict:
-                LOG('Invalid Conf', 'YamlLoader::AdditionalUpdate()', f'additional configuration "{updatedSTR}" has an invalid key "{key}"')
-                return False
-            return True
-        for key in keys[:-1]:
-            if check_key(key,nested_dict) == False:
-                return None
-            nested_dict = nested_dict[key]
-
-        if check_key(keys[-1],nested_dict) == False:
-            return None
-        nested_dict[keys[-1]] = val
-        LOG('Conf Updated', 'YamlLoader::AdditionalUpdate()', f'new configuration is {self.configs}')
+        return set_dict_value__nested(
+                inDICT = self.configs,
+                keys = keys,
+                value = val,
+                keyCONFIRMATION = keyCONFIRMATION )
 
 def tester_YamlLoader():
-    a = YamlLoader('input.defaults.yaml')
-    #a.LoadNewFile
-    # 'input.yaml')
-    print(a.configs)
+    yaml_hardware = YamlLoader('config/hardware.defaults.yaml')
+    yaml_hardware.LoadNewFile('config/hardware.yaml')
+    yaml_connects = YamlLoader('config/connects.defaults.yaml')
+    yaml_connects.LoadNewFile('config/connects.yaml')
+
+    for arg_config in sys.argv[1:]:
+        config_is_used = False
+        if not config_is_used: config_is_used = yaml_hardware.AdditionalUpdate(arg_config,keyCONFIRMATION=True)
+        if not config_is_used: config_is_used = yaml_connects.AdditionalUpdate(arg_config,keyCONFIRMATION=True)
 
 def YamlGenerator(outFILE:str, recDICT:dict):
     '''
