@@ -36,10 +36,6 @@ def SendCMD(theCONF, socketINPUT:str, nothing=''):
 @dataclass
 class Configurations:
     name:str
-
-    port:int
-    mesg_length:int
-    ip:str
 if __name__ == "__main__":
     # control PC
     host = "192.168.50.140"
@@ -81,9 +77,6 @@ if __name__ == "__main__":
 
     the_config = Configurations(
             name= 'SSHConnection',
-            ip='0.0.0.0',
-            port=2000,
-            mesg_length=1024,
             )
     from tools.SocketProtocol import SocketProtocol
     connections = SocketProtocol(the_config, SendCMD)
