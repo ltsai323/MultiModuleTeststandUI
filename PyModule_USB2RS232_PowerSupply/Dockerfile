@@ -15,6 +15,3 @@ RUN pip install pyyaml psutil zeroconf pyserial pyusb
 # Make port 80 available to the world outside this container
 EXPOSE 2234
 
-# Run your_app.py when the container launches
-CMD ["python", "server.py"]
-

@@ -3,5 +3,3 @@
 sudo docker stop pymodule-usbrs232-powersupply
 #sudo docker start pymodule-usbrs232-powersupply
 sudo docker rm pymodule-usbrs232-powersupply
-sudo docker rmi pymodule-usbrs232-powersupply
-sudo docker build -t  pymodule-usbrs232-powersupply .
