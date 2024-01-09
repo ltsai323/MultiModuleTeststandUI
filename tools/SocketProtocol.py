@@ -3,6 +3,9 @@ import threading
 import sys
 from tools.MesgHub import MesgEncoder
 from tools.LogTool import LOG
+MAX_MESG_LENG = 1024
+DEFAULT_IP = '0.0.0.0'
+DEFAULT_PORT = 2000
 def LOG(info,name,mesg):
     print(f'[{info} - LOG] (SocketProtocol-{name}) {mesg}', file=sys.stderr)
 
@@ -11,7 +14,8 @@ def handle_client(theCONF,socket_send, addr, mainFUNC):
         LOG('', theCONF.name,f'Address {addr} connected')
 
         while True:
-            data = socket_send.recv(theCONF.mesg_length)
+            #data = socket_send.recv(theCONF.mesg_length)
+            data = socket_send.recv(MAX_MESG_LENG)
             if not data:
                 break
             input_data = data.decode('utf-8') # as a str
@@ -36,7 +40,7 @@ class SocketProtocol:
             # For direct running, it is a debug mode. Such as all of the running procedure is set the same ip address.
             # But if you want to activate multiple process. I'm putting it into docker container, which remap the 2000 port to 
             # another port in the 'docker run -p ' option.
-            socket_listen.bind(('0.0.0.0', 2000))
+            socket_listen.bind((DEFAULT_IP,DEFAULT_PORT))
 
             socket_listen.listen()
 
