@@ -13,5 +13,5 @@ RUN pip install pyyaml psutil zeroconf pyserial pyusb
 
 
 # Make port 80 available to the world outside this container
-EXPOSE 2234
+EXPOSE 2000
 
