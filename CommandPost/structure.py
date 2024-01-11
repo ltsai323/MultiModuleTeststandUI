@@ -2,7 +2,10 @@ import socket
 import threading
 import time
 import tools.StatusDefinition as STAT_DEF
+import tools.SocketCommands as SOC_CMD
 from tools.LogTool import LOG
+from tools.MesgHub import MesgDecoder_JSON
+
 from typing import Callable
 BIND_ADDR = '0.0.0.0'
 BIND_PORT = 3000
@@ -87,20 +90,23 @@ class CommandPost:
     def cmd_receive_feedback(self,socket_connection):
         while True:
             try:
-                cmd = socket_connection.recv(1024).decode('utf-8')
-                print(f'Received command from client : {cmd}')
-                if cmd == 'close':
-                    socket_connection.close()
-                    LOG('Client Disconnected', 'CommandPost', f'Disconnect from {self.orig_address}, waiting for new connection...')
-                    self.orig_address = None
-                    return
-                if cmd == 'shutdown':
-                    socket_connection.close()
-                    self.server_socket.close()
-                    self.server_socket = None
-                    LOG('Shut down', 'CommandPost', 'Received the request to shutdown the whole program')
-                    return
-                #self.receive_func(cmd,self.mesgs) # asdf
+                #cmd = socket_connection.recv(1024).decode('utf-8')
+                cmds = MesgDecoder_JSON(socket_connection.recv(1024))
+                print(f'Received command from client : {cmds}')
+                for cmd in cmds:
+                    print(cmd)
+                    if cmd['cmd'] == SOC_CMD.CLOSE:
+                        socket_connection.close()
+                        LOG('Client Disconnected', 'CommandPost', f'Disconnect from {self.orig_address}, waiting for new connection...')
+                        self.orig_address = None
+                        return
+                    if cmd['cmd'] == SOC_CMD.SHUTDOWN:
+                        socket_connection.close()
+                        self.server_socket.close()
+                        self.server_socket = None
+                        LOG('Shut down', 'CommandPost', 'Received the request to shutdown the whole program')
+                        return
+                    self.receive_func(cmd,self.mesgs) # asdf need to use thread for parallel execution
 
             except OSError as e: # if the connection is closed
                 print('section closed')
@@ -130,15 +136,13 @@ class CommandPost:
 
 
 if __name__ == "__main__":
-    def command_pool(cmds): # command executed parallelly
-        for cmd in cmds:
-            if cmd == '1': print('1 received')
-            if cmd == '2': print('2 received')
-            if cmd == '3': print('3 received')
+    def command_pool(cmd, mesgHUB:dict): # command executed parallelly
+        if cmd['name'] == 'test': print(f'hi test  sample received with command {cmd["cmd"]}')
 
     obj1 = message_center('PowerSupply')
     obj2 = message_center('USB_RS232')
-    mainobj = CommandPost(command_pool, obj1,obj2)
+    obj3 = message_center('test')
+    mainobj = CommandPost(command_pool, obj1,obj2,obj3)
     mainobj.run()
 
 

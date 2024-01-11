@@ -1,6 +1,7 @@
 import socket
 import threading
-from tools.MesgHub import MesgDecoder_JSON
+from tools.MesgHub import MesgEncoder_JSON
+import tools.SocketCommands as SOC_CMD
 
 
 def receive_feedback(client_socket):
@@ -25,11 +26,12 @@ def main():
     idx = 0
     while True:
         # Get user input for the command
-        command = input("Enter command (or 'close' and 'shutdown' to quit): ")
+        command = input(f"Enter command (or '{SOC_CMD.CLOSE}' and '{SOC_CMD.SHUTDOWN}' to quit): ")
+        mesg = MesgEncoder_JSON( {'name':'test', 'cmd':command } )
 
         # Send the command to the server
-        client_socket.send(command.encode('utf-8'))
-        if command == 'close' or command == 'shutdown':
+        client_socket.send(mesg)
+        if command == SOC_CMD.CLOSE or command == SOC_CMD.SHUTDOWN:
             break
 
     client_socket.close()
