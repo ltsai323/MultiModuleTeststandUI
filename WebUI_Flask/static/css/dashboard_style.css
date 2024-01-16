@@ -52,8 +52,9 @@ nav a {
 }
 
 .dropdown {
-  position: relative;
-  display: inline-block;
+    /* flex:1; */
+    /* position: relative; */
+    display: inline-block;
 }
 
 .dropdown-list {

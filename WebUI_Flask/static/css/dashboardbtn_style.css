@@ -236,6 +236,7 @@
 
 #btnCommandPCAC, #btnCommandPCBC {
     flex: 1 0 30%;
+    order:3;
     background-color: #DCF2F1;
     display: inline-block;
     text-align: center;
@@ -264,6 +265,7 @@
 
 #btnCommandPCA1, #btnCommandPCB1 {
     flex: 1 0 30%;
+    order: 2;
     background-color: #F6E66F;
     display: inline-block;
     text-align: center;
