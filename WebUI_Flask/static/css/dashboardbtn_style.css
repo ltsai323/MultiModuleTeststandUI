@@ -58,8 +58,9 @@
 }
 
 
-.ctrlbtn-hexa-1 {
+#btnHexaControllerTT {
     flex: 1 0 30%;
+    order: 1;
     background-color: #DCF2F1;
     display: inline-block;
     text-align: center;
@@ -73,134 +74,21 @@
     
 }
 
-.ctrlbtn-hexa-1:hover {background-color: #90D5D2;}
+#btnHexaControllerTT:hover {background-color: #90D5D2;}
 
-.ctrlbtn-hexa-1:active {
+#btnHexaControllerTT:active {
     background-color: #48B7B2;
     box-shadow: 0 5px #666;
     transform: translateY(2px);
 }
 
-.ctrlbtn-hexa-1:disabled {
+#btnHexaControllerTT:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }
 
 
-.ctrlbtn-hexa-2 {
-    flex: 1 0 30%;
-    background-color: #65B741;
-    display: inline-block;
-    text-align: center;
-    font-size:1.2rem;
-    text-decoration: none;
-    padding: 16px;
-    cursor: pointer;
-    box-shadow: 0 9px #999;
-    border-radius: 15px;
-    border: none;
-    
-}
-
-.ctrlbtn-hexa-2:hover {background-color: #73C250;}
-
-.ctrlbtn-hexa-2:active {
-    background-color: #91D075;
-    box-shadow: 0 5px #666;
-    transform: translateY(2px);
-}
-
-.ctrlbtn-hexa-2:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.ctrlbtn-hexa-3 {
-    flex: 1 0 30%;
-    background-color: #DCF2F1;
-    display: inline-block;
-    text-align: center;
-    font-size:1.2rem;
-    text-decoration: none;
-    padding: 16px;
-    cursor: pointer;
-    box-shadow: 0 9px #999;
-    border-radius: 15px;
-    border: none;
-    
-}
-
-.ctrlbtn-hexa-3:hover {background-color: #90D5D2;}
-
-.ctrlbtn-hexa-3:active {
-    background-color: #CCCCCC;
-    box-shadow: 0 5px #666;
-    transform: translateY(2px);
-}
-
-.ctrlbtn-hexa-3:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-
-.ctrlbtn-hexa-4 {
-    flex: 1 0 30%;
-    background-color: #F6E66F;
-    display: inline-block;
-    text-align: center;
-    font-size:1.2rem;
-    text-decoration: none;
-    padding: 16px;
-    cursor: pointer;
-    box-shadow: 0 9px #999;
-    border-radius: 15px;
-    border: none;
-    
-}
-
-.ctrlbtn-hexa-4:hover {background-color: #F2DE40;}
-
-.ctrlbtn-hexa-4:active {
-    background-color: #EED411;
-    box-shadow: 0 5px #666;
-    transform: translateY(2px);
-}
-
-.ctrlbtn-hexa-4:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.ctrlbtn-hexa-5 {
-    flex: 1 0 30%;
-    background-color: #DCF2F1;
-    display: inline-block;
-    text-align: center;
-    font-size:1.2rem;
-    text-decoration: none;
-    padding: 16px;
-    cursor: pointer;
-    box-shadow: 0 9px #999;
-    border-radius: 15px;
-    border: none;
-    
-}
-
-.ctrlbtn-hexa-5:hover {background-color: #90D5D2;}
-
-.ctrlbtn-hexa-5:active {
-    background-color: #CCCCCC;
-    box-shadow: 0 5px #666;
-    transform: translateY(2px);
-}
-
-.ctrlbtn-hexa-5:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.ctrlbtn-cmdPC-1, .ctrlbtn-cmdPC-4 {
+#btnHexaControllerhI {
     flex: 1 0 30%;
     order: 1;
     background-color: #65B741;
@@ -216,20 +104,20 @@
     
 }
 
-.ctrlbtn-cmdPC-1:hover, .ctrlbtn-cmdPC-4:hover {background-color: #73C250;}
+#btnHexaControllerhI:hover {background-color: #73C250;}
 
-.ctrlbtn-cmdPC-1:active, .ctrlbtn-cmdPC-4:active {
+#btnHexaControllerhI:active {
     background-color: #91D075;
     box-shadow: 0 5px #666;
     transform: translateY(2px);
 }
 
-.ctrlbtn-cmdPC-1:disabled, ctrlbtn-cmdPC-4:disabled {
+#btnHexaControllerhI:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }
 
-.ctrlbtn-cmdPC-2, .ctrlbtn-cmdPC-5 {
+#btnHexaControllerhC {
     flex: 1 0 30%;
     order: 3;
     background-color: #DCF2F1;
@@ -245,22 +133,23 @@
     
 }
 
-.ctrlbtn-cmdPC-2:hover, .ctrlbtn-cmdPC-5:hover {background-color: #90D5D2;}
+#btnHexaControllerhC:hover {background-color: #90D5D2;}
 
-.ctrlbtn-cmdPC-2:active, .ctrlbtn-cmdPC-5:active {
+#btnHexaControllerhC:active {
     background-color: #CCCCCC;
     box-shadow: 0 5px #666;
     transform: translateY(2px);
 }
 
-.ctrlbtn-cmdPC-2:disabled, ctrlbtn-cmdPC-5:disabled {
+#btnHexaControllerhC:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }
 
-.ctrlbtn-cmdPC-3, .ctrlbtn-cmdPC-6 {
+
+#btnHexaControllerh0 {
     flex: 1 0 30%;
-    order: 2;
+    order: 4;
     background-color: #F6E66F;
     display: inline-block;
     text-align: center;
@@ -274,15 +163,129 @@
     
 }
 
-.ctrlbtn-cmdPC-3:hover, .ctrlbtn-cmdPC-6:hover {background-color: #F2DE40;}
+#btnHexaControllerh0:hover {background-color: #F2DE40;}
 
-.ctrlbtn-cmdPC-3:active, .ctrlbtn-cmdPC-6:active {
+#btnHexaControllerh0:active {
     background-color: #EED411;
     box-shadow: 0 5px #666;
     transform: translateY(2px);
 }
 
-.ctrlbtn-cmdPC-3:disabled, ctrlbtn-cmdPC-6:disabled {
+#btnHexaControllerh0:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+#btnHexaControllerh1 {
+    flex: 1 0 30%;
+    order: 5;
+    background-color: #DCF2F1;
+    display: inline-block;
+    text-align: center;
+    font-size:1.2rem;
+    text-decoration: none;
+    padding: 16px;
+    cursor: pointer;
+    box-shadow: 0 9px #999;
+    border-radius: 15px;
+    border: none;
+    
+}
+
+#btnHexaControllerh1:hover {background-color: #90D5D2;}
+
+#btnHexaControllerh1:active {
+    background-color: #CCCCCC;
+    box-shadow: 0 5px #666;
+    transform: translateY(2px);
+}
+
+#btnHexaControllerh1:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+#btnCommandPCAI, #btnCommandPCBI {
+    flex: 1 0 30%;
+    order: 1;
+    background-color: #65B741;
+    display: inline-block;
+    text-align: center;
+    font-size:1.2rem;
+    text-decoration: none;
+    padding: 16px;
+    cursor: pointer;
+    box-shadow: 0 9px #999;
+    border-radius: 15px;
+    border: none;
+    
+}
+
+#btnCommandPCAI:hover, #btnCommandPCBI:hover {background-color: #73C250;}
+
+#btnCommandPCAI:active, #btnCommandPCBI:active {
+    background-color: #91D075;
+    box-shadow: 0 5px #666;
+    transform: translateY(2px);
+}
+
+#btnCommandPCAI:disabled, #btnCommandPCBI:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+#btnCommandPCAC, #btnCommandPCBC {
+    flex: 1 0 30%;
+    background-color: #DCF2F1;
+    display: inline-block;
+    text-align: center;
+    font-size:1.2rem;
+    text-decoration: none;
+    padding: 16px;
+    cursor: pointer;
+    box-shadow: 0 9px #999;
+    border-radius: 15px;
+    border: none;
+    
+}
+
+#btnCommandPCAC:hover, #btnCommandPCBC:hover {background-color: #90D5D2;}
+
+#btnCommandPCAC:active, #btnCommandPCBC:active {
+    background-color: #CCCCCC;
+    box-shadow: 0 5px #666;
+    transform: translateY(2px);
+}
+
+#btnCommandPCAC:disabled, #btnCommandPCBC:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+#btnCommandPCA1, #btnCommandPCB1 {
+    flex: 1 0 30%;
+    background-color: #F6E66F;
+    display: inline-block;
+    text-align: center;
+    font-size:1.2rem;
+    text-decoration: none;
+    padding: 16px;
+    cursor: pointer;
+    box-shadow: 0 9px #999;
+    border-radius: 15px;
+    border: none;
+    
+}
+
+#btnCommandPCA1:hover, #btnCommandPCB1:hover {background-color: #F2DE40;}
+
+#btnCommandPCA1:active, #btnCommandPCB1:active {
+    background-color: #EED411;
+    box-shadow: 0 5px #666;
+    transform: translateY(2px);
+}
+
+#btnCommandPCA1:disabled, #btnCommandPCB1:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }
