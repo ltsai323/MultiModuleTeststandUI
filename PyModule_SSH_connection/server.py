@@ -10,16 +10,16 @@ conn_cmdPC1 = SingleConnector()
 def COMMAND_POOL(theCONF,cmdIDX:str ) -> tuple:
     if cmdIDX=='hI': return (None, conn_hexCtrl.Init())
     if cmdIDX=='hC': return (None, conn_hexCtrl.Close())
-    if cmdIDX=='h0': return (None, conn_hexCtrl.SendCMD('cd ~/hgcal_daq && ./turnOff FW_V2.sh'))
-    if cmdIDX=='h1': return (None, conn_hexCtrl.SendCMD('cd ~/hgcal_daq && ./turnOn  FW_V2.sh'))
+    if cmdIDX=='h0': return (None, conn_hexCtrl.SendCMD('cd ~/hgcal_daq && ./turnOff.sh'))
+    if cmdIDX=='h1': return (None, conn_hexCtrl.SendCMD('cd ~/hgcal_daq && ./turnOn_FW_V3.sh'))
 
     if cmdIDX=='AI': return (None, conn_cmdPC0.Init())
     if cmdIDX=='AC': return (None, conn_cmdPC0.Close())
-    if cmdIDX=='A1': return (None, conn_cmdPC0.SendCMD('daq_client'))
+    if cmdIDX=='A1': return (None, conn_cmdPC0.SendCMD('daq-client'))
 
     if cmdIDX=='BI': return (None, conn_cmdPC1.Init())
     if cmdIDX=='BC': return (None, conn_cmdPC1.Close())
-    if cmdIDX=='B1': return (None, conn_cmdPC1.SendCMD('cd ~/V3HD_hexactrl && ./run.sh TWH015_fixed'))
+    if cmdIDX=='B1': return (None, conn_cmdPC1.SendCMD('cd ~/V3HD_hexactrl && ./run.sh testing'))
 
     if cmdIDX=='TT': return (None, conn_cmdPC1.MESG('hiii tested'))
 
@@ -61,10 +61,10 @@ if __name__ == "__main__":
 
 
     # hexa controler
-    host = "192.168.50.140"
+    host = "192.168.50.152"
     port = 22  # Default SSH port
-    user = "ntucms"
-    password = "9ol.1qaz5tgb"
+    user = "root"
+    password = "centos"
     conf_hexCtrl = ConnectionConfig(
             host = host,
             port = port,
@@ -80,5 +80,6 @@ if __name__ == "__main__":
             )
     from tools.SocketProtocol import SocketProtocol
     connections = SocketProtocol(the_config, SendCMD)
-    LOG('Service Activated', the_config.name,f'Activate Socket@{the_config.ip}:{the_config.port}')
-    connections.MultithreadListening()
+    LOG('Service Activated', the_config.name,f'Activate Socket@0.0.0.0:2000')
+    #connections.MultithreadListening()
+    connections.SingleThreadListening()
