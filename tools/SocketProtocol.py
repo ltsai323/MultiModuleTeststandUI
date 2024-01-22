@@ -3,6 +3,7 @@ import threading
 import sys
 from tools.MesgHub import MesgEncoder
 from tools.LogTool import LOG
+MESG_LENG = 1024
 def LOG(info,name,mesg):
     print(f'[{info} - LOG] (SocketProtocol-{name}) {mesg}', file=sys.stderr)
 
@@ -11,7 +12,7 @@ def handle_client(theCONF,socket_send, addr, mainFUNC):
         LOG('', theCONF.name,f'Address {addr} connected')
 
         while True:
-            data = socket_send.recv(theCONF.mesg_length)
+            data = socket_send.recv(MESG_LENG)
             if not data:
                 break
             input_data = data.decode('utf-8') # as a str
