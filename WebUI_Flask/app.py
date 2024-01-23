@@ -7,8 +7,11 @@ from tools.LogTool import LOG
 app = Flask(__name__)
 
 @app.route('/')
+@app.route('/index')
 def index():
-    return render_template('index.html')
+    #return render_template('index.html')
+    return render_template('index_db.html')
+    #return render_template('Dashboard.html')
 
 @app.route('/buttonClick_hub', methods=['POST'])
 def buttonClick_hub():
