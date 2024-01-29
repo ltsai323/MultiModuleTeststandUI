@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+from tools.LogTool import LOG
 
 ''' message format: [>INDICATOR__MESSAGE<] '''
 ''' ex : [>PWR__Enabled<] '''
@@ -42,6 +43,17 @@ def MesgDecoder(theMESG):
 
 
 
+
+### asdf not updated
+''' json dumps
+[
+  { n:'name', m:'mesg', s:'status', t:'timestamp' },
+  { n:'name', m:'mesg', s:'status', t:'timestamp' },
+  { n:'name', m:'mesg', s:'status', t:'timestamp' },
+  { n:'name', c:'cmd', },
+]
+'''
+
 @send_socket_mesg
 def MesgEncoder_JSON(*sentMESG):
     return json.dumps(sentMESG)
@@ -52,6 +64,42 @@ def MesgDecoder_JSON(theMESG):
     except json.decoder.JSONDecodeError as e:
         return {'name': 'ERROR', 'mesg': theMESG}
         ## accept error messages
+
+''' Assume only 1 command loaded '''
+class MesgHub_SingleMesg:
+    def __init__(self, name):
+        self.name = name
+    def SendMesg(self, mesg):
+        return MesgEncoder_JSON({'name': self.name, 'mesg': mesg})
+    def GetCMD(self, mesg):
+        cmds = MesgDecoder_JSON(mesg)
+        for cmd in cmds:
+            if cmd['name'] == self.name:
+                LOG('Command Received', self.name, f'Command "{cmd["cmd"]}" received at time asdf')
+                return cmd['cmd']
+        LOG('Invalid Name Accepted', self.name, f'Commands "{cmds}" received at time asdf')
+#def HostReg(name, connADDR, connPORT):
+class MesgHub_MultipleMesg:
+    def __init__(self, *names):
+        self.names = names
+        self.pending_cmds = []
+    def SendCMD(self, name, cmd):
+        if name not in self.names:
+            LOG('Invalid Name Received', 'MesgHub_MultipleMesg', f'Input name "{name}" does not register in the MesgHub, reject the command')
+            return None
+        cmd_out = MesgEncoder_JSON( {'name':name, 'cmd':cmd} )
+
+class MesgHub:
+    def __init__(self, name):
+        self.name = name
+    def SendMesg(self, mesg_):
+        return {'name': self.name, 'mesg': mesg}
+    def GetMesg(self,mesg_):
+        for mesg in mesgs:
+            if mesg['name'] == self.name:
+                return mesg['mesg']
+        return ''
+
 
 
 if __name__ == "__main__":
