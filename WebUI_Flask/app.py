@@ -3,6 +3,8 @@ from dataclasses import dataclass
 import socket
 from tools.MesgHub import MesgDecoder
 from tools.LogTool import LOG
+from datetime import datetime
+
 
 app = Flask(__name__)
 
@@ -10,8 +12,18 @@ app = Flask(__name__)
 @app.route('/index')
 def index():
     #return render_template('index.html')
+
+    #current_datetime = datetime.now()
+    #datetime_string = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
+    #log = datetime_string + " | " + buttonClick_hub()
     return render_template('index_db.html')
-    #return render_template('Dashboard.html')
+
+logs = [
+    "Log entry 1",
+    "Log entry 2",
+    "Log entry 3",
+    # Add more log entries here if needed
+]
 
 @app.route('/buttonClick_hub', methods=['POST'])
 def buttonClick_hub():
@@ -59,6 +71,12 @@ def buttonClick_hub():
     indicator, mesg = MesgDecoder(raw_mesg)
     LOG('RecvMesg', 'buttonClick_hub', f'indicator:{indicator}  --- message:{mesg}')
     return jsonify({'indicator':indicator, 'message':mesg})
+    #return "Sample log from another device"
+
+
+@app.route('/fetch_logs')
+def fetch_logs():
+    return "Sample log from another device"
 
 
 def sendCMDTo(destnation, message):

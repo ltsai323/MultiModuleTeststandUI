@@ -50,6 +50,14 @@
 	  <span id="text">Lock Sc</span>
 	</button>
       </div>
+
+      <!-- New board ID setting -->
+      <div class="dropdown">
+	<button id="boardIDbtn" class="dropbtn" onclick="inputWindow()">
+	  <i class="fa-solid fa-sliders"></i>
+	  <span id="text">New Board</span>
+	</button>
+      </div>
       
       <div class="status-block">
 	<div class="title">
@@ -73,8 +81,13 @@
 	<div class="ctrlbox-title"><h3>Command PC Connection2</h3></div>
 	
 	<div class="ctrlbox">
-	  <button id="btnPowerSupply1" class="ctrlbtn-powerOn" onclick="showMessage('<i class=\'fa-solid fa-plug-circle-bolt\' style=\'color: #B80000\'></i> Power On'); DisableMe('btnPowerSupply1',['btnPowerSupply1','btnPowerSupply0'])">ON</button>
-	  <button id="btnPowerSupply0" class="ctrlbtn-powerOff" onclick="showMessage('<i class=\'fa-solid fa-plug-circle-xmark\' style=\'color: #B6BBC4\'></i> Power Off'); DisableMe('btnPowerSupply0',['btnPowerSupply1','btnPowerSupply0'])">OFF</button>
+	  <!-- <button id="btnPowerSupply1" class="ctrlbtn-powerOn" onclick="showMessage('<i class=\'fa-solid fa-plug-circle-bolt\' style=\'color: #B80000\'></i> Power On'); DisableMe('btnPowerSupply1',['btnPowerSupply1','btnPowerSupply0']); fetchLog()">ON</button> -->
+
+	  <button id="btnPowerSupply1" class="ctrlbtn-powerOn" onclick="showMessage('<i class=\'fa-solid fa-plug-circle-bolt\' style=\'color: #B80000\'></i> Power On'); fetchLog()">ON</button>
+	  
+	  <!-- <button id="btnPowerSupply0" class="ctrlbtn-powerOff" onclick="showMessage('<i class=\'fa-solid fa-plug-circle-xmark\' style=\'color: #B6BBC4\'></i> Power Off'); DisableMe('btnPowerSupply0',['btnPowerSupply1','btnPowerSupply0']); fetchLog()">OFF</button> -->
+
+	   <button id="btnPowerSupply0" class="ctrlbtn-powerOff" onclick="showMessage('<i class=\'fa-solid fa-plug-circle-xmark\' style=\'color: #B6BBC4\'></i> Power Off'); fetchLog()">OFF</button>
 	</div>
 
 	<div class="ctrlbox">
@@ -99,8 +112,18 @@
 	  <button id="btnCommandPCBC" class="ctrlbtn-cmdPC-5" onclick="showMessage('<i class=\'fa-solid fa-ban\' style=\'color: #B6BBC4\'></i> Disconnected'); DisableMyGroup('btnCommandPCBC',['CommandPCB0','CommandPCB1'])">Disconnect</button>
 	  
 	</div>
-
       </div>
+
+      <!-- <div class="ctrl-block"> -->
+      <!-- 	<div class="title" style="border-bottom: 2px solid #ccc;"> -->
+      <!-- 	  <h1>Control panel</h1> -->
+      <!-- 	</div> -->
+      <!-- </div> -->
+      <!-- Action Log text box -->
+      <div class="log-block">
+	<textarea id="logbox" rows="5" cols="300" readonly>{{ log }}</textarea>
+      </div>
+      
     </div>
     
     <script>
@@ -225,6 +248,41 @@
               buttons[i].disabled = !areButtonsDisabled;
           }
       }
+
+      function fetchLog() {
+          fetch('/fetch_logs')
+              .then(response => response.text())
+              .then(logs => {
+		  // Get the current timestamp
+		  var timestamp = new Date().toLocaleString();
+                  // Get the textarea element
+                  var logTextArea = document.getElementById('logbox');
+                  
+                  // Set fetched logs to the textarea
+                  logTextArea.value += timestamp + " | " + logs + '\n';
+                  
+                  // Scroll textarea to the bottom
+                  logTextArea.scrollTop = logTextArea.scrollHeight;
+              })
+              .catch(error => console.error('Error fetching logs:', error));
+      }
+
+      function inputWindow() {
+	  // Open a new window with a prompt for user input
+          var userInput = prompt("Please enter the new board ID:");
+
+	  // If the user input is not null (i.e., they clicked 'OK'), display a greeting
+          if (userInput !== null) {
+	      // Get the reference to the message box
+              var statusbox = document.getElementById('statusbox');
+
+              // Display the message in the message box
+              statusbox.innerHTML = "Board " + userInput + " ready for test!";
+	      // alert("Hello, " + userInput + "! You entered: " + userInput);
+          }
+
+      }
+      
     </script>
 
   </body>
