@@ -21,7 +21,7 @@ def COMMAND_POOL(theCONF,cmdIDX:str ) -> tuple:
     if cmdIDX=='BC': return (None, conn_cmdPC1.Close())
     if cmdIDX=='B1': return (None, conn_cmdPC1.SendCMD('cd ~/V3HD_hexactrl && ./run.sh testing'))
 
-    if cmdIDX=='TT': return (None, conn_cmdPC1.MESG('hiii tested'))
+    if cmdIDX=='TT': return (None, conn_cmdPC1.SendCMD('ls'))
 
 
     raise ValueError(f'undefined input index "{cmdIDX}"')
