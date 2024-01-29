@@ -56,6 +56,9 @@ if __name__ == "__main__":
     yaml_hardware.LoadNewFile('config/hardware.yaml')
     LOG('config loaded', 'main', 'yaml files loaded')
 
+    for arg_config in sys.argv[1:]:
+        config_is_used = yaml_hardware.AdditionalUpdate(arg_config,keyCONFIRMATION=True)
+
     the_config = Configurations(name='PowerSupply',
             resource = yaml_hardware.configs['resource'],
             output_voltage = yaml_hardware.configs['output_voltage'],
@@ -64,5 +67,5 @@ if __name__ == "__main__":
     from tools.SocketProtocol import SocketProtocol
     connections = SocketProtocol(the_config, SendCMD)
 
-    LOG('Service Activated', the_config.name,f'Activate Socket@{the_config.ip}:{the_config.port}')
+    LOG('Service Activated', the_config.name,f'Activate Socket@0.0.0.0:2000')
     connections.MultithreadListening()
