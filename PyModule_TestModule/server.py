@@ -14,9 +14,9 @@ def LOG(info,name,mesg):
     print(f'[{info} - LOG] ({name}) {mesg}', file=sys.stderr)
 
 
-def SendCMD(theCONF, socketINPUT:str, nothing=''):
+def SendCMDToModule(theCONF, socketINPUT:str, nothing=''):
     mesg='testing module'
-    LOG('mesg', 'SendCMD', mesg)
+    LOG('mesg', 'SendCMDToModule', mesg)
 
     return mesg
 
@@ -30,7 +30,7 @@ if __name__ == "__main__":
     yaml_hardware.LoadNewFile('config/hardware.test.yaml')
     LOG('config loaded', 'main', 'yaml files loaded')
     yaml_hardware.AdditionalUpdate('resource:hiiii')
-    yaml_hardware.AdditionalUpdate('recource:hiiii')
+    yaml_hardware.AdditionalUpdate('resource:hjhjji')
 
     the_config = Configurations(name='PowerSupply',
 
@@ -39,6 +39,6 @@ if __name__ == "__main__":
             )
 
     from tools.SocketProtocol import SocketProtocol
-    connections = SocketProtocol(the_config, SendCMD)
+    connections = SocketProtocol(the_config, SendCMDToModule)
 
-    connections.MultithreadListening()
+    connections.SingleThreadListening_test()
