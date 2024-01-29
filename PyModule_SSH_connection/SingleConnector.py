@@ -45,8 +45,7 @@ class SingleConnector:
 
         # Execute the command
         stdin, stdout, stderr = self.connection.exec_command(theCMD)
-
-        LOG('CMD Sent', 'SingleConnector.SendCMD', f'CMD: {theCMD} --- CMD Output: {stdout.read().decode()}')
+        LOG('CMD Sent', 'SingleConnector.SendCMD', f'CMD: "{theCMD}" --- CMD Output: {stdout.read().decode()} --- CMD Error: {stderr.read().decode()}')
         return self.MESG(f'CMD sent: {theCMD}')
     def Close(self):
         if self.stat != 1:
