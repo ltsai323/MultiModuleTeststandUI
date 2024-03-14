@@ -1,0 +1,48 @@
+available_commands:
+  - cmd: 'connect'
+    note: connect RS232 module
+  - cmd: 'DESTROY'
+    note: distroy the connection to RS232 module
+  - cmd: 'on'
+    note: activate power supply
+  - cmd: 'off'
+    note: inactivate power supply
+  - cmd: 'set'
+    note: 'set arguments to HW. Do it before turn on power supply'
+  - cmd: 'UPDATE'
+    note: 'update argument in the format "volt:3.14" '
+
+
+# config with default value
+default_args:
+  MaximumOutputVoltage: 1.5
+  MaximumOutputCurrent: 1.0
+  ControlMode: CV # available options : CV, CC, CR
+
+
+
+system_cmds:
+  CONNECT:
+    - cmd: 'connect'
+      timegap: 0.05
+  CONFIGURE: # send all current value to module.
+    - cmd: 'UPDATE'
+      configs:
+      - MaximumOutputVoltage
+      - MaximumOutputCurrent
+      - ControlMode
+  HALT:
+    - cmd: '_PASS_'
+  RUN: # only provided to commander. Not GUI
+    - cmd: 'set'
+      timegap: 0.5
+    - cmd: 'on'
+      timegap: 0.5
+  STOP: # only provided to commander. Not GUI
+    - cmd: 'off'
+      timegap: 0.5
+  DESTROY:
+    - cmd: 'off'
+      timegap: 0.5
+    - cmd: 'DESTROY'
+      timegap: 0.1

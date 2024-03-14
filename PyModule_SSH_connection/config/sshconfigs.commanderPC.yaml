@@ -1,0 +1,8 @@
+host: '192.168.50.140'
+user: 'ntucms'
+password: '9ol.1qaz5tgb'
+port: 22
+destnation: '192.168.50.152'
+
+boardtype: HD # available opts : HD / LD
+boardID: Test

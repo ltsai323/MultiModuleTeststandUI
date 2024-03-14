@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clickable Buttons</title>
+    <style>
+        /* Add your custom styles here */
+        .message-box {
+            max-height: 100px; /* Set the initial max-height */
+            overflow-y: auto;  /* Enable vertical scrollbar if content exceeds the max-height */
+        }
+    </style>
 </head>
 <body>
 
@@ -32,6 +39,13 @@
 <button id="btnCommandPCB1" class="CommandPCB1" onclick="DisableMe('btnCommandPCB1',['btnCommandPCB1'])" disabled>Take Data</button>
 <button id="btnCommandPCBC" class="CommandPCB1" onclick="DisableMyGroup('btnCommandPCBC',['CommandPCB0','CommandPCB1'])" disabled>Disconnect</button>
 <div style='display: inline' id='mesgCommandPCB'>Initialized</div>
+
+<div class="message-box" id="message-box">
+    {% for message in messages %}
+        <div>{{ message }}</div>
+    {% endfor %}
+</div>
+<button onclick="showDetails()">Show Detail</button>
 
 <script>
     function send_cmd(btnID) {
@@ -98,6 +112,35 @@
     function showMessage2(theID,mesg) {
         document.getElementById('mesg'+theID).innerText = mesg;
     }
+    function showDetails() { // news asdf
+        // Make an AJAX request to update messages
+        var xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                var response = JSON.parse(xhr.responseText);
+                updateMessageBox(response.messages);
+            }
+        };
+        xhr.open('GET', '/update_messages', true);
+        xhr.send();
+    }
+
+    function updateMessageBox(newMessages) {
+        var messageBox = document.getElementById('message-box');
+        messageBox.innerHTML = '';  // Clear existing content
+
+        // Add new messages to the message box
+        newMessages.forEach(function (message) {
+            var div = document.createElement('div');
+            div.appendChild(document.createTextNode(message));
+            messageBox.appendChild(div);
+        });
+
+        // Remove max-height to show all content
+        messageBox.style.maxHeight = 'none';
+        // Allow overflow to be visible
+        messageBox.style.overflowY = 'visible';
+    } // news end asdf
 </script>
 
 </body>

@@ -1,4 +1,3 @@
-# modify according to output command of dmesg|tail
 resource: 'ASRL/dev/ttyUSB0::INSTR'
 MaximumOutputVoltage: 1.5
 MaximumOutputCurrent: 1.0

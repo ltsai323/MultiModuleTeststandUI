@@ -1,5 +1,8 @@
 import codecs
 from dataclasses import dataclass
+import tools.SocketProtocol_ as SocketProtocol
+import tools.MesgHub as MesgHub
+import time
 
 @dataclass
 class Configurations:
@@ -14,31 +17,20 @@ def LOG(info,name,mesg):
     print(f'[{info} - LOG] ({name}) {mesg}', file=sys.stderr)
 
 
-def SendCMDToModule(theCONF, socketINPUT:str, nothing=''):
-    mesg='testing module'
-    LOG('mesg', 'SendCMDToModule', mesg)
+def execute_command(socketPROFILE:SocketProtocol.SocketProfile, clientSOCKET,command):
+    socketPROFILE.job_is_running.set()
+    status_message = f"Command '{command}' executed successfully."
+    LOG('Job finished', 'execute_command', f'Sending mesg to client : {status_message}')
 
-    return mesg
+    mesg = MesgHub.CMDUnitFactory( name='execute_command', cmd='TESTING', arg=status_message)
+    SocketProtocol.UpdateMesgAndSend( socketPROFILE, clientSOCKET, 'RUNNING', status_message)
+
+
+    time.sleep(5.0)
+    socketPROFILE.job_is_running.clear()
+    SocketProtocol.UpdateMesgAndSend( socketPROFILE, clientSOCKET, 'JOB_FINISHED')
 
 
 if __name__ == "__main__":
-    LOG('input arg', 'mainfunc', sys.argv)
-    from tools.YamlHandler import YamlLoader
-
-    yaml_hardware = YamlLoader('config/hardware.defaults.yaml')
-    #yaml_hardware.LoadNewFile('config/hardware.yaml')
-    yaml_hardware.LoadNewFile('config/hardware.test.yaml')
-    LOG('config loaded', 'main', 'yaml files loaded')
-    yaml_hardware.AdditionalUpdate('resource:hiiii')
-    yaml_hardware.AdditionalUpdate('resource:hjhjji')
-
-    the_config = Configurations(name='PowerSupply',
-
-            resource = yaml_hardware.configs['resource'],
-            output_voltage = yaml_hardware.configs['output_voltage'],
-            )
-
-    from tools.SocketProtocol import SocketProtocol
-    connections = SocketProtocol(the_config, SendCMDToModule)
-
-    connections.SingleThreadListening_test()
+    connection_profile = SocketProtocol.SocketProfile('selfTester',execute_command)
+    SocketProtocol.start_server(connection_profile)

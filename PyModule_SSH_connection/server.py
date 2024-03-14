@@ -6,8 +6,19 @@ conn_hexCtrl = SingleConnector()
 conn_cmdPC0 = SingleConnector()
 conn_cmdPC1 = SingleConnector()
 
+class CMD:
+    CONNECT = 'connect'
+    DESTROY = 'DESTROY'
+    UPDATE_CONFIG = 'UPDATE'
+
+    LONG_CONNECTION = 'on'
+    DEACTIVATE_POWER_SUPPLY = 'off'
+    SET_CONFIGS = 'set'
+
 # Create a PyVISA resource manager
 def COMMAND_POOL(theCONF,cmdIDX:str ) -> tuple:
+    LOG('Receive CMD', 'COMMAND_POOL', f'Command "{cmdIDX}" received')
+
     if cmdIDX=='hI': return (None, conn_hexCtrl.Init())
     if cmdIDX=='hC': return (None, conn_hexCtrl.Close())
     if cmdIDX=='h0': return (None, conn_hexCtrl.SendCMD('cd ~/hgcal_daq && ./turnOff.sh'))
@@ -19,7 +30,7 @@ def COMMAND_POOL(theCONF,cmdIDX:str ) -> tuple:
 
     if cmdIDX=='BI': return (None, conn_cmdPC1.Init())
     if cmdIDX=='BC': return (None, conn_cmdPC1.Close())
-    if cmdIDX=='B1': return (None, conn_cmdPC1.SendCMD('cd ~/V3HD_hexactrl && ./run.sh testing'))
+    if cmdIDX=='B1': return (None, conn_cmdPC1.SendCMD('cd ~/V3HD_hexactrl && ./run.sh new_testing_from_GUI'))
 
     if cmdIDX=='TT': return (None, conn_cmdPC1.SendCMD('ls'))
 
@@ -27,6 +38,7 @@ def COMMAND_POOL(theCONF,cmdIDX:str ) -> tuple:
     raise ValueError(f'undefined input index "{cmdIDX}"')
 
 def SendCMD(theCONF, socketINPUT:str, nothing=''):
+    LOG('blah', 'SendCMD', 'blah blah blah')
     cmd, mesg = COMMAND_POOL(theCONF, socketINPUT)
 
     LOG('content', 'SendCMD', mesg)
@@ -36,6 +48,22 @@ def SendCMD(theCONF, socketINPUT:str, nothing=''):
 @dataclass
 class Configurations:
     name:str
+def TestFunc():
+    # control PC
+    host = "192.168.50.140"
+    port = 22  # Default SSH port
+    user = "ntucms"
+    password = "9ol.1qaz5tgb"
+    conf_cmdPCA = ConnectionConfig(
+            host = host,
+            port = port,
+            user = user,
+            pwd = password,
+            tag = 'CommandPCA',
+            )
+    print('End of test func.')
+
+    exit(1)
 if __name__ == "__main__":
     # control PC
     host = "192.168.50.140"
@@ -78,6 +106,9 @@ if __name__ == "__main__":
     the_config = Configurations(
             name= 'SSHConnection',
             )
+
+    TestFunc()
+
     from tools.SocketProtocol import SocketProtocol
     connections = SocketProtocol(the_config, SendCMD)
     LOG('Service Activated', the_config.name,f'Activate Socket@0.0.0.0:2000')

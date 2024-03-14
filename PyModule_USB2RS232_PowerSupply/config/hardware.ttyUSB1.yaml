@@ -1,0 +1,4 @@
+resource: 'ASRL/dev/ttyUSB1::INSTR'
+MaximumOutputVoltage: 1.5
+MaximumOutputCurrent: 1.0
+ControlMode: CV
