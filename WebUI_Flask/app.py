@@ -13,6 +13,7 @@ def index():
 
 
 if __name__ == '__main__':
+    app.job_is_running = False
     import app_actbtn
     app.register_blueprint(app_actbtn.app_b)
     app_actbtn.module_init(app_actbtn.app_b)

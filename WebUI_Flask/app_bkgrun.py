@@ -11,67 +11,36 @@ import tools.MesgHub as MesgHub
 # the best option based on installed packages.
 
 app_b = Blueprint('bkgrun', __name__)
-thread = None
-thread_lock = Lock()
 
 
-def background_thread(updateTIMER):
-    """Example of how to send server generated events to clients."""
-    count = 0
-    while True:
-        socketio.sleep(updateTIMER)
-        count += 1
-        #price = ((requests.get(url)).json())['data']['amount']
-        socketio.emit('my_response',
-                      {'data': 'backgroun updating ', 'count': count})
+from queue import Queue
+job_queue = Queue()
+bkgevt_job_queue = None
+bkgevt_job_queue_lock = Lock()
 
-#@app_b.route('/flaskSOCKETio')
-#def index_():
-#    return render_template('index_flaskSocketIO.html', async_mode=socketio.async_mode)
 
-@socketio.event
-def my_event(message):
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('my_response',
-         {'data': message['data'], 'count': session['receive_count']})
-
-# Receive the test request from client and send back a test response
-@socketio.on('test_message')
-def handle_message(data):
-    print('received message: ' + str(data))
-    emit('test_response', {'data': 'Test response sent'})
-
-# Broadcast a message to all clients
-@socketio.on('broadcast_message')
-def handle_broadcast(data):
-    print('received: ' + str(data))
-    emit('broadcast_response', {'data': 'Broadcast sent'}, broadcast=True)
-
-@socketio.event
-#def connect():
-def __connect():
-    print('CONNNNNNNECT')
-    UPDATE_TIMER = 0.3
-    global thread
-    with thread_lock:
-        if thread is None:
-            thread = socketio.start_background_task(background_thread, UPDATE_TIMER)
-    emit('my_response', {'data': 'Connected', 'count': 0})
 
 bkgevt_mesg_update = None
 bkgevt_mesg_update_lock = Lock()
+#def Info( mesgHUB:MesgHub.MesgUnit ) -> dict:
+#    return {
+#            'indicator': mesgHUB.name,
+#            'theSTAT':   mesgHUB.stat,
+#            'message':   mesgHUB.mesg,
+#            'timestamp': mesgHUB.timestamp,
+#            }
 def Info( mesgHUB:MesgHub.MesgUnit ) -> dict:
     return {
             'indicator': mesgHUB.name,
             'theSTAT':    mesgHUB.stat,
-            'message':   mesgHUB.mesg,
+            'message':   f'[{mesgHUB.name}] {mesgHUB.mesg}',
             'timestamp': mesgHUB.timestamp,
             }
 def info(ii) -> dict:
     return {
-            'indicator': 'aaa',
-            'theSTAT':   'bbb',
-            'message':   f'ccc {ii}',
+            'indicator': 'll',
+            'theSTAT':   'BKG LOG',
+            'message':   f'periodically show log {ii}',
             'timestamp': 'ddd',
             }
 def message_update(updateTIMER):
@@ -79,21 +48,41 @@ def message_update(updateTIMER):
     ii = 0
     while True:
         socketio.sleep(updateTIMER)
-        #price = ((requests.get(url)).json())['data']['amount']
         ii += 1
         socketio.emit('bk', info(ii))
 
-@socketio.event
+def execute_job_from_queue():
+    JOB_CHECKING_TIMER = 1.0
+    global job_queue
+    while True:
+        if job_queue.empty():
+            socketio.sleep(JOB_CHECKING_TIMER)
+        else:
+            func, args, xargs = job_queue.get()
+            print('[lkasjdflkasjdlfk] function name is ', func)
+            socketio.emit('bkgRunJobs', Info( MesgHub.MesgUnitFactory(name='FLASK', stat=f'Run-Job', mesg=f'running function "{func}" with argument "{args}" and "{xargs}"') ) )
+            func(*args, **xargs)
+            socketio.emit('bkgRunJobs', Info( MesgHub.MesgUnitFactory(name='FLASK', stat=f'JobEnded', mesg=f'Ended func "{func}" with argument "{args}" and "{xargs}"') ) )
+
+def AddJob(jobFUNC, *args, **xargs):
+    job_queue.put( (jobFUNC,args,xargs) )
+
 #def activate_message_update():
 #        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.js" crossorigin="anonymous"></script>
 #  this code activates the function
+@socketio.event
 def connect():
-    print('ACTIVATGELKSJDFKLSJDFKLJ')
-    UPDATE_TIMER = 1.0
+    UPDATE_TIMER = 5.0
     global bkgevt_mesg_update
     with bkgevt_mesg_update_lock:
         if bkgevt_mesg_update is None:
             bkgevt_mesg_update = socketio.start_background_task(message_update, UPDATE_TIMER)
+
+    global bkgevt_job_queue, bkgevt_job_queue_lock
+    with bkgevt_job_queue_lock:
+        if bkgevt_job_queue is None:
+            bkgevt_job_queue = socketio.start_background_task(execute_job_from_queue)
+
     socketio.emit('bk', info(-1))
 
 def module_init(app):
