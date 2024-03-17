@@ -90,9 +90,12 @@
 
 
                 <div class="ctrlbox">
-                    <button id="buttonINITIALIZE" class="CommandPCA0" onclick="showMessage('<i class=\'fa-solid fa-circle-nodes\' style=\'color: #73C250\'></i> Connected'); send_cmd2(this.id);">INITIALIZE</button>
-                    <button id="buttonCONNECT" class="CommandPCA1" onclick="showMessage('<i class=\'fa-solid fa-land-mine-on\' style=\'color: #73C250\'></i> Activated'); send_cmd2(this.id);">CONNECT</button>
-                    <button id="buttonDESTROY" class="CommandPCA1" onclick="showMessage('<i class=\'fa-solid fa-ban\' style=\'color: #B6BBC4\'></i> Disconnected');send_cmd2(this.id);">DESTROY</button>
+                    <button id="buttonINITIALIZE"class="CommandPCA0" onclick="send_cmd2(this.id);">INITIALIZE</button>
+                    <button id="buttonCONNECT"   class="CommandPCA0" onclick="send_cmd2(this.id);">CONNECT</button>
+                    <button id="buttonCONFIGURE" class="CommandPCA0" onclick="send_cmd2(this.id);">CONFIGURE</button>
+                    <button id="buttonTEST"      class="CommandPCA0" onclick="send_cmd2(this.id);">TEST</button>
+                    <button id="buttonRUN"       class="CommandPCA0" onclick="send_cmd2(this.id);">RUN</button>
+                    <button id="buttonDESTROY"   class="CommandPCA0" onclick="send_cmd2(this.id);">DESTROY</button>
 
                 </div>
 
@@ -113,6 +116,7 @@
             var socket = io();
             socket.on('activate_message_update', function() { console.log('activating message update bkg'); } );
             socket.on('bk', function(jsonifyDATA) { console.log( "emit to "+jsonifyDATA.message+" captured"); showLatestLogs(jsonifyDATA); } );
+            socket.on('bkgRunJobs', function(jsonifyDATA) { console.log("[RunJob] "+jsonifyDATA.name+": "+jsonifyDATA.theSTAT); showLatestLogs(jsonifyDATA); } );
 
 
             function send_cmd2(btnID) {
@@ -181,15 +185,11 @@
                             showLatestLogs(jsonifyDATA);
                         }
             function showLatestLogs(jsonifyDATA) {
-                            //$('#logbox').prepend( createStyledString(jsonifyDATA.indicator,jsonifyDATA.theSTAT, jsonifyDATA.message) );
-                            var styledDiv = $('<div/>');
-                        
                             var statSpan = $('<span/>').text(jsonifyDATA.theSTAT).css('color', getStyleFromIndicator(jsonifyDATA.indicator));
+                            var mesgDiv = $('<div/>').text(jsonifyDATA.message);
                             var timerSpan = $('<span/>').text('('+jsonifyDATA.timestamp+')').css('float', 'right');
                         
-                            styledDiv.append(statSpan, ' ', jsonifyDATA.message, ' ', timerSpan);
-                        
-                            $('#logbox').prepend(styledDiv);
+                            $('#logbox').prepend( statSpan.add(mesgDiv).add(timerSpan).after('<br>').after('<br>') );
                         }
 
             function createStyledString(btnID, newSTAT, newMESG) {
