@@ -22,13 +22,6 @@ bkgevt_job_queue_lock = Lock()
 
 bkgevt_mesg_update = None
 bkgevt_mesg_update_lock = Lock()
-#def Info( mesgHUB:MesgHub.MesgUnit ) -> dict:
-#    return {
-#            'indicator': mesgHUB.name,
-#            'theSTAT':   mesgHUB.stat,
-#            'message':   mesgHUB.mesg,
-#            'timestamp': mesgHUB.timestamp,
-#            }
 def Info( mesgHUB:MesgHub.MesgUnit ) -> dict:
     return {
             'indicator': mesgHUB.name,

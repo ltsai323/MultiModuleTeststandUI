@@ -6,9 +6,10 @@ import socket
 import threading
 import errno
 import sys
+import time
 TIMEOUT = 2.0
 MAX_MESG_LENG = 1024
-LOG_LEVEL = 1
+LOG_LEVEL = 5
 def BUG(*mesg):
     if LOG_LEVEL < 1:
         print('#DEBUG# ', mesg)
@@ -113,14 +114,27 @@ def SendShortCMD(self, theCMD:str) -> int:
 ### *** Running are not in the list.
 from collections import deque
 _MAX_LOG_TO_SHOW_ = 10
+
+def BookExternalFunc(logMETHOD=None, sleepFUNC=None):
+    def default_log_method(mesgUNIT:MesgHub.MesgUnit):
+        LOG('TESTING', 'default_name', f'recording message from UnitStageCommander {mesgUNIT}')
+    def default_sleep_func(sleepPERIOD):
+        import time
+        time.sleep(sleepPERIOD)
+    log_method = logMETHOD if logMETHOD else default_log_method
+    sleep_func = sleepFUNC if sleepFUNC else default_sleep_func
+    return (log_method, sleep_func)
+
 class UnitStageCommander:
-    def __init__(self, subUNIT:SubUnit):
+    def __init__(self, subUNIT:SubUnit, logMETHOD = None, sleepFUNC = None):
         self.name = subUNIT.name
         self.unit_setup = subUNIT
         self.unit_status = UnitStatus()
         self.logs = deque(maxlen=_MAX_LOG_TO_SHOW_)
+        self.log_func, self.sleep_func = BookExternalFunc(logMETHOD,sleepFUNC)
 
     def record_message(self, mesg):
+        self.log_func(mesg)
         ### asdf
         ### to do 
         ###   a log file for output
@@ -145,26 +159,40 @@ class UnitStageCommander:
 
         LOG('Initialized', self.name, f'UnitStageCommander::Initialize() - Communication to PyModule "{self.name}" is built successfully.')
     def Connect(self):
-        SendLongCMD(self, 'connect', self.unit_setup.connect_config.name) # Set the module name
+        for serialized_cmd in SerializedCMDs(self, 'CONNECT'):
+            SendLongCMD(self, serialized_cmd['cmd'], self.unit_setup.connect_config.name)
+            self.sleep_func(serialized_cmd['timegap'])
 
         LOG('Connected', self.name, f'UnitStageCommander::Connect() - PyModule "{self.name}" successfully connected to hardware.')
     def Configure(self):
-        SendLongCMD(self,'UPDATE', self.unit_setup.AllConfigsAsUpdateArg() )
-        #SendLongCMD(self,'on')
+        for serialized_cmd in SerializedCMDs(self, 'CONFIGURE'):
+            SendLongCMD(self, serialized_cmd['cmd'], self.unit_setup.AllConfigsAsUpdateArg() )
+            self.sleep_func(serialized_cmd['timegap'])
     def Run(self):
-        SendLongCMD(self, 'set')
-        SendLongCMD(self, 'on')
+        for serialized_cmd in SerializedCMDs(self, 'RUN'):
+            SendLongCMD(self, serialized_cmd['cmd'])
+            self.sleep_func(serialized_cmd['timegap'])
 
     def Destroy(self):
-        SendLongCMD(self,'DESTROY')
-        LOG('Destroyed', self.name, f'UnitStageCommander::Destroy() - Connection destroyed to PyModule "{self.name}".')
         ''' need to destroy socket_client '''
+        for serialized_cmd in SerializedCMDs(self, 'DESTROY'):
+            SendLongCMD(self, serialized_cmd['cmd'])
+            self.sleep_func(serialized_cmd['timegap'])
     def Test(self):
         SendLongCMD(self, 'test')
         LOG('testing', self.name, f'UnitStageCommander::Test() - Connection destroyed to PyModule "{self.name}".')
 
 ''' Every SendLongCMD is required to load the commands inside yaml file '''
 ''' Need to load configuration profiles at initialize or connect step asdf '''
+def SerializedCMDs(unitstageCMDer: UnitStageCommander, theCMD:str):
+    cmd_pool = unitstageCMDer.unit_setup.cmd_pool.sys_cmds
+    if theCMD not in cmd_pool:
+        raise IOError(f'Input command "{theCMD}" does not recognized in available system commands "{cmd_pool.keys()}"')
+    serialized_cmds = cmd_pool[theCMD]
+
+    def out_format(cmdSTR:str,waitingFOR:float):
+        return { 'cmd':cmdSTR, 'timegap': waitingFOR }
+    return [ out_format(serialized_cmd['cmd'],serialized_cmd['timegap']) for serialized_cmd in serialized_cmds ]
 
 
 class CommandPost:
@@ -187,9 +215,10 @@ if __name__ == "__main__":
     #pwrunit.Help()
     #print(pwrunit.CommandList)
 
-    pwrcmder = UnitStageCommander(pwrunit)
+    def log_method(mesgUNIT:MesgHub.MesgUnit):
+        print(f'recording message from UnitStageCommander {mesgUNIT}')
+    pwrcmder = UnitStageCommander(pwrunit, log_method)
     pwrcmder.Initialize()
-    pwrcmder.Connect()
     pwrcmder.Connect()
     pwrcmder.Destroy()
 

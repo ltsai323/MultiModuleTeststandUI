@@ -74,6 +74,9 @@ def send_log_to_website(mesgUNIT:MesgHub.MesgUnit):
     global socketio
     print(f'send_log_to_website {mesgUNIT}')
     socketio.emit('bk', Info(mesgUNIT))
+def socketio_sleep(sleepPERIOD):
+    global socketio
+    socketio.sleep(sleepPERIOD)
 
 def module_init(app):
     # SSH connector
@@ -81,7 +84,7 @@ def module_init(app):
     sshconf = subunit.PyModuleCommandPool('../CommandPost/data/subunit_ssh_connect.yaml')
     sshunit = subunit.SubUnit(sshconn,sshconf)
 
-    _VARS_.cmders['sshcmder'] = UnitStageCommander(sshunit, send_log_to_website)
+    _VARS_.cmders['sshcmder'] = UnitStageCommander(sshunit, send_log_to_website, socketio_sleep)
     app.pwrcmder = _VARS_.cmders['sshcmder']
 
     # SSH connector
@@ -89,7 +92,7 @@ def module_init(app):
     testsshconf = subunit.PyModuleCommandPool('../CommandPost/data/subunit_ssh_connect.yaml')
     testsshunit = subunit.SubUnit(testsshconn,testsshconf)
 
-    _VARS_.cmders['testSSH'] = UnitStageCommander(testsshunit, send_log_to_website)
+    _VARS_.cmders['testSSH'] = UnitStageCommander(testsshunit, send_log_to_website, socketio_sleep)
     app.pwrcmder = _VARS_.cmders['testSSH']
 
 if __name__ == "__main__":
