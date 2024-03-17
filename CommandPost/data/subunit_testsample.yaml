@@ -31,8 +31,6 @@ system_cmds:
       - MaximumOutputVoltage
       - MaximumOutputCurrent
       - ControlMode
-  HALT:
-    - cmd: '_PASS_'
   RUN: # only provided to commander. Not GUI
     - cmd: 'set'
       timegap: 0.5

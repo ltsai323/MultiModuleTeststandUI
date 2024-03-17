@@ -14,7 +14,7 @@ available_commands:
 
 # config with default value
 default_args:
-  boardtype:
+  boardtype: # Which is the folder name in command PC
       - V3HD_hexactrl # first one is the default value
       - V3HD_hexactrl_v2 # other values are the available options
       - V3LD_hexactrl
@@ -41,14 +41,16 @@ system_cmds:
       timegap: 0.05
   CONFIGURE: # send all current value to module.
     - cmd: 'UPDATE'
+      timegap: 0.1
       configs:
         - boardtype
         - boardID
-  HALT:
-    - cmd: '_PASS_'
   RUN: # only provided to commander. Not GUI
     - cmd: 'run'
       timegap: 0.5
   DESTROY:
     - cmd: 'DESTROY'
       timegap: 0.1
+  TEST:
+    - cmd: 'test'
+      timegap: 10.
