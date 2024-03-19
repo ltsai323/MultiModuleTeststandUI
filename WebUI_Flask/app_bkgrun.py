@@ -1,6 +1,6 @@
 from threading import Lock
 from flask import Flask, render_template, session
-from flask_socketio import socketio, emit
+from flask_socketio import emit
 from flask import Blueprint
 from app_socketio import socketio
 import requests
@@ -51,14 +51,18 @@ def execute_job_from_queue():
         if job_queue.empty():
             socketio.sleep(JOB_CHECKING_TIMER)
         else:
-            func, args, xargs = job_queue.get()
-            print('[lkasjdflkasjdlfk] function name is ', func)
-            socketio.emit('bkgRunJobs', Info( MesgHub.MesgUnitFactory(name='FLASK', stat=f'Run-Job', mesg=f'running function "{func}" with argument "{args}" and "{xargs}"') ) )
+            name, func, args, xargs = job_queue.get()
+            socketio.emit('bkgRunJobs', Info( MesgHub.MesgUnitFactory(name='FLASK', stat=f'Run-Job', mesg=f'running function "{name}"') ) )
+            print('bkgRunJobs', Info( MesgHub.MesgUnitFactory(name='FLASK', stat=f'Run-Job', mesg=f'running function "{name}"') ) )
             func(*args, **xargs)
-            socketio.emit('bkgRunJobs', Info( MesgHub.MesgUnitFactory(name='FLASK', stat=f'JobEnded', mesg=f'Ended func "{func}" with argument "{args}" and "{xargs}"') ) )
+            socketio.emit('bkgRunJobs', Info( MesgHub.MesgUnitFactory(name='FLASK', stat=f'JobEnded', mesg=f'Ended func "{name}"') ) )
+            socketio.sleep(0.5)
+            #input('End of bkg run job...')
 
-def AddJob(jobFUNC, *args, **xargs):
-    job_queue.put( (jobFUNC,args,xargs) )
+def AddJob(jobNAME, jobFUNC, *args, **xargs):
+    socketio.emit('Add job to queue', Info( MesgHub.MesgUnitFactory(name='FLASK', stat=f'NewJobAccepted', mesg=f'job "{jobNAME} put into queue"') ) )
+    print('Add job to queue', MesgHub.MesgUnitFactory(name='FLASK', stat=f'NewJobAccepted', mesg=f'job "{jobNAME} put into queue"') )
+    job_queue.put( (jobNAME, jobFUNC,args,xargs) )
 
 #def activate_message_update():
 #        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.js" crossorigin="anonymous"></script>
