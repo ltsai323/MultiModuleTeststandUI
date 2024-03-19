@@ -8,7 +8,7 @@ import errno
 import sys
 import time
 
-TestMode = True
+TestMode = False
 TIMEOUT = 2.0
 MAX_MESG_LENG = 1024
 LOG_LEVEL = 5
@@ -88,14 +88,20 @@ def SendLongCMD(self, theCMD:str, theARG:str='' ) -> int:
                 data = self.socket_client.recv(MAX_MESG_LENG)
 
                 if not data or data == b'': continue
-                rec_data = MesgHub.GetSingleMesg(data)
-                self.record_message(rec_data)
-                if rec_data.stat == 'JOB_FINISHED':
-                    print('*'*10, 'Received a JOB_FINISHED')
-                    return STAT_JOB_FINISHED # close this connection
-                    print('*'*10, 'Received a ERROR FOUND')
-                if rec_data.stat == 'ERROR FOUND':
-                    return STAT_ERROR
+                recDATA = MesgHub.GetMultipleMesg(data)
+                for rec_data in recDATA:
+                    self.record_message(rec_data)
+                    #print('*'*10, 'Received a mesg ', rec_data)
+                    ### ignore no formatted string.
+                    ### Once JOB_FINISHED or ERROR FOUND received, the other messages are ignored
+                    if rec_data.stat == 'UNKNOWN':
+                        continue
+                    if rec_data.stat == 'JOB_FINISHED':
+                        #print('*'*10, 'Received a JOB_FINISHED')
+                        return STAT_JOB_FINISHED # close this connection
+                        #print('*'*10, 'Received a ERROR FOUND')
+                    if rec_data.stat == 'ERROR FOUND':
+                        return STAT_ERROR
             except socket.timeout:
                 self.socketio.sleep(0.03) # force socketio emit flash its buffer. Such that the server refreshed its data in async mode.
                 if TestMode: print('long_cmd(): timeout... skip')

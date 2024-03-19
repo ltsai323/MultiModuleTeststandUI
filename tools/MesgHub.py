@@ -171,21 +171,30 @@ def SendSingleMesg(mesgUNIT:MesgUnit):
 #def SendMultipleMesg(*mesgUNITs:list):
 #    return MesgEncoder_JSON( *[delivering_dictionary_translater(mUnit) for mUnit in mesgUNITs] )
 
-def GetSingleMesg(encodedMESG:str) -> MesgUnit:
+def GetMultipleMesg(encodedMESG:str) -> list:
     rec_data = MesgDecoder_JSON(encodedMESG)
 
     if len(rec_data) == 0: return MesgUnitFactory(name='no_data', stat='unknown')
-    def first_message(recDATA):
-        if isinstance(recDATA, str): return recDATA
+    def getMesgs(recDATA):
+        if isinstance(recDATA, str): return [recDATA]
         if isinstance(recDATA, list): return recDATA[0]
         raise IOError(f'first_message(): unknown rec_data received. Type {type(rec_data)}: Content: "{recDATA}"')
-    rdata = first_message(rec_data)
-    if 'c' in rdata.keys(): return CMDUnitFactory(**delivered_dictionary_translater(rdata) )
-    if 's' in rdata.keys(): return MesgUnitFactory(**delivered_dictionary_translater(rdata) )
-    return MesgUnitFactory(name='no_data', stat='unknown')
-#def GetMultipleMesg(encodedMESG:str) -> list:
-#    rec_data = MesgDecoder_JSON(encodedMESG)
-#    return [ MesgUnitFactory(**delivered_dictionary_translater(rdata) ) for rdata in rec_data ]
+
+    def first_message(recDATA):
+        if isinstance(recDATA, str): return [recDATA]
+        if isinstance(recDATA, list): return recDATA
+        raise IOError(f'first_message(): unknown rec_data received. Type {type(rec_data)}: Content: "{recDATA}"')
+    output = []
+    for rdata in first_message(rec_data):
+        if 'c' in rdata.keys(): output.append(CMDUnitFactory(**delivered_dictionary_translater(rdata) ))
+        if 's' in rdata.keys(): output.append(MesgUnitFactory(**delivered_dictionary_translater(rdata) ))
+
+    if len(output)==0:
+        output.append(MesgUnitFactory(name='no_data', stat='UNKNOWN', mesg='Unknown data from MesgHub.GetMultipleMesg(). Ignored'))
+    return output
+def GetSingleMesg(encodedMESG:str) -> MesgUnit:
+    return GetMultipleMesg(encodedMESG)[0]
+
 
 def IsCMDUnit(theUNIT) -> bool:
     return hasattr(theUNIT, 'cmd')
