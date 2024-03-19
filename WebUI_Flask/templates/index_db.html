@@ -115,8 +115,8 @@
         <script>
             var socket = io();
             socket.on('activate_message_update', function() { console.log('activating message update bkg'); } );
-            socket.on('bk', function(jsonifyDATA) { console.log( "emit to "+jsonifyDATA.message+" captured"); showLatestLogs(jsonifyDATA); } );
-            socket.on('bkgRunJobs', function(jsonifyDATA) { console.log("[RunJob] "+jsonifyDATA.name+": "+jsonifyDATA.theSTAT); showLatestLogs(jsonifyDATA); } );
+            //socket.on('bk', function(jsonifyDATA) { console.log( "emit to "+jsonifyDATA.message+" captured"); showLatestLogs(jsonifyDATA); } );
+            socket.on('bkgRunJobs', function(jsonifyDATA) { console.log("[RunJob] "+jsonifyDATA.indicator+": "+jsonifyDATA.theSTAT); showLatestLogs(jsonifyDATA); } );
 
 
             function send_cmd2(btnID) {
@@ -197,11 +197,14 @@
                             var styledString = styledSpan.prop("outerHTML") + ": " + newMESG + "<br>";
                             return styledString;
                         }
-            function getStyleFromIndicator(btnID) {
-                            if ( btnID === "button1" ) { return "#B80000"; }
-                            if ( btnID === "button2" ) { return "#B6BBC4"; }
-                            if ( btnID === "button3" ) { return "#73C250"; }
-                            if ( btnID === "SSHTEST1") { return "#73C250"; }
+            function getStyleFromIndicator(jsonifyINDICATOR) {
+                            if ( jsonifyINDICATOR === "button1" ) { return "#B80000"; }
+                            if ( jsonifyINDICATOR === "button2" ) { return "#B6BBC4"; }
+                            if ( jsonifyINDICATOR === "button3" ) { return "#73C250"; }
+
+                            if ( jsonifyINDICATOR === "SSHTEST1") { return "#73C250"; }
+                            if ( jsonifyINDICATOR === "SSHTEST2") { return "#B80000"; }
+                            if ( jsonifyINDICATOR === "FLASK") { return "#B6BBC4"; }
                             return "";
                         }
 
