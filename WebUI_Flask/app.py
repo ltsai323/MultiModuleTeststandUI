@@ -14,6 +14,7 @@ def index():
 
 if __name__ == '__main__':
     app.job_is_running = False
+    from app_socketio import socketio
     import app_actbtn
     app.register_blueprint(app_actbtn.app_b)
     app_actbtn.module_init(app_actbtn.app_b)
@@ -57,7 +58,6 @@ if __name__ == '__main__':
 
     #app.run(debug=True)
     #app.run(host='0.0.0.0', port=8888, threaded=True)
-    from app_socketio import socketio
     socketio.init_app(app)
     socketio.run(app,host='0.0.0.0', port=8888)
     #app.run(host='0.0.0.0', port=8888, threaded=True)

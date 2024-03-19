@@ -72,6 +72,7 @@ class SingleConnector:
     def set_logger(self, stdoutFUNC, stderrFUNC):
         self.MESG = stdoutFUNC
         self.MERR = stderrFUNC
+
     def Initialize(self):
         self.MESG('Initializing', f'SingleConnector.Initialize() : Building SSH connection to {self.config.host}:{self.config.port}')
         #self.the_stat.SetTaskRunning( myLOG('Initialize', 'SingleConnector.Init', 'Initialize SSH connection') )
@@ -95,6 +96,7 @@ class SingleConnector:
             except Exception as e:
                 self.stat = -1 # asdf del
                 self.MERR('Failed Initialization', f'Connection to {self.config.host}:{self.config.port} failed.\n{e}')
+        self.MESG('JOB_FINISHED', f'SSH connection to {self.config.host}:{self.config.port} is checked')
         self.the_stat.SetIdle()
 
     def send_cmd(self, theCMD):
@@ -113,7 +115,7 @@ class SingleConnector:
                 endedStat = 0
                 for line in stdout:
                     the_mesg = line.strip()
-                    self.MESG('ssh log', the_mesg )
+                    self.MESG('LOG', the_mesg )
                     try:
                         ended_code = int(the_mesg)
                         endedStat = ended_code
@@ -126,6 +128,8 @@ class SingleConnector:
                         for line in stderr:
                             yield line.strip()
                     self.MERR('ERROR FOUND', '\n'.join(all_errs(stderr) ) )
+                self.MESG('JOB_FINISHED', f'end of command "{bashCOMMAND}"')
+
             bkgrun = threading.Thread(target=execute_command, args=(self,bashCOMMAND))
             bkgrun.start()
         return None
