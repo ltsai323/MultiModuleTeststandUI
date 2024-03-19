@@ -35,65 +35,89 @@ def Info( mesgHUB:MesgHub.MesgUnit ) -> dict:
 
 @app_b.route('/buttonINITIALIZE', methods=['POST'])
 def buttonINITIALIZE():
+    jobTEMPLATE = '{}.Initialize'
     for subunitName, subunitInstance in _VARS_.cmders.items():
-        AddJob(subunitInstance.Initialize)
-    return jsonify( Info(app_b.pwrcmder.mesg) )
+        AddJob(jobTEMPLATE.format(subunitName),subunitInstance.Initialize)
+    return jsonify( Info(MesgHub.MesgUnitFactory(name='FLASK', stat='Initializing all modules', mesg='')) )
 
 @app_b.route('/buttonCONNECT', methods=['POST'])
 def buttonCONNECT():
+    jobTEMPLATE = '{}.Connect'
     for subunitName, subunitInstance in _VARS_.cmders.items():
-        AddJob(subunitInstance.Connect)
-    return jsonify( Info(app_b.pwrcmder.mesg) )
+        AddJob(jobTEMPLATE.format(subunitName),subunitInstance.Connect)
+    return jsonify( Info(MesgHub.MesgUnitFactory(name='FLASK', stat='Initializing all modules', mesg='')) )
 
 @app_b.route('/buttonCONFIGURE', methods=['POST'])
 def buttonCONFIGURE():
+    jobTEMPLATE = '{}.Configure'
+    return jsonify( Info(MesgHub.MesgUnitFactory(name='FLASK', stat='Configuring', mesg='Function Not Implemented')) )
+
     for subunitName, subunitInstance in _VARS_.cmders.items():
-        AddJob(subunitInstance.Configure)
-    return jsonify( Info(app_b.pwrcmder.mesg) )
+        AddJob(jobTEMPLATE.format(subunitName),subunitInstance.Configure)
+    return jsonify( Info(MesgHub.MesgUnitFactory(name='FLASK', stat='Configuring', mesg='Configuring all modules')) )
 
 
 @app_b.route('/buttonRUN', methods=['POST'])
 def buttonRUN():
-    AddJob(_VARS_.cmders['sshcmder'].Run)
-    AddJob(_VARS_.cmders['testSSH'].Run)
-    return jsonify( Info( MesgHub.MesgUnitFactory(name='FLASK', stat='Job Sent', mesg='running jobs. waiting for the ended!') ) )
+    jobTEMPLATE = '{}.Run'
+    AddJob(jobTEMPLATE.format('SSHTEST1'),_VARS_.cmders['SSHTEST1'].Run)
+    AddJob(jobTEMPLATE.format('SSHTEST2'),_VARS_.cmders['SSHTEST2'].Run)
+    return jsonify( Info( MesgHub.MesgUnitFactory(name='FLASK', stat='Job Sent', mesg='running all jobs.') ) )
+
+@app_b.route('/buttonPAUSE', methods=['POST'])
+def buttonPAUSE():
+    return jsonify( Info( MesgHub.MesgUnitFactory(name='FLASK', stat='Pause Job', mesg='function not implemented') ) )
+
+@app_b.route('/buttonSTOP', methods=['POST'])
+def buttonSTOP():
+    return jsonify( Info( MesgHub.MesgUnitFactory(name='FLASK', stat='Stop all jobs', mesg='Function not implemented') ) )
 
 @app_b.route('/buttonTEST', methods=['POST'])
 def buttonTEST():
-    AddJob(_VARS_.cmders['sshcmder'].Test)
-    AddJob(_VARS_.cmders['testSSH'].Test)
-    return jsonify( Info( MesgHub.MesgUnitFactory(name='FLASK', stat='Test Sent', mesg='running jobs. waiting for the ended!') ) )
+    jobTEMPLATE = '{}.Test'
+    AddJob(jobTEMPLATE.format('SSHTEST1'),_VARS_.cmders['SSHTEST1'].Test)
+    AddJob(jobTEMPLATE.format('SSHTEST2'),_VARS_.cmders['SSHTEST2'].Test)
+    print('jsonify:::', Info( MesgHub.MesgUnitFactory(name='FLASK', stat='Test Sent', mesg='running all test jobs.') ) )
+    return jsonify( Info( MesgHub.MesgUnitFactory(name='FLASK', stat='Test Sent', mesg='running all test jobs.') ) )
 
 @app_b.route('/buttonDESTROY', methods=['POST'])
 def buttonDESTROY():
-    _VARS_.cmders['testSSH'].Destroy()
-    _VARS_.cmders['sshcmder'].Destroy()
+    jobTEMPLATE = '{}.Destroy'
+    ## asdf error
+    AddJob(jobTEMPLATE.format('SSHTEST2'),_VARS_.cmders['SSHTEST2'].Destroy)
+    AddJob(jobTEMPLATE.format('SSHTEST1'),_VARS_.cmders['SSHTEST1'].Destroy)
+    print('jsonfiy:::', Info( MesgHub.MesgUnitFactory(name='FLASK', stat='Destroying', mesg='Signal sent. Waiting for updates.') ) )
     return jsonify( Info( MesgHub.MesgUnitFactory(name='FLASK', stat='Destroying', mesg='Signal sent. Waiting for updates.') ) )
 
-def send_log_to_website(mesgUNIT:MesgHub.MesgUnit):
-    global socketio
-    print(f'send_log_to_website {mesgUNIT}')
-    socketio.emit('bk', Info(mesgUNIT))
-def socketio_sleep(sleepPERIOD):
-    global socketio
-    socketio.sleep(sleepPERIOD)
 
 def module_init(app):
+    global socketio
+    class OverwriteBuildInFunc:
+        from flask_socketio import SocketIO
+        def __init__(self, socketIO:SocketIO):
+            self.socketio = socketIO
+        def log_method(self,mesgUNIT:MesgHub.MesgUnit):
+            print(f'send_log_to_website {mesgUNIT}')
+            self.socketio.emit('bkgRunJobs', Info(mesgUNIT))
+        def sleep_func(self,sleepPERIOD):
+            self.socketio.sleep(sleepPERIOD)
+    new_log_and_sleep = OverwriteBuildInFunc(socketio)
     # SSH connector
-    sshconn = subunit.PyModuleConnectionConfig('SSHTEST1', '192.168.50.60', 2000)
+    name='SSHTEST1'
+    sshconn = subunit.PyModuleConnectionConfig(name, '192.168.50.60', 2000)
     sshconf = subunit.PyModuleCommandPool('../CommandPost/data/subunit_ssh_connect.yaml')
     sshunit = subunit.SubUnit(sshconn,sshconf)
 
-    _VARS_.cmders['sshcmder'] = UnitStageCommander(sshunit, send_log_to_website, socketio_sleep)
-    app.pwrcmder = _VARS_.cmders['sshcmder']
+    _VARS_.cmders[name] = UnitStageCommander(sshunit, new_log_and_sleep)
+    #app.pwrcmder = _VARS_.cmders[name]
 
     # SSH connector
-    testsshconn = subunit.PyModuleConnectionConfig('SSHTEST2', '192.168.50.60', 2001)
+    name = 'SSHTEST2'
+    testsshconn = subunit.PyModuleConnectionConfig(name, '192.168.50.60', 2001)
     testsshconf = subunit.PyModuleCommandPool('../CommandPost/data/subunit_ssh_connect.yaml')
     testsshunit = subunit.SubUnit(testsshconn,testsshconf)
 
-    _VARS_.cmders['testSSH'] = UnitStageCommander(testsshunit, send_log_to_website, socketio_sleep)
-    app.pwrcmder = _VARS_.cmders['testSSH']
+    _VARS_.cmders[name] = UnitStageCommander(testsshunit, new_log_and_sleep)
 
 if __name__ == "__main__":
     app = Flask(__name__)
