@@ -21,7 +21,7 @@ def LOG(info,name,mesg):
 class RunningConfigurations:
     def __init__(self, logFUNC = print ):
         self.status = 0
-        self.name = 'testing'
+        self.name = 'NotInitialized'
         self.logFUNC = print
     def LOG(self, stat, mesg):
         self.logFUNC(stat,mesg)
@@ -153,14 +153,14 @@ def execute_command(socketPROFILE:SocketProfile, clientSOCKET,command):
     UpdateMesgAndSend( socketPROFILE, clientSOCKET, 'JOB_FINISHED')
 
 
-def start_server(socketPROFILE:SocketProfile):
-    DEFAULT_IP = '0.0.0.0'
-    DEFAULT_PORT = 2000
+DEFAULT_IP = '0.0.0.0'
+DEFAULT_PORT = 2000
+def start_server(socketPROFILE:SocketProfile, theADDR=DEFAULT_IP, thePORT=DEFAULT_PORT):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind((DEFAULT_IP,DEFAULT_PORT))
+    server_socket.bind((theADDR,thePORT))
     server_socket.listen(5)
 
-    LOG('Start Server', 'start_server', f"Server listening on port {DEFAULT_PORT}...")
+    LOG('Start Server', 'start_server', f"Server listening on port {thePORT}...")
 
     try:
         while socketPROFILE.server_socket_is_active.is_set():
