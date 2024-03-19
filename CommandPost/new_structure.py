@@ -7,6 +7,8 @@ import threading
 import errno
 import sys
 import time
+
+TestMode = True
 TIMEOUT = 2.0
 MAX_MESG_LENG = 1024
 LOG_LEVEL = 5
@@ -75,6 +77,7 @@ def socket_error_handler(self, theCMD:str, socketFUNC) -> int:
         else:
             err_mesg = f'Socket error : {e}'
         raise IOError(err_mesg)
+
 def SendLongCMD(self, theCMD:str, theARG:str='' ) -> int:
     def long_cmd(self, theCMD):
         the_cmd = MesgHub.CMDUnitFactory(name=self.name, cmd = theCMD, arg=theARG)
@@ -88,8 +91,14 @@ def SendLongCMD(self, theCMD:str, theARG:str='' ) -> int:
                 rec_data = MesgHub.GetSingleMesg(data)
                 self.record_message(rec_data)
                 if rec_data.stat == 'JOB_FINISHED':
+                    print('*'*10, 'Received a JOB_FINISHED')
                     return STAT_JOB_FINISHED # close this connection
+                    print('*'*10, 'Received a ERROR FOUND')
+                if rec_data.stat == 'ERROR FOUND':
+                    return STAT_ERROR
             except socket.timeout:
+                self.socketio.sleep(0.03) # force socketio emit flash its buffer. Such that the server refreshed its data in async mode.
+                if TestMode: print('long_cmd(): timeout... skip')
                 continue # totally disable the timeout message. Such that all message comes from the running message
     return socket_error_handler(self,theCMD, long_cmd)
 def SendShortCMD(self, theCMD:str) -> int:
@@ -115,25 +124,32 @@ def SendShortCMD(self, theCMD:str) -> int:
 from collections import deque
 _MAX_LOG_TO_SHOW_ = 10
 
-def BookExternalFunc(logMETHOD=None, sleepFUNC=None):
-    def default_log_method(mesgUNIT:MesgHub.MesgUnit):
+
+class BuildInFunc:
+    import time
+    def __init__(self):
+        pass
+    def log_method(self, mesgUNIT:MesgHub.MesgUnit):
         LOG('TESTING', 'default_name', f'recording message from UnitStageCommander {mesgUNIT}')
-    def default_sleep_func(sleepPERIOD):
-        import time
+    def sleep_func(self,sleepPERIOD):
         time.sleep(sleepPERIOD)
-    log_method = logMETHOD if logMETHOD else default_log_method
-    sleep_func = sleepFUNC if sleepFUNC else default_sleep_func
-    return (log_method, sleep_func)
+
 
 class UnitStageCommander:
-    def __init__(self, subUNIT:SubUnit, logMETHOD = None, sleepFUNC = None):
+    def __init__(self, subUNIT:SubUnit, usedFUNCs:BuildInFunc):
         self.name = subUNIT.name
         self.unit_setup = subUNIT
         self.unit_status = UnitStatus()
+        self.build_in_funcs = usedFUNCs
         self.logs = deque(maxlen=_MAX_LOG_TO_SHOW_)
-        self.log_func, self.sleep_func = BookExternalFunc(logMETHOD,sleepFUNC)
+
+    def log_func(self, mesgUNIT:MesgHub.MesgUnit):
+        self.build_in_funcs.log_method(mesgUNIT)
+    def sleep_func(self, sleepPERIOD):
+        self.build_in_funcs.sleep_func(sleepPERIOD)
 
     def record_message(self, mesg):
+        #print("RECORDING_MESSAGES")
         self.log_func(mesg)
         ### asdf
         ### to do 
@@ -142,6 +158,9 @@ class UnitStageCommander:
     @property
     def mesg(self):
         return self.logs[-1] if len(self.logs)>0 else MesgHub.MesgUnitFactory(name=self.name, stat='N/A', mesg='Not initialized')
+    @property
+    def socketio(self):
+        return self.build_in_funcs.socketio
 
     def LoadConfigProfile(self):
         return (self.name, self.unit_setup.ConfigDict)
@@ -174,6 +193,7 @@ class UnitStageCommander:
             self.sleep_func(serialized_cmd['timegap'])
 
     def Destroy(self):
+        ## asdf error
         ''' need to destroy socket_client '''
         for serialized_cmd in SerializedCMDs(self, 'DESTROY'):
             SendLongCMD(self, serialized_cmd['cmd'])
@@ -196,6 +216,7 @@ def SerializedCMDs(unitstageCMDer: UnitStageCommander, theCMD:str):
 
 
 class CommandPost:
+    # asdf not accomplished code
     def __init__(self, *subUNITs):
         duplicate_connect_config_checking( (unit.connect_config for unit in subUNITs) )
         self.subunits = { unit.name:unit for unit in subUNITs }
@@ -217,7 +238,8 @@ if __name__ == "__main__":
 
     def log_method(mesgUNIT:MesgHub.MesgUnit):
         print(f'recording message from UnitStageCommander {mesgUNIT}')
-    pwrcmder = UnitStageCommander(pwrunit, log_method)
+    default_log_and_sleep = BuildInFunc()
+    pwrcmder = UnitStageCommander(pwrunit, default_log_and_sleep)
     pwrcmder.Initialize()
     pwrcmder.Connect()
     pwrcmder.Destroy()
