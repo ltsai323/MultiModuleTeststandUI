@@ -6,57 +6,106 @@ from tools.LogTool import LOG
 import tools.SocketProtocol_ as SocketProtocol
 import tools.MesgHub as MesgHub
 import time
-
-
-class CMD:
-    CONNECT = 'connect'
-    DESTROY = 'DESTROY'
-    UPDATE_CONFIG = 'UPDATE'
-
-    TAKE_DATA = 'run'
-    TEST = 'test'
+import re
 
 
 
+class CMDConnect:
+    remote_cmd = 'connect'
+    def __init__(self, cmdUNIT:MesgHub.CMDUnit):
+        self.cmd_unit = cmdUNIT
+    def execute(self,theCONFIGs:SocketProtocol.RunningConfigurations) -> str:
+        theCONFIGs.name = self.cmd_unit.name
+        theCONFIGs.MESG('NameUpdated', f'PyModule name is set from remote "{theCONFIGs.name}"')
+        theCONFIGs.connMgr.Initialize()
+        return False # no waiting for job ended
+class CMDDestroy:
+    remote_cmd = 'DESTROY'
+    def __init__(self, cmdUNIT:MesgHub.CMDUnit):
+        self.cmd_unit = cmdUNIT
+    def execute(self,theCONFIGs:SocketProtocol.RunningConfigurations) -> bool:
+        time.sleep(1.0)
+        remote_cmd_set = theCONFIGs.destroyCMD
+        out_mesg = send_ssh_mesg(theCONFIGs, full_CMD_with_args(theCONFIGs,remote_cmd_set['cmd']) )
+        time.sleep( remote_cmd_set['delay'] )
+        theCONFIGs.connMgr.Close()
+        if remote_cmd_set['type'] == 'waiting_for_job_ended':
+            return True # waiting for job ended
+        return False
+class CMDRun:
+    remote_cmd = 'run'
+    def __init__(self, cmdUNIT:MesgHub.CMDUnit):
+        self.cmd_unit = cmdUNIT
+    def execute(self,theCONFIGs:SocketProtocol.RunningConfigurations) -> bool:
+        remote_cmd_set = theCONFIGs.runCMD
+        out_mesg = send_ssh_mesg(theCONFIGs, full_CMD_with_args(theCONFIGs,remote_cmd_set['cmd']) )
+        time.sleep( remote_cmd_set['delay'] )
+        if remote_cmd_set['type'] == 'waiting_for_job_ended':
+            return True # waiting for job ended
+        return False
+class CMDTest:
+    remote_cmd = 'test'
+    def __init__(self, cmdUNIT:MesgHub.CMDUnit):
+        self.cmd_unit = cmdUNIT
+    def execute(self,theCONFIGs:SocketProtocol.RunningConfigurations) -> bool:
+        remote_cmd_set = theCONFIGs.testCMD
+        out_mesg = send_ssh_mesg(theCONFIGs, full_CMD_with_args(theCONFIGs,remote_cmd_set['cmd']) )
+        time.sleep( remote_cmd_set['delay'] )
+        if remote_cmd_set['type'] == 'waiting_for_job_ended':
+            return True # waiting for job ended
+        return False
+
+
+class CMDConfigure:
+    remote_cmd = 'UPDATE'
+    def __init__(self, cmdUNIT:MesgHub.CMDUnit):
+        self.cmd_unit = cmdUNIT
+    def execute(self,theCONFIGs:SocketProtocol.RunningConfigurations) -> bool:
+        'aaa:3.14|bbb:6.28|ccc:7.19'
+        theCONFIGs.SetValues(self.cmd_unit.arg)
+        theCONFIGs.MESG('ConfigUpdated', f'Update configuration {command.arg}')
+
+        return False
+def CMDInstanceFactory(cmdUNIT:MesgHub.CMDUnit):
+    if cmdUNIT.cmd == CMDConnect.remote_cmd:
+        return CMDConnect(cmdUNIT)
+    if cmdUNIT.cmd == CMDDestroy.remote_cmd:
+        return CMDDestroy(cmdUNIT)
+    if cmdUNIT.cmd == CMDRun.remote_cmd:
+        return CMDRun(cmdUNIT)
+    if cmdUNIT.cmd == CMDTest.remote_cmd:
+        return CMDTest(cmdUNIT)
+    if cmdUNIT.cmd == CMDConfigure.remote_cmd:
+        return CMDConfigure(cmdUNIT)
 @dataclass
 class Configurations:
     name:str
 
+def full_CMD_with_args(theCONFIGs:SocketProtocol.RunningConfigurations, cmdSTR:str) -> str:
+    used_var_names = lambda cmdFRAGMENT: re.findall( r'{([^{}]+)}', cmdFRAGMENT)
+    variable_names = used_var_names(cmdSTR)
+    loaded_variables = { name:getattr(theCONFIGs,name) for name in variable_names }
+    return cmdSTR.format(**loaded_variables)
+
+def send_ssh_mesg(theCONFIGs:SocketProtocol.RunningConfigurations,bashCMD:str):
+    if not hasattr(theCONFIGs.connMgr,'connection'): # connection = paramiko.SSHClient()
+        theCONFIGs.MESG('NotInitializedError', f'SingleConnector was not connected to any SSH server. Initialize before send any message')
+        return 'nothing send to HW'
+    return SingleConnector.SendCMDWithoutWaiting(theCONFIGs.connMgr,bashCMD)
+
 def main_func(theCONFIGs:SocketProtocol.RunningConfigurations,command:MesgHub.CMDUnit):
-    theCONFIGs.MESG('CMD Received', str(command))
+    theCONFIGs.MESG('CMD Received', command.cmd)
 
-    def send_ssh_mesg(bashCMD:str):
-        if not hasattr(theCONFIGs.connMgr,'connection'): # connection = paramiko.SSHClient()
-            theCONFIGs.MESG('NotInitializedError', f'SingleConnector was not connected to any SSH server. Initialize before send any message')
-            return 'nothing send to HW'
-        return SingleConnector.SendCMDWithoutWaiting(theCONFIGs.connMgr,bashCMD)
 
-    job_finished = True
+    still_running = False
     mesg_box = ''
-    if command.cmd == CMD.CONNECT:
-        theCONFIGs.name = command.arg # Set PyModule name
-        theCONFIGs.MESG('MESG', f'current config name is {theCONFIGs.name}')
-        theCONFIGs.connMgr.Initialize()
-        mesg_box = f'SSH Connection Initialized.'
-    if command.cmd == CMD.TAKE_DATA: # need to load command inside yaml
-        out_mesg = send_ssh_mesg(f'sh runGUI.sh {theCONFIGs.boardtype} {theCONFIGs.boardID} {theCONFIGs.hexacontrollerIP} ')
-        job_finished = False
-    if command.cmd == CMD.TEST: # need to load command inside yaml
-        out_mesg = send_ssh_mesg(f'ls&& sleep 5 && echo hiiii && sleep 5 && ls -ltr')
-        job_finished = False
-
-    if command.cmd == CMD.UPDATE_CONFIG:
-        'aaa:3.14|bbb:6.28|ccc:7.19'
-        theCONFIGs.SetValues(command.arg)
-        mesg_box = f'Update configuration {command.arg}'
-
-    if command.cmd == CMD.DESTROY:
-        theCONFIGs.connMgr.Close()
-        mesg_box = f'Closed SSH connection'
+    exec_unit = CMDInstanceFactory(command)
+    if exec_unit:
+        still_running = exec_unit.execute(theCONFIGs)
 
 
-    if job_finished:
-        theCONFIGs.MESG('JOB_FINISHED', mesg_box) # Notify the execution is finished.
+    if not still_running:
+        theCONFIGs.MESG('JOB_FINISHED', f'running cmd {command.cmd}') # Notify the execution is finished.
 
 def communicate_with_socket(socketPROFILE:SocketProtocol.SocketProfile, clientSOCKET,command:MesgHub.CMDUnit):
     socketPROFILE.job_is_running.set()
@@ -79,17 +128,17 @@ def communicate_with_socket(socketPROFILE:SocketProtocol.SocketProfile, clientSO
 def TestFunc():
     ### put yaml file asdf
     # control PC
-    host = "192.168.50.140"
-    port = 22  # Default SSH port
-    user = "ntucms"
-    password = "9ol.1qaz5tgb"
+    from tools.YamlHandler import YamlLoader
+    inputFILE='config/sshconfigs.commanderPC.yaml'
+    inputFILE='config/sshconfigs.hexacontroller.yaml'
+    loadedCONFIGs = YamlLoader(inputFILE)
+
     default_configs = SingleConnector.ConnectionConfig(
-            host = host,
-            port = port,
-            user = user,
-            pwd = password,
-            tag = 'tobedeleted asdf',
-            ) ## need to load yaml file
+            host = loadedCONFIGs.configs['host'],
+            port = loadedCONFIGs.configs['port'],
+            user = loadedCONFIGs.configs['user'],
+            pwd = loadedCONFIGs.configs['password'],
+            )
 
     # new
     def log(theSTAT:str,theMESG:str):
@@ -100,7 +149,10 @@ def TestFunc():
     LOG('Service Activated', 'SSHConnection',f'Activate Socket@0.0.0.0:2000')
     LOG('Service Activated', 'SSHConnection',f'Connecting to {default_configs.host}:{default_configs.port} via SSH')
     run_configs = SocketProtocol.RunningConfigurations(log)
-    run_configs.SetDefault(default_configs)
+    #run_configs.SetDefault(default_configs)
+
+    for argNAME, arg in loadedCONFIGs.configs.items():
+        setattr(run_configs,argNAME,arg)
     run_configs.MESG = log
     setattr(run_configs, 'connMgr', SingleConnector.SingleConnector(log,err) )
     run_configs.connMgr.SetConfig(default_configs)
@@ -109,9 +161,12 @@ def TestFunc():
     main_func(run_configs, socketCMD)
     socketCMD = MesgHub.CMDUnitFactory( name='testing', cmd='test')
     main_func(run_configs, socketCMD)
+    socketCMD = MesgHub.CMDUnitFactory( name='testing', cmd='run')
+    main_func(run_configs, socketCMD)
     import time
     time.sleep(5)
     socketCMD = MesgHub.CMDUnitFactory( name='testing', cmd='DESTROY')
+    print('TestFunc() middle term')
     main_func(run_configs, socketCMD)
 
     print('TestFunc() Finished')
@@ -120,18 +175,16 @@ def TestFunc():
 if __name__ == "__main__":
     #TestFunc()
     # control PC
-    host = "192.168.50.140"
-    port = 22  # Default SSH port
-    user = "ntucms"
-    password = "9ol.1qaz5tgb"
-    conf_cmdPCA = SingleConnector.ConnectionConfig(
-            host = host,
-            port = port,
-            user = user,
-            pwd = password,
-            tag = 'tobedeleted asdf',
+    from tools.YamlHandler import YamlLoader
+    inputFILE='config/sshconfigs.commanderPC.yaml'
+    loadedCONFIGs = YamlLoader(inputFILE)
+
+    default_configs = SingleConnector.ConnectionConfig(
+            host = loadedCONFIGs.configs['host'],
+            port = loadedCONFIGs.configs['port'],
+            user = loadedCONFIGs.configs['user'],
+            pwd = loadedCONFIGs.configs['password'],
             )
-    default_configs = conf_cmdPCA
 
 
 
@@ -140,9 +193,11 @@ if __name__ == "__main__":
     LOG('Service Activated', 'SSHConnection',f'Activate Socket@0.0.0.0:2000')
     LOG('Service Activated', 'SSHConnection',f'Connecting to {default_configs.host}:{default_configs.port} via SSH')
     run_configs = SocketProtocol.RunningConfigurations()
-    run_configs.SetDefault(default_configs)
+
+    for argNAME, arg in loadedCONFIGs.configs.items():
+        setattr(run_configs,argNAME,arg)
     setattr(run_configs, 'connMgr', SingleConnector.SingleConnector() )
-    run_configs.connMgr.SetConfig(conf_cmdPCA)
+    run_configs.connMgr.SetConfig(default_configs)
 
     connection_profile = SocketProtocol.SocketProfile(communicate_with_socket, run_configs)
-    SocketProtocol.start_server(connection_profile, thePORT=2001)
+    SocketProtocol.start_server(connection_profile, port=2001)

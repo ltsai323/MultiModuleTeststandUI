@@ -130,6 +130,7 @@ def TestFunc():
     # control PC
     from tools.YamlHandler import YamlLoader
     inputFILE='config/sshconfigs.commanderPC.yaml'
+    inputFILE='config/sshconfigs.hexacontroller.yaml'
     loadedCONFIGs = YamlLoader(inputFILE)
 
     default_configs = SingleConnector.ConnectionConfig(
@@ -137,7 +138,6 @@ def TestFunc():
             port = loadedCONFIGs.configs['port'],
             user = loadedCONFIGs.configs['user'],
             pwd = loadedCONFIGs.configs['password'],
-            tag = 'tobedeleted asdf',
             )
 
     # new
@@ -173,7 +173,7 @@ def TestFunc():
     exit()
 
 if __name__ == "__main__":
-    TestFunc()
+    #TestFunc()
     # control PC
     from tools.YamlHandler import YamlLoader
     inputFILE='config/sshconfigs.commanderPC.yaml'
@@ -184,7 +184,6 @@ if __name__ == "__main__":
             port = loadedCONFIGs.configs['port'],
             user = loadedCONFIGs.configs['user'],
             pwd = loadedCONFIGs.configs['password'],
-            tag = 'tobedeleted asdf',
             )
 
 
