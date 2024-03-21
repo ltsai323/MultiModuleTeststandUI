@@ -12,7 +12,6 @@ class ConnectionConfig:
     port:int
     user:str
     pwd:str
-    tag:str # name
 
 
 @dataclass
@@ -62,8 +61,8 @@ class SingleConnector:
         self.the_stat = StatusMesg()
         if stdoutHANDLER and stderrHANDLER:
             self.set_logger(stdoutHANDLER,stderrHANDLER)
-    def MESG(self,stat,mesg): print(MesgHub.MesgUnitFactory(name=self.config.tag, stat=stat,mesg=mesg))
-    def MERR(self,stat,mesg): print(MesgHub.MesgUnitFactory(name=self.config.tag, stat=stat,mesg='[ERROR] '+mesg))
+    def MESG(self,stat,mesg): print(MesgHub.MesgUnitFactory(name='TestMesg', stat=stat,mesg=mesg))
+    def MERR(self,stat,mesg): print(MesgHub.MesgUnitFactory(name='TestMesg', stat=stat,mesg='[ERROR] '+mesg))
 
     def SetConfig(self, connectCONFIG:ConnectionConfig):
         self.config = connectCONFIG
@@ -110,6 +109,7 @@ class SingleConnector:
         if Initialized(self):
             bashCOMMAND = theCMD + '; echo $?'
             def execute_command(self,bashCOMMAND):
+                print(f'testing : {bashCOMMAND}')
                 stdin, stdout, stderr = self.connection.exec_command(bashCOMMAND)
 
                 endedStat = 0
@@ -141,32 +141,6 @@ class SingleConnector:
             self.MESG('FORCE STOPPED', f'job has been stopped')
         else:
             self.MESG('Do NOthing', 'No job is running, so nothing happened with this FORCE STOP')
-    #def send_cmd_(self, theCMD):
-    #    FUNC_NAME = '''SingleConnector.send_cmd()'''
-
-    #    self.the_stat.SetBusy()
-    #    if Initialized(self):
-    #        def execute_command(self, command):
-    #            stdin, stdout, stderr = self.connection.exec_command(command)
-    #            def handle_output(stream, printFUNC, theSTAT:str): ## asdf need to change print to stderr
-    #                for line in stream:
-    #                    printFUNC(theSTAT,line.strip())
-    #            new_threads = []
-    #            new_threads.append(threading.Thread(target=handle_output, args = (stdout, self.MESG,'SSH Report') ) )
-    #            new_threads.append(threading.Thread(target=handle_output, args = (stderr, self.MERR,'SSH ERROR' ) ) ) # asdf
-
-    #            for new_thread in new_threads:
-    #                new_thread.start()
-    #            for new_thread in new_threads:
-    #                new_thread.join()
-    #            self.the_stat.SetIdle()
-    #        thread = threading.Thread(target=execute_command, args=(self, theCMD) )
-    #        thread.start()
-    #        return thread
-
-    #    self.the_stat.SetErrorMesg( myLOG('ERROR', 'SingleConnector.send_cmd', 'Connection Not initialized. Failed to send Command') ) # asdf
-    #    self.MERR('NotInitailized', f'{FUNC_NAME}: Connection Not initialized. Failed to send Command')
-    #    return None
 
 
     def Close(self):
@@ -176,7 +150,8 @@ class SingleConnector:
             self.connection.close()
             self.the_stat.SetTaskEnding( myLOG('Closed', 'SingleConnector.Close', 'Safely close the connection') )
             self.MESG('SafelyClosed', f'{FUNC_NAME}: Safely closed a SSH connection from {self.config.host}:{self.config.port}')
-            delattr(self, 'invokeShell')
+            if hasattr(self, 'invokeShell') and self.invokeShell:
+                delattr(self, 'invokeShell')
         else:
             self.the_stat.SetTaskEnding( myLOG('ERROR', 'SingleConnector.Close', 'No connection established. Ignore close command') )
         self.the_stat.SetIdle()
@@ -207,7 +182,6 @@ if __name__ == "__main__":
             port = port,
             user = user,
             pwd = password,
-            tag = 'ControlPC',
             )
     conn = SingleConnector()
     conn.SetConfig(connConfig)
