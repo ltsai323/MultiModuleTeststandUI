@@ -168,8 +168,13 @@ class UnitStageCommander:
     def socketio(self):
         return self.build_in_funcs.socketio
 
+    #def LoadConfigProfile(self):
+    #    return {self.name: self.unit_setup.ConfigDict}
     def LoadConfigProfile(self):
-        return (self.name, self.unit_setup.ConfigDict)
+        return self.unit_setup.ConfigDict
+    def SetConfigs(self, theDICT):
+        for key, val in theDICT.items():
+            self.unit_setup.SetConfig(key,val)
 
 
 

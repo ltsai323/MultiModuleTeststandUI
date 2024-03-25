@@ -19,7 +19,7 @@ class PyModuleCommandPool:
             configs = yaml.safe_load(ifile)
             self.commands = configs['available_commands']
             self.sys_cmds = configs['system_cmds']
-            self.args = configs['default_args']
+            self.args = { key:val for key,val in configs['default_args'].items() if key != "NO_ARGS" }
             '''
             systemCMD = 'CONNECT'
             systemCMD = 'RUN'
@@ -48,7 +48,8 @@ class PyModuleCommandPool:
 
                 if sys_cmd == "CONFIGURE":
                     for arg in detail_cmd['configs']:
-                        if arg not in [ reg_arg for reg_arg in self.args.keys() ]:
+                        if arg and arg not in [ reg_arg for reg_arg in self.args.keys() ]: # if None found in arg, that means no arg needed
+                            print(detail_cmd['configs'])
                             raise ImportError(f'configuring arg "{arg}" of system command "{sys_cmd}" not registed in default_args in {self.yaml_config}')
                 else:
                     if cmd not in [ reg_cmd['cmd'] for reg_cmd in self.commands ]:
@@ -80,6 +81,7 @@ class SubUnit:
         return '|'.join( [f'{key}:{self.ConfigDict[key]}' for key in confKEYs] )
 
     def SetConfig(self, name,val):
+        print(f'[SetConfig] Updating config {name} from {self.cmd_pool.args[name]} to {val}')
         if name in self.cmd_pool.args: self.cmd_pool.args[name] = val
         else: raise KeyError(f'SetConfig(): config "{name}" does not exist in {self.cmd_pool.yaml_config}!')
 
