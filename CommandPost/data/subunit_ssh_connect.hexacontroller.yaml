@@ -14,22 +14,21 @@ available_commands:
 
 # config with default value
 default_args:
-  boardtype: # Which is the folder name in command PC
-      - V3HD_hexactrl # first one is the default value
-      - V3HD_hexactrl_v2 # other values are the available options
-      - V3LD_hexactrl
-      - V3LD_partial_hexactrl
-  boardID: testing # need to use some options like HD / LD / type / blahblah to construct a board ID
+  firmware_script:
+    - turnOn_FW_V3.sh # first one is default value
+    - turnOn_FW_V2.sh
+    - turnOn_FW_V3_HD.sh
+    - turnReOn_FW_V2.sh
+    - turnReOn_FW_V3.sh
 
 
 
 configuration_profiles:
   ### configurations not related to data taking. Describes how to activate HW.
-  host: '192.168.50.140'
+  host: '192.168.50.152'
   port: 22
-  user: 'ntucms'
-  password: '9ol.1qaz5tgb'
-  destnation: '192.168.50.140' # IP address of Hexaboard
+  user: 'root'
+  password: 'centos'
   
   
 
@@ -43,8 +42,7 @@ system_cmds:
     - cmd: 'UPDATE'
       timegap: 0.1
       configs:
-        - boardtype
-        - boardID
+        - firmware_script
   RUN: # only provided to commander. Not GUI
     - cmd: 'run'
       timegap: 0.5

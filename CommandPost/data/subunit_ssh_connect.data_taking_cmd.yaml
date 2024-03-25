@@ -20,6 +20,7 @@ default_args:
       - V3LD_hexactrl
       - V3LD_partial_hexactrl
   boardID: testing # need to use some options like HD / LD / type / blahblah to construct a board ID
+  hexacontrollerIP: '192.168.50.152' # IP address of Hexaboard
 
 
 
@@ -29,7 +30,6 @@ configuration_profiles:
   port: 22
   user: 'ntucms'
   password: '9ol.1qaz5tgb'
-  destnation: '192.168.50.140' # IP address of Hexaboard
   
   
 

@@ -43,4 +43,4 @@ system_cmds:
     - cmd: 'off'
       timegap: 0.5
     - cmd: 'DESTROY'
-      timegap: 0.1
+      timegap: 2.0
