@@ -150,6 +150,7 @@ class SingleConnector:
             self.connection.close()
             self.the_stat.SetTaskEnding( myLOG('Closed', 'SingleConnector.Close', 'Safely close the connection') )
             self.MESG('SafelyClosed', f'{FUNC_NAME}: Safely closed a SSH connection from {self.config.host}:{self.config.port}')
+            delattr(self, 'connection')
             if hasattr(self, 'invokeShell') and self.invokeShell:
                 delattr(self, 'invokeShell')
         else:
