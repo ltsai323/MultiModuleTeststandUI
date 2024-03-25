@@ -27,18 +27,20 @@ class RunningConfigurations:
         self.logFUNC(stat,mesg)
 
     def SetDefault(self, loadedCONFIGs):
-        for key,val in loadedCONFIGs.__dict__.items():
+        for key,val in loadedCONFIGs.configs.items():
             setattr(self,key,val)
-        self.default_configs = loadedCONFIGs
+        self.default_configs = loadedCONFIGs.configs
     def SetValue(self, key,val):
+        if key == 'runCMD': return # not to update runCMD
         if hasattr(self,key):
             setattr(self, key,val)
             LOG('Config Updated!', 'SetValue()', f'config "{key}" is set to "{val}" now')
         else:
-            raise IOError(f'RunningConfigurations::SetValue() : input value "{key}" does not exist.')
+            raise IOError(f'RunningConfigurations::SetValue() : input value "{key}" does not exist. Available keys are {self.default_configs.keys()}')
     def SetValues(self, argSTR):
         update_list = argSTR.split('|')
         for update_item in update_list:
+            if update_item == '': continue
             name,val = update_item.split(':')
             self.SetValue(name,val)
 class SocketProfile:
@@ -83,9 +85,6 @@ def SystemCMDs(socketPROFILE:SocketProfile, cmdUNIT:MesgHub.CMDUnit):
     if cmdUNIT.cmd == ConnCMD._FORCED_CLOSE_CURRENT_CONNECTION():
         socketPROFILE.client_socket_is_active.clear()
         return True
-
-    if socketPROFILE.job_is_running.is_set():
-        socketPROFILE.job_is_running.wait()
     # Not so emergent commands
     if cmdUNIT.cmd == ConnCMD._DESTROY():
         socketPROFILE.client_socket_is_active.clear()
@@ -112,11 +111,11 @@ def handle_client(socketPROFILE:SocketProfile, clientSOCKET):
                     if SystemCMDs(socketPROFILE, rec_data):
                         UpdateMesgAndSend(socketPROFILE, clientSOCKET, 'Got SystCMD '+rec_data.cmd)
                         continue
-                    elif not socketPROFILE.job_is_running.is_set():
-                        process = threading.Thread(target=socketPROFILE.mainfunc, args=(socketPROFILE,clientSOCKET,rec_data,))
-                        process.start()
-                    else:
-                        LOG('Command Rejected', 'handle_client', f'the previous job is still processing. Ignore new command {rec_data}')
+                    if socketPROFILE.job_is_running.is_set():
+                        LOG('Command Postponed', 'handle_client', f'the previous job is still processing. postpone new command {rec_data} until previous job finished')
+                        socketPROFILE.job_is_running.wait()
+                    process = threading.Thread(target=socketPROFILE.mainfunc, args=(socketPROFILE,clientSOCKET,rec_data,))
+                    process.start()
 
             except socket.timeout:
                 continue # totally disable the timeout message. Such that all message comes from the running message
@@ -184,12 +183,6 @@ def start_server(socketPROFILE:SocketProfile, theADDR=DEFAULT_IP, thePORT=DEFAUL
         # Close the server socket when done
         LOG('Close the whole program', 'SingleThreadListening', '')
         server_socket.close()
-        '''
-        Traceback (most recent call last):
-          File "/home/ltsai/miniconda3/envs/python3p9/lib/python3.9/threading.py", line 1477, in _shutdown
-            lock.acquire()
-        KeyboardInterrupt:
-        '''
 
 if __name__ == "__main__":
     connection_profile = SocketProfile('selfTester',execute_command)
