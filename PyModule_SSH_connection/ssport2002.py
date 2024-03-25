@@ -130,7 +130,7 @@ def TestFunc():
     # control PC
     from tools.YamlHandler import YamlLoader
     inputFILE='config/sshconfigs.commanderPC.yaml'
-    inputFILE='config/sshconfigs.hexacontroller.yaml'
+    #inputFILE='config/sshconfigs.hexacontroller.yaml'
     loadedCONFIGs = YamlLoader(inputFILE)
 
     default_configs = SingleConnector.ConnectionConfig(
@@ -160,16 +160,20 @@ def TestFunc():
 
     socketCMD = MesgHub.CMDUnitFactory( name='testing', cmd='connect')
     main_func(run_configs, socketCMD)
-    socketCMD = MesgHub.CMDUnitFactory( name='testing', cmd='test')
-    main_func(run_configs, socketCMD)
-    socketCMD = MesgHub.CMDUnitFactory( name='testing', cmd='run')
-    main_func(run_configs, socketCMD)
+    #socketCMD = MesgHub.CMDUnitFactory( name='testing', cmd='test')
+    #main_func(run_configs, socketCMD)
+    #socketCMD = MesgHub.CMDUnitFactory( name='testing', cmd='run')
+    #main_func(run_configs, socketCMD)
     import time
     time.sleep(5)
     socketCMD = MesgHub.CMDUnitFactory( name='testing', cmd='DESTROY')
-    print('TestFunc() middle term')
     main_func(run_configs, socketCMD)
+    print('\n\n\nTestFunc() Destroyed\n\n\n\n')
 
+    socketCMD = MesgHub.CMDUnitFactory( name='testing', cmd='connect')
+    main_func(run_configs, socketCMD)
+    socketCMD = MesgHub.CMDUnitFactory( name='testing', cmd='DESTROY')
+    main_func(run_configs, socketCMD)
     print('TestFunc() Finished')
     exit()
 
@@ -204,4 +208,4 @@ if __name__ == "__main__":
     run_configs.connMgr.SetConfig(default_configs)
 
     connection_profile = SocketProtocol.SocketProfile(communicate_with_socket, run_configs)
-    SocketProtocol.start_server(connection_profile)
+    SocketProtocol.start_server(connection_profile, thePORT=2002)

@@ -204,4 +204,4 @@ if __name__ == "__main__":
     run_configs.connMgr.SetConfig(default_configs)
 
     connection_profile = SocketProtocol.SocketProfile(communicate_with_socket, run_configs)
-    SocketProtocol.start_server(connection_profile)
+    SocketProtocol.start_server(connection_profile, thePORT=2001)
