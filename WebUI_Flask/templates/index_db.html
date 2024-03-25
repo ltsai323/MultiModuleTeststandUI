@@ -92,7 +92,8 @@
                 <div class="ctrlbox">
                     <button id="buttonINITIALIZE"class="CommandPCA0" onclick="send_cmd2(this.id);">INITIALIZE</button>
                     <button id="buttonCONNECT"   class="CommandPCA0" onclick="send_cmd2(this.id);">CONNECT</button>
-                    <button id="buttonCONFIGURE" class="CommandPCA0" onclick="send_cmd2(this.id);">CONFIGURE</button>
+                    <input type='submit' form='available_arguments' value='CONFIGURE' class="CommandPCA0" />
+                    <button id="buttonCONFIGURE" class="CommandPCA0" onclick="send_cmd2(this.id);" type="submit">CONFIGURE</button>
                     <button id="buttonTEST"      class="CommandPCA0" onclick="send_cmd2(this.id);">TEST</button>
                     <button id="buttonRUN"       class="CommandPCA0" onclick="send_cmd2(this.id);">RUN</button>
                     <button id="buttonDESTROY"   class="CommandPCA0" onclick="send_cmd2(this.id);">DESTROY</button>
@@ -107,6 +108,27 @@
                 </div>
 
             </div>
+            <form method="POST" action="/buttonCONFIGURE" id="available_arguments">
+                {% for subunitNAME, data in allARGs.items() %}
+                    {% for key, value in data.items() %}
+                        {% if value is iterable and value is not string %}
+                            <label for="{{ key }}">{{ key }}</label>
+                            <select id="{{ subunitNAME+':'+key }}" name="{{ subunitNAME+':'+key }}">
+                            {% for option in value %}
+                                <option value="{{ option }}">{{ option }}</option>
+                            {% endfor %}
+                            </select>
+                        {% else %}
+                            <label for="{{ key }}">{{ key }}</label>
+                            <input type="text" id="{{ subunitNAME+':'+key }}" class="{{ 'args:'+subunitNAME }}" name="{{ subunitNAME+':'+key }}" value="{{ value }}">
+                            <br>
+                        {% endif %}
+                    {% endfor %}
+                        <br>
+                {% endfor %}
+                <button type="submit">Submit</button>
+            </form>
+            <br>
             <div id="logbox">
                 Web initialized
             </div>
@@ -115,7 +137,6 @@
         <script>
             var socket = io();
             socket.on('activate_message_update', function() { console.log('activating message update bkg'); } );
-            //socket.on('bk', function(jsonifyDATA) { console.log( "emit to "+jsonifyDATA.message+" captured"); showLatestLogs(jsonifyDATA); } );
             socket.on('bkgRunJobs', function(jsonifyDATA) { console.log("[RunJob] "+jsonifyDATA.indicator+": "+jsonifyDATA.theSTAT); showLatestLogs(jsonifyDATA); } );
 
 
@@ -123,7 +144,7 @@
                             fetch('/'+btnID, {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/x-www-form-urlencoded', },
-                                            body: new URLSearchParams({ 'button_id': btnID, }),
+                                            body: new URLSearchParams({ 'button_id': btnID, })
                                         })
                                 .then(response => response.json())
                                 //.then(data => { console.log(data); updateMessageBox(data.indicator,data.message); })
@@ -237,13 +258,6 @@
                             // Get all buttons on the page
                             var buttons = document.getElementsByTagName('button');
 
-                            // // Loop through each button and disable it if it's not the clicked button
-                            // for (var i = 0; i < buttons.length; i++) {
-                            //     if (buttons[i] !== clickedButton) {
-                            //         buttons[i].disabled = true;
-                            //     }
-                            // }
-
                             // Toggle the disabled state of all buttons except the clicked one
                             for (var i = 0; i < buttons.length; i++) {
                                             if (buttons[i] !== clickedButton) {
@@ -265,6 +279,38 @@
                                         }
                         }
         </script>
+
+            <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    	<script type="text/javascript">
+    	    $(document).ready(function() {
+                            // not to pop new window
+    	        // Intercept form submission
+    	        $('#available_arguments').submit(function(event) {
+    	            // Prevent default form submission
+    	            event.preventDefault();
+
+    	            // Serialize form data
+    	            var formData = $(this).serialize();
+
+    	            // Send form data asynchronously via AJAX
+    	            $.ajax({
+    	                type: 'POST',
+    	                url: '/buttonCONFIGURE',
+    	                data: formData,
+    	                success: function(response) {
+    	                    // Handle success response
+    	                    console.log('Form submitted successfully');
+    	                    //alert(response); // Show response message
+    	                },
+    	                error: function(xhr, status, error) {
+    	                    // Handle error response
+    	                    console.error('Error:', error);
+    	                    alert('An error occurred while submitting the form');
+    	                }
+    	            });
+    	        });
+    	    });
+    	</script>
 
     </body>
 </html>

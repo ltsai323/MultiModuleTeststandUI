@@ -52,10 +52,11 @@ def execute_job_from_queue():
             socketio.sleep(JOB_CHECKING_TIMER)
         else:
             name, func, args, xargs = job_queue.get()
-            socketio.emit('bkgRunJobs', Info( MesgHub.MesgUnitFactory(name='FLASK', stat=f'Run-Job', mesg=f'running function "{name}"') ) )
-            print('bkgRunJobs', Info( MesgHub.MesgUnitFactory(name='FLASK', stat=f'Run-Job', mesg=f'running function "{name}"') ) )
+            socketio.emit('bkgRunJobs', Info( MesgHub.MesgUnitFactory(name='FLASK', stat=f'Run-Job', mesg=f'job "{name} is executing from queue"') ) )
+            print('run job from queue', Info( MesgHub.MesgUnitFactory(name='FLASK', stat=f'Run-Job', mesg=f'job "{name} is executing from queue"') ) )
             func(*args, **xargs)
-            socketio.emit('bkgRunJobs', Info( MesgHub.MesgUnitFactory(name='FLASK', stat=f'JobEnded', mesg=f'Ended func "{name}"') ) )
+            socketio.emit('bkgRunJobs', Info( MesgHub.MesgUnitFactory(name='FLASK', stat=f'JobEnded', mesg=f'Ended job "{name}"') ) )
+            print('finished job from queue', Info( MesgHub.MesgUnitFactory(name='FLASK', stat=f'JobEnded', mesg=f'Ended job "{name}"') ) )
             socketio.sleep(0.5)
             #input('End of bkg run job...')
 

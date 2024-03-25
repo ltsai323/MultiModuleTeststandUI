@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 
 app = Flask(__name__)
 
@@ -8,7 +8,10 @@ app = Flask(__name__)
 @app.route('/')
 @app.route('/index')
 def index():
-    return render_template('index_db.html')
+    import app_actbtn
+    all_args = app_actbtn.AvailableArgsFromSubUnits()
+    return render_template('index_db.html', allARGs = all_args)
+
 
 
 
