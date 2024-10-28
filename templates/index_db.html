@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clickable Buttons</title>
+
+    <!-- StyleSheet -->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/dashboard_style.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/dashboardbtn_style.css') }}">
+
+    <!-- <\!-- Google Fonts -\-> -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500&display=swap" rel="stylesheet">
+
+    <!-- <\!-- Free Icons -\-> -->
+    <script src="https://kit.fontawesome.com/45d652beb3.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.js" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.slim.js" crossorigin="anonymous"></script>
+
+
+  </head>
+  <body>
+
+    <header>
+      <div id="page-heading">
+        <h3>Multi-Module Teststand Dashboard</h3>	
+      </div>
+      <nav>
+        <a href="{{url_for('index')}}" >Dashboard</a>
+      </nav>
+    </header>
+
+    <!-- Web objects -->
+    <div id="main">
+
+      <div class="dropdown">
+        <button class="dropbtn">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="dropdown-list">
+          <a href="#Controls">Controls</a>
+          <a href="#Data Display">Data Display</a>
+          <a href="#Guide">Guide</a>	    
+        </div>
+      </div>
+
+      <!-- Lock button -->
+      <div class="dropdown">
+        <button id="lockallbtn" class="dropbtn" onclick="toggleLock(); disableOtherButtons(this)">
+          <i id="icon" class="fa-solid fa-lock"></i>
+          <span id="text">Lock Sc</span>
+        </button>
+      </div>
+
+      <div class="status-block">
+        <div class="title">
+          <h1>Status Update!</h1>
+        </div>
+        <div id="statusbox">
+
+        </div>
+      </div>
+
+
+      <div class="control-block">
+
+        <div class="title" style="border-bottom: 2px solid #ccc;">
+          <h1>Control panel</h1>
+        </div>
+
+        <div class="ctrlbox-title"><h3>Commands</h3></div>
+        <div class="ctrlbox">
+          <button id="buttonINITIALIZE"class="CommandPCA0" onclick="send_cmd2(this.id);">INITIALIZE</button>
+          <input  id="buttonCONFIGURE" type='submit' form='pymodule_configurations' value='CONFIGURE' class="CommandPCA0" />
+          <button id="buttonTEST"      class="CommandPCA0" onclick="send_cmd2(this.id);">TEST</button>
+          <button id="buttonRUN"       class="CommandPCA0" onclick="send_cmd2(this.id);">RUN</button>
+          <button id="buttonSTOP"      class="CommandPCA0" onclick="send_cmd2(this.id);">STOP</button>
+          <button id="buttonDESTROY"   class="CommandPCA0" onclick="send_cmd2(this.id);">DESTROY</button>
+        </div>
+      </div>
+      <form method="POST" action="/buttonCONFIGURE" id="pymodule_configurations">
+          {% for section_name, form in forms.items() %}
+            <fieldset>
+              <legend>{{ section_name }}</legend>
+            {{ form.hidden_tag() }}
+            {% for field in form %}
+                {% if field.type == 'CSRFTokenField' %}
+                {% elif field.type == 'RadioField' %}
+                    <p> {{field.label.text|safe}} </p>
+                    {% for subfield in field %}
+                        <div class="form-check form-check-inline">
+                            {{ subfield(class_='form-check-input') }}
+                            {{ subfield.label(class_='form-check-label') }}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="form-group">
+                        {{ field.label(class="form-label") }}
+                        {{ field(class="form-control") }}
+                    </div>
+                {% endif %}
+            {% endfor %}
+            </fieldset>
+            {% endfor %}
+      </form>
+      <br>
+      <div id="logbox">
+        Web initialized
+      </div>
+    </div>
+
+    <script>
+      var socket = io();
+      socket.on('bkgRunJobs', // asdf need to update for clear message to #logbox
+        function(jsonifyDATA) { console.log("[RunJob] "+jsonifyDATA.indicator+": "+jsonifyDATA.theSTAT); showLatestLogs(jsonifyDATA); } );
+      socket.on('all_job_finished', function() { ButtonStatus(["buttonCONFIGURE","buttonTEST","buttonRUN","buttonDESTROY"]); } );
+
+      // The button status is controlled by flask
+      socket.on('button_status', function(btnSTAT) { console.log(btnSTAT); ButtonStatus(btnSTAT); } );
+          
+
+
+      function send_cmd2(btnID) {
+        fetch('/'+btnID, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded', },
+          body: new URLSearchParams({ 'button_id': btnID, })
+        }) // end of fetch /btnID
+          .then(response => response.json())
+          .then(jsonifyDATA => {
+            console.log("get jsonifyDATA from server : "+jsonifyDATA);
+            showMessage(jsonifyDATA);
+          }) // end of then jsonifyDATA
+          .catch(error => {
+            console.error('Error:', error);
+            ButtonStatus(['buttonDESTROY']);
+          }); // end of catch error
+      } // end of send_cmd2
+
+      function DisableAllButtons() {
+        document.getElementById("buttonINITIALIZE").disabled = true;
+        document.getElementById("buttonCONFIGURE" ).disabled = true;
+        document.getElementById("buttonTEST"      ).disabled = true;
+        document.getElementById("buttonRUN"       ).disabled = true;
+        document.getElementById("buttonSTOP"      ).disabled = true;
+        document.getElementById("buttonDESTROY"   ).disabled = true;
+      }
+      function EnableButton(btnID) {
+        document.getElementById(btnID).disabled = false;
+      }
+        
+      function ButtonStatus(availableBUTTONs) {
+        DisableAllButtons();
+        availableBUTTONs.forEach(function(buttonId) { document.getElementById(buttonId).disabled = false; } );
+      }
+
+      function updateMessageBox(jsonifyDATA) {
+        $('#statusbox').text(jsonifyDATA.message);
+        showLatestLogs(jsonifyDATA);
+      }
+      function showLatestLogs(jsonifyDATA) {
+        var statSpan = $('<span/>').text(jsonifyDATA.theSTAT).css('color', getStyleFromIndicator(jsonifyDATA.indicator));
+        var mesgDiv = $('<div/>').text(jsonifyDATA.message);
+        var timerSpan = $('<span/>').text('('+jsonifyDATA.timestamp+')').css('float', 'right');
+
+        //$('#logbox').prepend( statSpan.add(mesgDiv).add(timerSpan).after('<br>').after('<br>') );
+        $('#logbox').append( mesgDiv.after('<br>').after('<br>') );
+      }
+
+      function getStyleFromIndicator(jsonifyINDICATOR) {
+        if ( jsonifyINDICATOR === "button1" ) { return "#B80000"; }
+        if ( jsonifyINDICATOR === "button2" ) { return "#B6BBC4"; }
+        if ( jsonifyINDICATOR === "button3" ) { return "#73C250"; }
+
+        if ( jsonifyINDICATOR === "SSHTEST1") { return "#73C250"; }
+        if ( jsonifyINDICATOR === "SSHTEST2") { return "#B80000"; }
+        if ( jsonifyINDICATOR === "FLASK") { return "#B6BBC4"; }
+        return "";
+      }
+
+      function showMessage(htmlCode) {
+        // Get the reference to the message box
+        var statusbox = document.getElementById('statusbox');
+
+        // Display the message in the message box
+        statusbox.innerHTML = htmlCode;
+      }
+
+      function toggleLock() {
+        var button = document.getElementById('lockallbtn');
+        var iconElement = document.getElementById('icon');
+        var textElement = document.getElementById('text');
+
+        // Toggle between different Font Awesome icons
+        if (iconElement.classList.contains('fa-lock')) {
+          iconElement.classList.remove('fa-lock');
+          iconElement.classList.add('fa-lock-open');
+          textElement.textContent = 'Unlock Sc';
+        } else {
+          iconElement.classList.remove('fa-lock-open');
+          iconElement.classList.add('fa-lock');
+          textElement.textContent = 'Lock Sc';
+        }
+      }
+
+      function disableOtherButtons(clickedButton) {
+        // Get all buttons on the page
+        var buttons = document.getElementsByTagName('button');
+
+        // Toggle the disabled state of all buttons except the clicked one
+        for (var i = 0; i < buttons.length; i++) {
+          if (buttons[i] !== clickedButton) {
+            buttons[i].disabled = !buttons[i].disabled;
+          }
+        }
+      }
+
+      ButtonStatus( {{ availableBUTTONs | tojson }} );
+      showMessage( {{ webSTAT | tojson }} );
+    </script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $('form').off('submit').on('submit', function(event) {
+                event.preventDefault();  // Prevent default form submission
+                var formData = $(this).serialize();
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/submit',
+                    data: formData,
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            //alert(response.message); // disable message if success
+                            console.log("Configure successfully: "+response.message);
+                            //ButtonStatus(response.available_buttons); // enable this button at beginning.
+                        } else {
+                            alert(response.message+"\n"+response.errors);
+                            console.log("Configuration failed: " + response.errors);  // Log validation errors if needed
+                        }
+                    },
+                    error: function() {
+                        alert('An error occurred. Please try again.');
+                    }
+                });
+            }); // end of submit-btn
+        }); // end of document ready
+    </script>
+
+  </body>
+</html>

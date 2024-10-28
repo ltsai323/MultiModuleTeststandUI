@@ -1,0 +1,41 @@
+name: 'ntu8'
+jobtype: 'sequentialjob'
+  
+configs:
+  hostname: 'ntugrid8.phys.ntu.edu.tw'
+  username: 'ltsai'
+  privatekey: '/Users/noises/.ssh/toNTU8'
+  port: 22
+
+
+parameters:
+  boardtype:
+    type: radiofield
+    options:
+      - HD
+      - LD
+  boardID:
+    type: stringfield
+    
+  hexacontrollerIP:
+    type: radiofield
+    options:
+      - '192.168.50.140'
+      - '192.168.50.60'
+
+
+stagedCMD:
+  'TEST':
+    cmd: 'echo {boardtype} ; sleep 5 ; echo {boardID}'
+    type: 'waiting_for_job_ended' # waiting_for_job_ended or no_waiting
+    delay: 2.0
+
+  'RUN':
+    cmd: 'echo runGUI.sh {boardtype} {boardID} {hexacontrollerIP} 2>&1 '
+    type: 'waiting_for_job_ended'
+    delay: 2.0
+  'DESTROY':
+    cmd: 'exit' # do nothing
+    type: 'waiting_for_job_ended'
+    delay: 1.0
+

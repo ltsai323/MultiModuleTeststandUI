@@ -18,11 +18,21 @@ Sometimes socket stocked by multiple messages like [> mesg1 <][> mesg2 <].
 def LOG(info,name,mesg):
     print(f'[{info} - LOG] (SocketProtocol-{name}) {mesg}', file=sys.stderr)
 
+MODULE_STATUS = {
+        'NOT_INITIALIZED': -2,
+
+        'ERR': -1,
+        'idle': 0,
+        'monitor': 1, # send readout value periodically
+        'running': 2, # send message immediately
+        }
 class RunningConfigurations:
     def __init__(self, logFUNC = print ):
         self.status = 0
         self.name = 'NotInitialized'
         self.logFUNC = print
+
+        self.module_status = MODULE_STATUS['idle']
     def LOG(self, stat, mesg):
         self.logFUNC(stat,mesg)
 
@@ -49,7 +59,7 @@ class SocketProfile:
         self.server_socket_is_active = threading.Event()
         self.client_socket_is_active = threading.Event()
 
-        self.job_is_running = threading.Event()
+        #self.job_is_running = threading.Event() # asdf
         self.sending_messages = threading.Event()
         self.InitFlags()
 
@@ -61,7 +71,7 @@ class SocketProfile:
         self.server_socket_is_active.set()
         self.client_socket_is_active.set()
 
-        self.job_is_running.clear()
+        # self.job_is_running.clear() # asdf
         self.sending_messages.clear()
     def SendMesg(self, socketCLIENT, mesg):
         self.sending_messages.set()
@@ -111,9 +121,9 @@ def handle_client(socketPROFILE:SocketProfile, clientSOCKET):
                     if SystemCMDs(socketPROFILE, rec_data):
                         UpdateMesgAndSend(socketPROFILE, clientSOCKET, 'Got SystCMD '+rec_data.cmd)
                         continue
-                    if socketPROFILE.job_is_running.is_set():
-                        LOG('Command Postponed', 'handle_client', f'the previous job is still processing. postpone new command {rec_data} until previous job finished')
-                        socketPROFILE.job_is_running.wait()
+                    # if socketPROFILE.job_is_running.is_set(): # asdf
+                    #     LOG('Command Postponed', 'handle_client', f'the previous job is still processing. postpone new command {rec_data} until previous job finished')
+                    #     socketPROFILE.job_is_running.wait()
                     process = threading.Thread(target=socketPROFILE.mainfunc, args=(socketPROFILE,clientSOCKET,rec_data,))
                     process.start()
 
@@ -138,7 +148,7 @@ def handle_client(socketPROFILE:SocketProfile, clientSOCKET):
         socketPROFILE.client_socket_is_active.set()
 
 def execute_command(socketPROFILE:SocketProfile, clientSOCKET,command):
-    socketPROFILE.job_is_running.set()
+    #socketPROFILE.job_is_running.set() # asdf
     # Implement the logic to execute the command here
     # For demonstration purposes, this example simply prints the command
     # Send the current status back to the client
@@ -148,7 +158,7 @@ def execute_command(socketPROFILE:SocketProfile, clientSOCKET,command):
     mesg = MesgHub.CMDUnitFactory( name='execute_command', cmd='TESTING', arg=status_message)
     UpdateMesgAndSend( socketPROFILE, clientSOCKET, 'RUNNING', status_message)
 
-    socketPROFILE.job_is_running.clear()
+    # socketPROFILE.job_is_running.clear() # asdf
     UpdateMesgAndSend( socketPROFILE, clientSOCKET, 'JOB_FINISHED')
 
 

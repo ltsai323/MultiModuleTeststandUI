@@ -1,0 +1,27 @@
+host: '192.168.50.140'
+user: 'ntucms'
+password: '9ol.1qaz5tgb'
+port: 22
+
+
+
+testCMD:
+  cmd: 'echo TESTETTSEESTGESTESTESTETESTETESTSETESTESTESTSETES; wait 5 ; echo full finished test'
+  type: waiting_for_job_ended # waiting_for_job_ended or no_waiting
+  delay: 2.0
+runCMD:
+  cmd: 'daq-client 2>&1'
+  type: 'monitor_output' # not implemented
+  delay: 0.5 
+stopCMD:
+  #cmd: 'none'
+  #type: do_nothing
+  #delay: 0.1
+  type: 'abort_current_ssh_session'
+  delay: 0.5
+
+destroyCMD:
+  cmd: 'kill % && exit' # kill daq-client at background and exit
+  type: waiting_for_job_ended
+  delay: 1.0
+

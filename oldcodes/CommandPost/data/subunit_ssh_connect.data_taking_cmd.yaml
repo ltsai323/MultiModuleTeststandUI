@@ -1,0 +1,62 @@
+available_commands:
+  - cmd: 'connect'
+    note: connect to SSH client
+  - cmd: 'DESTROY'
+    note: disable SSH client
+  - cmd: 'UPDATE'
+    note: update arguments
+
+  - cmd: 'run'
+    note: execute the bash script
+  - cmd: 'stop'
+    note: abort current data taking procedure
+  - cmd: 'test'
+    note: Send Test command
+
+
+# config with default value
+default_args:
+  boardtype: # Which is the folder name in command PC
+      - V3HD_hexactrl # first one is the default value
+      - V3HD_hexactrl_v2 # other values are the available options
+      - V3LD_hexactrl
+      - V3LD_partial_hexactrl
+  boardID: testing # need to use some options like HD / LD / type / blahblah to construct a board ID
+  hexacontrollerIP:
+    - 192.168.50.152 # IP address of Hexaboard
+
+
+
+configuration_profiles:
+  ### configurations not related to data taking. Describes how to activate HW.
+  host: '192.168.50.140'
+  port: 22
+  user: 'ntucms'
+  password: '9ol.1qaz5tgb'
+  
+  
+
+
+
+system_cmds:
+  CONNECT:
+    - cmd: 'connect'
+      timegap: 0.05
+  CONFIGURE: # send all current value to module.
+    - cmd: 'UPDATE'
+      timegap: 0.1
+      configs:
+        - boardtype
+        - boardID
+  RUN: # only provided to commander. Not GUI
+    - cmd: 'run'
+      timegap: 0.5
+  STOP:
+    - cmd: 'stop'
+      timegap: 0.5
+  DESTROY:
+    - cmd: 'DESTROY'
+      timegap: 2.0
+  TEST:
+    - cmd: 'test'
+      timegap: 10.

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Run Script</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+    <button id="runButton">Run Script</button>
+    <button id="CONFIGURE">Configure</button>
+    <button id="RUN">Run</button>
+    <button id="Stop">Stop</button>
+    <button id="DESTROY">Destroy</button>
+    <div id="output"></div>
+    <script>
+        //$(document).ready(function() {
+        //    $('#runButton').click(function() {
+        //        $.ajax({
+        //            type: 'POST',
+        //            url: '/run_script',
+        //            success: function(response) {
+        //                $('#output').text(response);
+        //            },
+        //            error: function(xhr, status, error) {
+        //                alert('Error: ' + error);
+        //            }
+        //        });
+        //    });
+        //});
+        $('#CONFIGURE, #RUN, #STOP, #DESTROY').click(function() {
+            console.log('button pressed');
+            $.post('/send_event', {'button_name': $(this).attr('id')});
+        });
+    </script>
+</body>
+</html>
+

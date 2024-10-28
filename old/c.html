@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dynamic Form</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#submit-btn').on('click', function() {
+                $('form').submit(); // Trigger form submission when the button is clicked
+            });
+            $('form').on('submit', function(event) {
+                event.preventDefault();  // Prevent default form submission
+                var formData = $(this).serialize();
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/submit',
+                    data: formData,
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            // alert(response.message);
+                            console.log(response.error);  // Log validation errors if needed
+                        } else {
+                            alert(response.message+'\n Empty field found');
+                            console.log(response.errors);  // Log validation errors if needed
+                        }
+                    },
+                    error: function() {
+                        alert('An error occurred. Please try again.');
+                    }
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Dynamic Form</h1>
+        <button id="submit-btn" class="btn btn-primary">Submit</button>
+
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            <fieldset>
+                <legend>Section 1</legend>
+                <div class="form-group">
+                    {{ form.opt1.label }}<br>
+                    {% for subfield in form.opt1 %}
+                        <div class="form-check form-check-inline">
+                            {{ subfield(class_='form-check-input') }}
+                            {{ subfield.label(class_='form-check-label') }}
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="form-group">
+                    {{ form.opt2.label }}
+                    {{ form.opt2(class_='form-control') }}
+                </div>
+                <div class="form-group">
+                    {{ form.opt3.label }}
+                    {{ form.opt3(class_='form-control') }}
+                </div>
+            </fieldset>
+            <fieldset>
+                <legend>Section 2</legend>
+                <div class="form-group">
+                    {{ form.section2_opt1.label }}
+                    {{ form.section2_opt1(class_='form-control') }}
+                </div>
+            </fieldset>
+        </form>
+    </div>
+</body>
+</html>
+

@@ -1,0 +1,44 @@
+name: 'ctrlpc_bkg'
+jobtype: 'bkgjobmonitor'
+  
+configs:
+  hostname: '192.168.50.140'
+  username: 'ntucms'
+  privatekey: '/home/ltsai/.ssh/test140'
+  port: 22
+
+
+parameters:
+  boardtype_bkg:
+    type: radiofield
+    options:
+      - HD
+      - LD
+  boardID_bkg:
+    type: stringfield
+    
+  hexacontrollerIP_bkg:
+    type: radiofield
+    options:
+      - '192.168.50.152'
+
+
+stagedCMD:
+  'TEST':
+    cmd: ' for a in {{1..10}}; do echo bkgrunning; sleep 5;done'
+    type: 'waiting_for_job_ended' # waiting_for_job_ended or no_waiting
+    delay: 2.0
+
+  'RUN':
+    cmd: 'echo runGUI.sh {boardtype_bkg} {boardID_bkg} {hexacontrollerIP_bkg} 2>&1 '
+    type: 'waiting_for_job_ended'
+    delay: 2.0
+  'STOP':
+    cmd: 'sleep 0.5; echo stopped'
+    type: 'waiting_for_job_ended'
+    delay: 0.1
+  'DESTROY':
+    cmd: 'exit' # do nothing
+    type: 'waiting_for_job_ended'
+    delay: 1.0
+

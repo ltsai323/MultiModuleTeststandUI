@@ -1,0 +1,34 @@
+name: 'PowerSupplyLower'
+jobtype: 'bkgjobmonitor'
+configs: # only INITIALIZE uses this settings
+  resource: 'ASRL/dev/ttyUSB1::INSTR'
+  MaximumOutputVoltage: 1.5
+  MaximumOutputCurrent: 1.0
+  ControlMode: CV
+  monitorperiod: 1.0 # second
+  ## the configs updated while resource opened. (maxV, maxI, CM)
+
+
+parameters:
+
+
+stagedCMD:
+  'INITIALIZE':
+    cmd: '[sendcmd - set voltage limit]VSET1:{MaximumOutputVoltage}|[sendcmd - set current limit]ISET1:{MaximumOutputCurrent} | [sendcmd - set control mode]LOAD1:{ControlMode} | [sendcmd - power on]:OUTPUT1:STATE ON'
+    type: 'waiting_for_job_ended' # waiting_for_job_ended or no_waiting
+    delay: 2.0
+  'TEST':
+    cmd: '[sendcmd - power off]:OUTPUT1:STATE OFF'
+    type: 'waiting_for_job_ended' # waiting_for_job_ended or no_waiting
+    delay: 2.0
+
+  'RUN':
+    cmd: '[monitor - readout]:MEASURE1:ALL?'
+    delay: 2.0
+  'STOP':
+    cmd: '[donothing - do nothing]'
+    delay: 1.0
+  'DESTROY':
+    cmd: '[sendcmd - power off]:OUTPUT:STATE OFF'
+    delay: 1.0
+

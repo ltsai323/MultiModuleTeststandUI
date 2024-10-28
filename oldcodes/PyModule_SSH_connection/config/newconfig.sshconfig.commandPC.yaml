@@ -1,0 +1,31 @@
+Module: SSHCmder
+Parameters:
+  host: 192.168.50.140
+  user: ntucms
+  password: '9ol.1qaz5tgb'
+  port: 22
+
+  boardtype: HD # available opts : HD / LD
+  boardgeometry: full # available opts : full / top / bottom / left / right / five
+  boardID: test
+
+  hexacontrollerIP: 192.168.50.152
+
+CMDDetails:
+  Test:
+    cmd: 'echo testingggggg'
+    type: 'waiting_for_job_ended' # 'monitoring'
+    delay: 2.0
+  Run:
+    cmd: 'sh runGUI.sh {boardtype} {boardID} {hexacontrollerIP} 2>&1'
+    type: 'waiting_for_job_ended'
+    delay: 2.0
+  Stop:
+    cmd: 'NO_CMD_EXECUTED'
+    type: 'waiting_for_job_ended'
+    delay: 0.5
+  Destroy:
+    cmd: 'exit' # do nothing
+    type: 'monitoring'
+    delay: 1.5
+

@@ -1,0 +1,41 @@
+name: 'HexaCtrl'
+jobtype: 'sequentialjob'
+  
+configs:
+  hostname: '192.168.50.152'
+  username: root
+  privatekey: /home/ltsai/.ssh/gotoHexaCtrl
+  port: 22
+
+
+parameters:
+  firmware:
+    type: radiofield
+    options:
+      - turnOn_FW_V2.sh
+      - turnOn_FW_V3.sh
+      - turnReOn_FW_V2.sh
+      - turnReOn_FW_V3.sh
+
+
+
+stagedCMD:
+  'TEST':
+    cmd: 'echo source ~/insmod.sh ; echo source /root/hgcal_daq/{firmware}'
+    type: 'waiting_for_job_ended'
+    delay: 1.0
+    
+
+  'RUN':
+    cmd: 'echo source ~/insmod.sh ; echo source /root/hgcal_daq/{firmware}'
+    type: 'waiting_for_job_ended'
+    delay: 1.0
+  'STOP':
+    cmd: 'systemctl restart daq-server.service && systemctl restart i2c-server.service'
+    type: 'waiting_for_job_ended'
+    delay: 1.0
+  'DESTROY':
+    cmd: 'source /root/hgcal_daq/turnOff.sh'
+    type: 'waiting_for_job_ended'
+    delay: 1.0
+

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>app_bkgrun module &#8212; MultiModuleTestStandUI  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-app_bkgrun">
+<span id="app-bkgrun-module"></span><h1>app_bkgrun module<a class="headerlink" href="#module-app_bkgrun" title="Link to this heading">¶</a></h1>
+<p>Set this variable to “threading”, “eventlet” or “gevent” to test the
+different async modes, or leave it set to None for the application to choose
+the best option based on installed packages.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="app_bkgrun.AddJob">
+<span class="sig-prename descclassname"><span class="pre">app_bkgrun.</span></span><span class="sig-name descname"><span class="pre">AddJob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">jobNAME</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jobFUNC</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">xargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app_bkgrun.AddJob" title="Link to this definition">¶</a></dt>
+<dd><p>Put job in queue</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app_bkgrun.AddJob1">
+<span class="sig-prename descclassname"><span class="pre">app_bkgrun.</span></span><span class="sig-name descname"><span class="pre">AddJob1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">priority</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jobNAME</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jobFUNC</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">xargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app_bkgrun.AddJob1" title="Link to this definition">¶</a></dt>
+<dd><p>Give a message to webpage before put job in queue</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app_bkgrun.ClearJob">
+<span class="sig-prename descclassname"><span class="pre">app_bkgrun.</span></span><span class="sig-name descname"><span class="pre">ClearJob</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app_bkgrun.ClearJob" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app_bkgrun.Info">
+<span class="sig-prename descclassname"><span class="pre">app_bkgrun.</span></span><span class="sig-name descname"><span class="pre">Info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesgHUB</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">MesgUnit</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#app_bkgrun.Info" title="Link to this definition">¶</a></dt>
+<dd><p>Returned a directory used for flask.Jsonify generating a index.html</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mesgHUB</strong> (<em>MesgHub.MesgUnit</em>) – Put name, status, mesg and timestampe to output dict.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p><strong>dict</strong> – With format</p>
+<ul class="simple">
+<li><p>indicator: Records where generates the message</p></li>
+<li><p>theSTAT: Is a brief word showing the message</p></li>
+<li><p>message: Is the detail message for indicating the result</p></li>
+<li><p>timestamp mmm</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>python dictionary</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app_bkgrun.connect">
+<span class="sig-prename descclassname"><span class="pre">app_bkgrun.</span></span><span class="sig-name descname"><span class="pre">connect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app_bkgrun.connect" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app_bkgrun.execute_job_from_queue">
+<span class="sig-prename descclassname"><span class="pre">app_bkgrun.</span></span><span class="sig-name descname"><span class="pre">execute_job_from_queue</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app_bkgrun.execute_job_from_queue" title="Link to this definition">¶</a></dt>
+<dd><p>This is a function instance that keeps executing jobs in background threading.
+It checks the current running status and <cite>job_queue</cite>. Once the running status is job-available,
+this function executes the job from the <cite>job_queue</cite> sequentially.
+However, you can also define a job not to block the queue.</p>
+<p>Additionally, I need to implement a job priority mechanism. In previous code,
+the code recorded <cite>job_is_stucked</cite>, with possible values of <cite>True</cite> or <cite>False</cite>.
+I should modify it to use a range from <cite>0</cite> to <cite>N</cite>, where <cite>0</cite> has the greatest priority.
+If a new action has a greater priority, this job can be processed first.</p>
+<p>Job priorities are as follows:</p>
+<ul class="simple">
+<li><p><strong>0</strong>: Destroy command</p></li>
+<li><p><strong>1</strong>: Stop command</p></li>
+<li><p><strong>2</strong>: Start / Run / Other command in sequence</p></li>
+<li><p><strong>9</strong>: Commands that need to be running in the background (How do I prevent two low-priority commands from blocking each other?)</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app_bkgrun.extract_mesg_from_log_center">
+<span class="sig-prename descclassname"><span class="pre">app_bkgrun.</span></span><span class="sig-name descname"><span class="pre">extract_mesg_from_log_center</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inMESG</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">MesgUnit</span></span></span><a class="headerlink" href="#app_bkgrun.extract_mesg_from_log_center" title="Link to this definition">¶</a></dt>
+<dd><p>Convert input message to MesgHub.MesgUnit</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>inMESG</strong> (<em>str</em>) – <p>Input message with template:</p>
+<p>”[mesg1][mesg2]mesg3”</p>
+<ul class="simple">
+<li><p>mesg1 : module name who generate this message</p></li>
+<li><p>mesg2 : brief status of this message</p></li>
+<li><p>mesg3 : detail message</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>MesgHub.MesgUnit</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app_bkgrun.get_current_status">
+<span class="sig-prename descclassname"><span class="pre">app_bkgrun.</span></span><span class="sig-name descname"><span class="pre">get_current_status</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#app_bkgrun.get_current_status" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app_bkgrun.info">
+<span class="sig-prename descclassname"><span class="pre">app_bkgrun.</span></span><span class="sig-name descname"><span class="pre">info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ii</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#app_bkgrun.info" title="Link to this definition">¶</a></dt>
+<dd><p>As Info() do, but this function is only used for testing</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app_bkgrun.message_update">
+<span class="sig-prename descclassname"><span class="pre">app_bkgrun.</span></span><span class="sig-name descname"><span class="pre">message_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">updateTIMER</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app_bkgrun.message_update" title="Link to this definition">¶</a></dt>
+<dd><p>This is an function instance that keeps sending log to website.
+This function should be executed at background thread.</p>
+<p>Use socketio.sleep() instead of time.sleep() because socketio.sleep() would not stuck the whole thread but time.sleep() do.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app_bkgrun.module_init">
+<span class="sig-prename descclassname"><span class="pre">app_bkgrun.</span></span><span class="sig-name descname"><span class="pre">module_init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app_bkgrun.module_init" title="Link to this definition">¶</a></dt>
+<dd><p>Add two numbers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>a</strong> (<em>int</em>) – The first number.</p></li>
+<li><p><strong>b</strong> (<em>int</em>) – The second number.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The sum of a and b.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app_bkgrun.set_current_status">
+<span class="sig-prename descclassname"><span class="pre">app_bkgrun.</span></span><span class="sig-name descname"><span class="pre">set_current_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">btnSTAT</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#app_bkgrun.set_current_status" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">MultiModuleTestStandUI</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, ltsai.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="_sources/app_bkgrun.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

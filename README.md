@@ -1,39 +1,64 @@
-# Multimodule Teststand Controller
-24 modules IV testing at the same time will be required for HGCal production.
-This repository aims to control every individual equipment at one control panel.
+### Job Priority
+* [ ] execute_job_from_queue() : reads priorities of activing jobs.
+* [ ] AbleToAcceptNewJob() should be moved into job priority instead of True and False.
+* [ ] AbltoToAcceptNewJob(): how do I put job priority into this function.
+* [ ] Is job_priority able to be controlled from rs232.py code?
+* [ ] AddJob() should accept job priority. Such that every job is able to check priority before execute.
 
-This is separated into three parts : webUI, database and unit commander.
-### WebUI
-Based on Flask, providing buttons sending command to unit commander and message boxes receiving messages.
-Also another webpage loading historical information drawing line charts provides information to environmental parameters.
-As the user, webUI is the only thing been touched.
-### Database
-The mini database receives every readout from unit commander.
-### Unit commander
-Unit commander directly communicates with equipment like power supply via USB port / RS232 port / ethernet port.
-Yaml configuration files records every parameter used in the code.
-Very few parameters would be modified from WebUI to simplify complexity during operation.
+## Installations
+Use mini conda handling the python libraries.
+To install the dependency, you need to use the following commands:
+```
+#!/usr/bin/env sh
+conda config --append channels anaconda
+conda config --append channels conda-forge
+
+envNAME=myPython3p9
+conda create --name $envNAME python=3.9
+conda activate $envNAME
+conda install flask flask-socketio requests sphinx paramiko pyvisa pyyaml flask-wtf myst-parser
+```
+
+Or you can load the file `used_packages_conda.txt` for building dependencies.
+```
+#!/usr/bin/env sh
+conda config --append channels anaconda
+conda config --append channels conda-forge
+
+envNAME=myPython3p9
+conda create -n $envNAME --file used_packages_conda.txt 
+conda activate $envNAME
+```
+## File descriptions
+### aaa.py
+### app.py
+This is the main function that activates the whole flask server.
+No any input arguments required. All configurations are put into app_actbtn.py and app_bkgrun.py
+### app_actbtn.py
+
+### app_bkgrun.py
+### app_dynamic_form.py
+### app_global_variables.py
+### app_socketio.py
+### a.py
+### bashcmd.py
+### ConfigHandler.py
+### ConfigLoader.py
+### DebugManager.py
+### JobCMDPackManager.py
+### JobCMDPack.py
+### JobStatManager.py
+### rs232cmder.py
+### sshconn.py
+### StageCMDManager.py
 
 
 
-## Note for developing
-### Special words inside the MesgHub.MesgUnit
-The status "JOB_FINISHED" and "ERROR FOUND" are used for identify to ended the socket.recv() inside CommandPost/new_structure.SendLongCMD()
-
-### Update socketio.emit() while the long job
-Add additional socketio.sleep(0.03) inside CommandPost/new_structure.SendLongCMD() to force Flask flash its emit buffer. Such as the webpage is able to update the current stdout from PyModule. [Reference](https://blog.csdn.net/wangyuehy/article/details/123382520)
-
-### Ignore further messages if "JOB_FINISHED" or "ERROR FOUND" received while executing CommandPost/new_structure.SendLongCMD()
-
-### Every loaded PyModule is stored insde WebUI_Flask/app_actbtn._VARS_
-This is a global variable storing all variables. This is a dirty writing method but I don't know how to pass the argument into flask. Flask also need to search for the listed pymodule inside _VARS_
-
-### Every action is designed as a job to a job queue. All of jobs are put into a queue except for Initialize.
-The job will be put into queue and execute piece by piece. So initialize button is not able to press twice and need additional time delay
+# To do list
+## hi
+* [ ] 
 
 
-### To do list
-* [ ] Create a general yaml file to define connection port and ip address.
- - 1st option: Create a connection_ID = PyModule001 for identify. And ROOT/general_configs/connections.yaml defines connection_ID and properties.
- - 2nd option: Create a ROOT/general_configs/connections.yaml and use 'ln -s' to force all modules sharing values.
-* [ ] Think a method to tell dockerfile using ../tools packages.
+## Future features
+* [ ] Handle multiple connections
+

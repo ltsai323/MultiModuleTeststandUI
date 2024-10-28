@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>sshconn module &#8212; MultiModuleTestStandUI  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-sshconn">
+<span id="sshconn-module"></span><h1>sshconn module<a class="headerlink" href="#module-sshconn" title="Link to this heading">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="sshconn.DirectlyExecution">
+<span class="sig-prename descclassname"><span class="pre">sshconn.</span></span><span class="sig-name descname"><span class="pre">DirectlyExecution</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sshconn.DirectlyExecution" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sshconn.JobCMDPack">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sshconn.</span></span><span class="sig-name descname"><span class="pre">JobCMDPack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jobtype</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logQUEUE</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">commandSET</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="ConfigHandler.html#ConfigHandler.LoadedCMDFactory" title="ConfigHandler.LoadedCMDFactory"><span class="pre">LoadedCMDFactory</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadedPARs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="ConfigHandler.html#ConfigHandler.LoadedParameterFactory" title="ConfigHandler.LoadedParameterFactory"><span class="pre">LoadedParameterFactory</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">allCONFIGs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sshconn.JobCMDPack" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="JobCMDPackManager.html#JobCMDPackManager.JobCMDPack" title="JobCMDPackManager.JobCMDPack"><code class="xref py py-class docutils literal notranslate"><span class="pre">JobCMDPack</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="sshconn.JobCMDPack.cmd">
+<span class="sig-name descname"><span class="pre">cmd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stagedCMD</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sshconn.JobCMDPack.cmd" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sshconn.JobCMDPackFactory">
+<span class="sig-prename descclassname"><span class="pre">sshconn.</span></span><span class="sig-name descname"><span class="pre">JobCMDPackFactory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logQUEUE</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yamlFILE</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="JobCMDPackManager.html#JobCMDPackManager.JobCMDPack" title="JobCMDPackManager.JobCMDPack"><span class="pre">JobCMDPack</span></a></span></span><a class="headerlink" href="#sshconn.JobCMDPackFactory" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sshconn.JobStatMgrFactory">
+<span class="sig-prename descclassname"><span class="pre">sshconn.</span></span><span class="sig-name descname"><span class="pre">JobStatMgrFactory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">jobtype</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="JobStatManager.html#JobStatManager.JobStatMgr" title="JobStatManager.JobStatMgr"><span class="pre">JobStatMgr</span></a></span></span><a class="headerlink" href="#sshconn.JobStatMgrFactory" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sshconn.LOG">
+<span class="sig-prename descclassname"><span class="pre">sshconn.</span></span><span class="sig-name descname"><span class="pre">LOG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sshconn.LOG" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sshconn.StageCMDFactory">
+<span class="sig-prename descclassname"><span class="pre">sshconn.</span></span><span class="sig-name descname"><span class="pre">StageCMDFactory</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="StageCMDManager.html#StageCMDManager.StageCMDMgr" title="StageCMDManager.StageCMDMgr"><span class="pre">StageCMDMgr</span></a></span></span><a class="headerlink" href="#sshconn.StageCMDFactory" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sshconn.get_private_key">
+<span class="sig-prename descclassname"><span class="pre">sshconn.</span></span><span class="sig-name descname"><span class="pre">get_private_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logFUNC</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">privateKEY</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sshconn.get_private_key" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sshconn.mainfunc">
+<span class="sig-prename descclassname"><span class="pre">sshconn.</span></span><span class="sig-name descname"><span class="pre">mainfunc</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sshconn.mainfunc" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sshconn.ssh_command">
+<span class="sig-prename descclassname"><span class="pre">sshconn.</span></span><span class="sig-name descname"><span class="pre">ssh_command</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logFUNC</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terminateJOB</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sshCLIENT</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SSHClient</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">command</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">connCONFIGs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sshconn.ssh_command" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sshconn.stage_cmd_destroy">
+<span class="sig-prename descclassname"><span class="pre">sshconn.</span></span><span class="sig-name descname"><span class="pre">stage_cmd_destroy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmdPACK:</span> <span class="pre">~JobCMDPackManager.JobCMDPack</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jobSTAT:</span> <span class="pre">~JobStatManager.JobStatMgr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terminateJOBflag=&lt;threading.Event</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sshconn.stage_cmd_destroy" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sshconn.stage_cmd_exec">
+<span class="sig-prename descclassname"><span class="pre">sshconn.</span></span><span class="sig-name descname"><span class="pre">stage_cmd_exec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmdPACK:</span> <span class="pre">~JobCMDPackManager.JobCMDPack</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jobSTAT:</span> <span class="pre">~JobStatManager.JobStatMgr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">execCMD:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terminateJOBflag=&lt;threading.Event</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sshconn.stage_cmd_exec" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sshconn.stage_cmd_initialize">
+<span class="sig-prename descclassname"><span class="pre">sshconn.</span></span><span class="sig-name descname"><span class="pre">stage_cmd_initialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmdPACK:</span> <span class="pre">~JobCMDPackManager.JobCMDPack</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jobSTAT:</span> <span class="pre">~JobStatManager.JobStatMgr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terminateJOBflag=&lt;threading.Event</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sshconn.stage_cmd_initialize" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sshconn.stage_cmd_run">
+<span class="sig-prename descclassname"><span class="pre">sshconn.</span></span><span class="sig-name descname"><span class="pre">stage_cmd_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmdPACK:</span> <span class="pre">~JobCMDPackManager.JobCMDPack</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jobSTAT:</span> <span class="pre">~JobStatManager.JobStatMgr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terminateJOBflag=&lt;threading.Event</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sshconn.stage_cmd_run" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sshconn.stage_cmd_stop">
+<span class="sig-prename descclassname"><span class="pre">sshconn.</span></span><span class="sig-name descname"><span class="pre">stage_cmd_stop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmdPACK:</span> <span class="pre">~JobCMDPackManager.JobCMDPack</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jobSTAT:</span> <span class="pre">~JobStatManager.JobStatMgr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terminateJOBflag=&lt;threading.Event</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sshconn.stage_cmd_stop" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sshconn.stage_cmd_test">
+<span class="sig-prename descclassname"><span class="pre">sshconn.</span></span><span class="sig-name descname"><span class="pre">stage_cmd_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmdPACK:</span> <span class="pre">~JobCMDPackManager.JobCMDPack</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jobSTAT:</span> <span class="pre">~JobStatManager.JobStatMgr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terminateJOBflag=&lt;threading.Event</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sshconn.stage_cmd_test" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sshconn.testfunc">
+<span class="sig-prename descclassname"><span class="pre">sshconn.</span></span><span class="sig-name descname"><span class="pre">testfunc</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#sshconn.testfunc" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">MultiModuleTestStandUI</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, ltsai.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="_sources/sshconn.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

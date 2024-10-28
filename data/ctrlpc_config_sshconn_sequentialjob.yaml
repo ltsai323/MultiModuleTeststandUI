@@ -1,0 +1,45 @@
+name: 'ctrlpc_seq'
+jobtype: 'sequentialjob'
+  
+configs:
+  hostname: '192.168.50.140'
+  username: 'ntucms'
+  privatekey: '/home/ltsai/.ssh/test140'
+  port: 22
+
+
+parameters:
+  boardtype:
+    type: radiofield
+    options:
+      - HD
+      - LD
+  boardID:
+    type: stringfield
+    
+  hexacontrollerIP:
+    type: radiofield
+    options:
+      - '192.168.50.152'
+
+
+stagedCMD:
+  'TEST':
+    cmd: ' for a in {{1..10}}; do echo sequential job; sleep 5;done'
+    type: 'waiting_for_job_ended' # waiting_for_job_ended or no_waiting
+    delay: 2.0
+
+  'RUN':
+    cmd: 'echo runGUI.sh {boardtype} {boardID} {hexacontrollerIP} 2>&1 '
+    type: 'waiting_for_job_ended'
+    delay: 2.0
+  STOP:
+    cmd: 'exit'
+    type: 'waiting_for_job_ended'
+    delay: 1.0
+
+  'DESTROY':
+    cmd: 'exit' # do nothing
+    type: 'waiting_for_job_ended'
+    delay: 1.0
+
