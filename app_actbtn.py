@@ -78,6 +78,33 @@ def buttonINITIALIZE():
 
 @app_b.route('/submit', methods=['POST'])
 def buttonCONFIGURE():
+    print('configured!!!')
+    '''
+    Configure function:
+        When CONFIGURE button clicked from webpage, this function arised.
+        There will be a message box raised.
+        I should create information let user know the current configurations.
+
+        (to do)
+        At this stage, the webpage would send module IDs into this function.
+        It is used to setup module into individual working unit.
+        Furthermore, this stage put decides turn which working unit on and off.
+
+        In the end, the output message forced user check the current configuration.
+    '''
+
+    IDs = request.form
+    #has = lambda ID: IDs[ID] != "" and IDs[ID] != "module ID"
+    has = lambda ID: IDs[ID] != ""
+    outMesg = f'''
+    Configurations
+    1L {has("moduleID1L")} 1C {has("moduleID1C")} 1R {has("moduleID1R")}
+    2L {has("moduleID2L")} 2C {has("moduleID2C")} 2R {has("moduleID2R")}
+    3L {has("moduleID3L")} 3C {has("moduleID3C")} 3R {has("moduleID3R")}
+
+    Can I beautify this notification?
+    '''
+    return send_mesg_to_web(name='hi', stat='configured', mesg=outMesg)
     form_dict = AllAvailableInputFields()
 
     for form_name, form in form_dict.items():
