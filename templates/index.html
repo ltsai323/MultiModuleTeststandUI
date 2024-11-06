@@ -3,35 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log Viewer</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-    <script>
-        var socket = io.connect('http://' + document.domain + ':' + location.port);
+    <title>Clickable Buttons</title>
 
-        socket.on('connected', function(data) {
-            console.log(data);
-        });
+    <!-- StyleSheet -->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/dashboard_style.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/dashboardbtn_style.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/layout.css') }}">
 
-        socket.on('execution_started', function(data) {
-            console.log(data);
-        });
+    <!-- <\!-- Google Fonts -\-> -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500&display=swap" rel="stylesheet">
 
-        socket.on('new_message', function(data) {
-            var logDiv = document.getElementById('logs');
-            var logElement = document.createElement("div");
-            logElement.textContent = data.message;
-            logDiv.appendChild(logElement);
-        });
+    <!-- <\!-- Free Icons -\-> -->
+    <script src="https://kit.fontawesome.com/45d652beb3.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="{{ url_for('static',filename='js/function_buttonStatusMap.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/function_trash.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/function_changeLightStatus.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/action_btnCONFIGURE.js') }}"></script>
 
-        function startExecution() {
-            socket.emit('start_execution');
-        }
-    </script>
 </head>
 <body>
-    <h1>Log Viewer</h1>
-    <button onclick="startExecution()">Start Generating Messages</button>
-    <div id="logs"></div>
+
+    <header>
+        <div id="page-heading">
+            <h3>Multi-Module Teststand Dashboard</h3>	
+        </div>
+        <nav>
+            <a href="{{url_for('index')}}" >Dashboard</a>
+        </nav>
+    </header>
+
+    <!-- Web objects -->
+    <div id="main">
+        <div class="dropdown">
+            <button class="dropbtn">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="dropdown-list">
+                <a href="#Controls">Controls</a>
+                <a href="#Data Display">Data Display</a>
+                <a href="#Guide">Guide</a>	    
+            </div>
+        </div>
+
+        <!-- Lock button -->
+        <div class="dropdown">
+            <button id="lockallbtn" class="dropbtn" onclick="toggleLock(); disableOtherButtons(this)">
+                <i id="icon" class="fa-solid fa-lock"></i>
+                <span id="text">Lock Sc</span>
+            </button>
+        </div>
+
+        <!-- New board ID setting -->
+        <div class="dropdown">
+            <button id="boardIDbtn" class="dropbtn" onclick="inputWindow()">
+                <i class="fa-solid fa-sliders"></i>
+                <span id="text">New Board</span>
+            </button>
+        </div>
+
+        <div class="status-block">
+            <div id="box_ctrlbtns">
+                <div class="vertical">
+                    <div class="horizontal">
+                        <button id="btnINIT" class="ctrlbtn" >Initialize</button>
+                        <input  id="btnCONF" type="submit" form="pymodule_configurations" value="CONFIGURE" class="ctrlbtn">
+                        <button id="btnSTOP" class="ctrlbtn" >Stop</button>
+                    </div>
+                    <div class="horizontal">
+                        <button id="btnCONN" class="ctrlbtn" >Connect</button>
+                        <button id="btnEXEC" class="ctrlbtn" >Start</button>
+                        <button id="btnEXIT" class="ctrlbtn" >Destroy</button>
+                    </div>
+                </div>
+            </div>
+            <div id="statusbox">
+                <p> Here is the log message </p>
+            </div>
+        </div>
+
+        
+
+
+        <div class="inputIDblock">
+            <form method="POST" action="/btnCONF" id="pymodule_configurations">
+                <fieldset>
+                    <legend>Module ID Settings</legend>
+                    <input id="csrf_token" name="csrf_token" type="hidden" value="IjEzZjgzZWM1YzY3NjQ4MTAyZTQxYmU0ZGQ0YmNjZjI4ZTI2YzA4OTQi.ZyIAgA.lpaaH4O2WJhuNRL89BSQULcJjwg">
+
+                    <div class="vertical">
+                        <div class="horizontal" id="inputIDrow1">
+                            <div>
+                                <button type="button" class="LED" id="LED1L" onclick="console.log('clicked')"></button>
+                                <p>1L</p>
+                                <input class="form-check-input" name="moduleID1L" type="text" placeholder="module ID">
+                            </div>
+                            <div>
+                                <button type="button" class="LED" id="LED1C" onclick="alert('clicked')"></button>
+                                <p>1C</p>
+                                <input class="form-check-input" name="moduleID1C" type="text" placeholder="module ID">
+                            </div>
+                            <div>
+                                <button type="button" class="LED" id="grayLight" onclick="console.log('clicked')"></button>
+                                <p>1R</p>
+                                <input class="form-check-input" name="moduleID1R" type="text" placeholder="module ID">
+                            </div>
+                        </div>
+
+                    </div>
+                </fieldset>
+            </form>
+        </div>
+                    
+
+
+            <div class="title" style="border-bottom: 2px solid #ccc;">
+                <h1>Control panel</h1>
+            </div>
+
+            <div class="ctrlbox-title"><h3>Power</h3></div>
+            <div class="ctrlbox-title"><h3>Hexa Controller</h3></div>
+            <div class="ctrlbox-title"><h3>Command PC Connection</h3></div>
+            <div class="ctrlbox-title"><h3>Command PC Connection2</h3></div>
+
+            <div class="ctrlbox">
+                <!-- <button id="btnPowerSupply1" class="ctrlbtn-powerOn" onclick="showMessage('<i class=\'fa-solid fa-plug-circle-bolt\' style=\'color: #B80000\'></i> Power On'); DisableMe('btnPowerSupply1',['btnPowerSupply1','btnPowerSupply0']); fetchLog()">ON</button> -->
+
+                <button id="btnPowerSupply1" class="ctrlbtn-powerOn" onclick="showMessage('<i class=\'fa-solid fa-plug-circle-bolt\' style=\'color: #B80000\'></i> Power On'); fetchLog()">ON</button>
+
+                <!-- <button id="btnPowerSupply0" class="ctrlbtn-powerOff" onclick="showMessage('<i class=\'fa-solid fa-plug-circle-xmark\' style=\'color: #B6BBC4\'></i> Power Off'); DisableMe('btnPowerSupply0',['btnPowerSupply1','btnPowerSupply0']); fetchLog()">OFF</button> -->
+
+                <button id="btnPowerSupply0" class="ctrlbtn-powerOff" onclick="showMessage('<i class=\'fa-solid fa-plug-circle-xmark\' style=\'color: #B6BBC4\'></i> Power Off'); fetchLog()">OFF</button>
+            </div>
+
+            <div class="ctrlbox">
+                <button id="btnHexaControllerTT" class="HexaController0" onclick="DisableMe('btnHexaControllerTT',['btnHexaControllerTT','btnHexaControllerh1'])">Test BTN</button>
+                <button id="btnHexaControllerhI" class="HexaController0" onclick="showMessage('<i class=\'fa-solid fa-circle-nodes\' style=\'color: #73C250\'></i> Connected'); DisableMyGroup('btnHexaControllerhI',['HexaController0','HexaController1'])">Connect</button>
+                <button id="btnHexaControllerh0" class="HexaController1" onclick="showMessage('<i class=\'fa-solid fa-land-mine-on\' style=\'color: #73C250\'></i> Activated'); DisableMe('btnHexaControllerh0',['btnHexaControllerh0','btnHexaControllerh1'])">Activate HexaController</button>
+                <button id="btnHexaControllerh1" class="HexaController1" onclick="showMessage('<i class=\'fa-solid fa-ban\' style=\'color: #B6BBC4\'></i> Diactivated'); DisableMe('btnHexaControllerh1',['btnHexaControllerh0','btnHexaControllerh1'])">Diactivate HexaController</button>
+                <button id="btnHexaControllerhC" class="HexaController1" onclick="showMessage('<i class=\'fa-solid fa-ban\' style=\'color: #B6BBC4\'></i> Disconnected'); DisableMyGroup('btnHexaControllerhC',['HexaController0','HexaController1'])">Disconnect</button>
+            </div>
+
+
+            <div class="ctrlbox">
+                <button id="btnCommandPCAI" class="CommandPCA0" onclick="showMessage('<i class=\'fa-solid fa-circle-nodes\' style=\'color: #73C250\'></i> Connected'); DisableMyGroup('btnCommandPCAI',['CommandPCA0','CommandPCA1'])">Connect</button>
+                <button id="btnCommandPCA1" class="CommandPCA1" onclick="showMessage('<i class=\'fa-solid fa-land-mine-on\' style=\'color: #73C250\'></i> Activated'); DisableMe('btnCommandPCA1',['btnCommandPCA1'])">Activate DAQ Client</button>
+                <button id="btnCommandPCAC" class="CommandPCA1" onclick="showMessage('<i class=\'fa-solid fa-ban\' style=\'color: #B6BBC4\'></i> Disconnected'); DisableMyGroup('btnCommandPCAC',['CommandPCA0','CommandPCA1'])">Disconnect</button>
+
+            </div>
+
+            <div class="ctrlbox">
+                <button id="btnCommandPCBI" class="CommandPCB0" onclick="showMessage('<i class=\'fa-solid fa-circle-nodes\' style=\'color: #73C250\'></i> Connected'); DisableMyGroup('btnCommandPCBI',['CommandPCB0','CommandPCB1'])">Connect</button>
+                <button id="btnCommandPCB1" class="CommandPCB1" onclick="showMessage('<i class=\'fa-solid fa-land-mine-on\' style=\'color: #73C250\'></i> Taking Data'); DisableMe('btnCommandPCB1',['btnCommandPCB1'])">Take Data</button>
+                <button id="btnCommandPCBC" class="ctrlbtn-cmdPC-5" onclick="showMessage('<i class=\'fa-solid fa-ban\' style=\'color: #B6BBC4\'></i> Disconnected'); DisableMyGroup('btnCommandPCBC',['CommandPCB0','CommandPCB1'])">Disconnect</button>
+
+            </div>
+        </div>
+
+        <!-- <div class="ctrl-block"> -->
+        <!-- 	<div class="title" style="border-bottom: 2px solid #ccc;"> -->
+        <!-- 	  <h1>Control panel</h1> -->
+        <!-- 	</div> -->
+        <!-- </div> -->
+        <!-- Action Log text box -->
+        <div class="log-block">
+            <textarea id="logbox" rows="5" cols="300" readonly>{{ log }}</textarea>
+        </div>
+
+    </div>
+
+
+<script>
+document.getElementById("LED1L").addEventListener("click", function() {
+
+    // Redirect to the route that serves the log file content
+    //window.location.href = "/show_logpage?btnID=test";
+    window.open("/show_logpage?btnID=test", "_blank");
+});
+</script>
 </body>
 </html>
-
