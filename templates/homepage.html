@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Items List</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    </head>
+    <body>
+        <h1>Items List</h1>
+        <ul id="items-list"></ul>
+
+        <script>
+            const socket = io();
+
+            socket.on('data_update', (data) => {
+                            console.log('hiiii d');
+                            const itemsList = document.getElementById('items-list');
+                            itemsList.innerHTML = ''; // Clear the current list
+                            data.items.forEach(item => {
+                                            const li = document.createElement('li');
+                                            li.textContent = `${item.name}: ${item.description}`;
+                                            itemsList.appendChild(li);
+                                        });
+                        });
+            fetch('http://127.0.0.1:5000/api/current_status')
+                .then(response => {
+                                if (!response.ok) {
+                                                throw new Error('Network response was not ok ' + response.statusText);
+                                            }
+                                return response.json();  // Assuming the response is JSON
+                            })
+                .then(data => {
+                                console.log(data);  // Handle the data from the response
+                            })
+                .catch(error => {
+                                console.error('There was a problem with the fetch operation:', error);
+                            });
+            setInterval(function() {
+                            socket.emit('request_message', { request: 'Can I get the latest message?' });
+                            console.log('requesting message');
+                        }, 5000);  // Every second
+        </script>
+    </body>
+</html>
+
