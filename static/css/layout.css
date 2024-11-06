@@ -1,0 +1,59 @@
+.horizontal{
+    float: left;
+    border: 2px ;
+}
+
+.horizontal  *{
+    display: inline-block;
+    margin-left: 10px;
+}
+
+.vertical {
+    float: left;
+    width: 100%;
+    min-width: 100px;
+    border: 2px;
+}
+
+.vertical  > *{
+    display :block;
+    width: 100%;
+}
+
+.light {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    opacity: 0.8; /* Default opacity for all lights */
+    text-align: center;
+    margin-right: 0px;
+    margin-left: 10px;
+}
+.green {
+    background-color: green;
+}
+.red {
+    background-color: red;
+}
+.gray {
+    background-color: gray;
+}
+
+button.LED {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    opacity: 0.8; /* Default opacity for all lights */
+    text-align: center;
+    margin-right: 0px;
+    margin-left: 10px;
+    background-color: gray;
+
+    outline: none;
+    cursor: pointer;
+    border: none;
+    display: inline-flex;
+}
+button.LED:focus {
+    outline: none;
+}

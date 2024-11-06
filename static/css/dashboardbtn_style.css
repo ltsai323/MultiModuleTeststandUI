@@ -57,6 +57,13 @@
     cursor: not-allowed;
 }
 
+#box_ctrlbtns {
+    width: 300px;
+    align-self: center;
+}
+.ctrlbtn {
+    width: 80px;
+}
 
 #btnHexaControllerTT {
     flex: 1 0 30%;
