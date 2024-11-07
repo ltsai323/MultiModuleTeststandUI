@@ -4,11 +4,16 @@ import app_bkgrun
 import app_actbtn
 from DebugManager import BUG
 from flask_wtf.csrf import CSRFProtect
+from flask_cors import CORS
 
 app = Flask(__name__, static_folder='./static')
+
+CORS(app, resources={r"/*": {"origins": ["http://127.0.0.1:5001", "http://127.0.0.1:5000"]}})
 # add csrf protect asdf
 app.secret_key = 'your_secret_key'  # Required for CSRF protection. The availability checking required
 csrf = CSRFProtect(app)
+
+current_status = None # initialized at main function()
 
 
 # def current_status() # new function for sockeio
@@ -39,22 +44,22 @@ And `app_bkgrun.py` configures the jobs sent to bkg
     '''
 
     # I should delete this block but later
-    ''' '''
-    form_dict = app_actbtn.AllAvailableInputFields()
+    # ''' '''
+    # form_dict = app_actbtn.AllAvailableInputFields()
 
-    available_form_dict = {}
-    for n, v in form_dict.items():
-        field_names = [field.type for field in v]
-        if len(field_names) > 1:
-            BUG(f'all available fields in [{n}]: ', field_names)
-            available_form_dict[n] = v
+    # available_form_dict = {}
+    # for n, v in form_dict.items():
+    #     field_names = [field.type for field in v]
+    #     if len(field_names) > 1:
+    #         BUG(f'all available fields in [{n}]: ', field_names)
+    #         available_form_dict[n] = v
 
 
 
-    BUG('get current status : ', app_bkgrun.get_current_status())
-    available_buttons = app_bkgrun.get_current_status()
-    the_stat = app_bkgrun.app_b.web_stat
-    ''' '''
+    # BUG('get current status : ', app_bkgrun.get_current_status())
+    # available_buttons = app_bkgrun.get_current_status()
+    # the_stat = app_bkgrun.app_b.web_stat
+    # ''' '''
 
 
     # should add fetch() function to index.html that require current status from api/current_status or use "initialize" button
@@ -78,8 +83,41 @@ def show_logpage():
 
     return render_template('show_logpage.html', btnID=button_id, content=content)
 
+class WebStatus:
+    def __init__(self):
+        # btn status, recorded from function_statusButtonMap.js
+        self.btn = "none"
+
+        # LED status, matching to index.html
+        self.LEDs = {
+                'LED1L': '',
+                'LED1C': '',
+                'grayLight': '',
+                }
+        self.moduleIDs = {
+                'LED1L': '',
+                'LED1C': '',
+                'grayLight': '',
+                }
+    def jsonify(self):
+        return jsonify({ 'btnSTATUS': self.btn, 'LEDs': self.LEDs, 'moduleIDs': self.moduleIDs })
+
+@app.route('/btn_initialize', methods=['GET'])
+def btn_initialize():
+    return current_status.jsonify()
+
 
 if __name__ == '__main__':
+    current_status = WebStatus()
+    current_status.btn = 'running'
+    '''
+    To do:
+        1. Put LED status into action_btnINIT.
+        2. Put kept module ID 
+        '''
+
+
+
     app.job_is_running = False
     from app_socketio import socketio
     # regist functions from app_actbtn.py

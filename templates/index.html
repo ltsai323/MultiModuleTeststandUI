@@ -22,7 +22,7 @@
     <script src="{{ url_for('static',filename='js/function_buttonStatusMap.js') }}"></script>
     <script src="{{ url_for('static',filename='js/function_trash.js') }}"></script>
     <script src="{{ url_for('static',filename='js/function_changeLightStatus.js') }}"></script>
-    <script src="{{ url_for('static',filename='js/action_btnCONFIGURE.js') }}"></script>
+
 
 </head>
 <body>
@@ -178,12 +178,15 @@
 
 
 <script>
-document.getElementById("LED1L").addEventListener("click", function() {
+    updateButtonStates("none");
+    document.getElementById("LED1L").addEventListener("click", function() {
 
     // Redirect to the route that serves the log file content
     //window.location.href = "/show_logpage?btnID=test";
     window.open("/show_logpage?btnID=test", "_blank");
 });
 </script>
+    <script src="{{ url_for('static',filename='js/action_btnINIT.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/action_btnCONFIGURE.js') }}"></script>
 </body>
 </html>
