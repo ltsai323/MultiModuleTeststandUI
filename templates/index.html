@@ -90,9 +90,10 @@
 
         <div class="inputIDblock">
             <form method="POST" action="/btnCONF" id="pymodule_configurations">
+                <input name="csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+                <!-- <input name="csrf_token" type="hidden" value="{{ csrf_token() }}"/> --!>
                 <fieldset>
                     <legend>Module ID Settings</legend>
-                    <input id="csrf_token" name="csrf_token" type="hidden" value="IjEzZjgzZWM1YzY3NjQ4MTAyZTQxYmU0ZGQ0YmNjZjI4ZTI2YzA4OTQi.ZyIAgA.lpaaH4O2WJhuNRL89BSQULcJjwg">
 
                     <div class="vertical">
                         <div class="horizontal" id="inputIDrow1">
