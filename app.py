@@ -5,6 +5,7 @@ import app_actbtn
 from DebugManager import BUG
 from flask_wtf.csrf import CSRFProtect
 from flask_cors import CORS
+import WebStatus
 
 app = Flask(__name__, static_folder='./static')
 
@@ -19,18 +20,6 @@ current_status = None # initialized at main function()
 # def current_status() # new function for sockeio
 
 
-@app.route('/')
-@app.route('/homepage')
-def homepage():
-    '''
-    home pages
-
-    index.html define the basic structure, not to get a lot of calculation.
-    (JavaScript) Use fetch() get current status while initialize and use socketio.emit() update regularly.
-    '''
-
-
-    return render_template('homepage.html')
 
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/index')
@@ -83,38 +72,14 @@ def show_logpage():
 
     return render_template('show_logpage.html', btnID=button_id, content=content)
 
-class WebStatus:
-    def __init__(self):
-        # btn status, recorded from function_statusButtonMap.js
-        self.btn = "none"
-
-        # LED status, matching to index.html
-        self.LEDs = {
-                'LED1L': '',
-                'LED1C': '',
-                'grayLight': '',
-                }
-        self.moduleIDs = {
-                'LED1L': '',
-                'LED1C': '',
-                'grayLight': '',
-                }
-    def jsonify(self):
-        return jsonify({ 'btnSTATUS': self.btn, 'LEDs': self.LEDs, 'moduleIDs': self.moduleIDs })
-
 @app.route('/btn_initialize', methods=['GET'])
 def btn_initialize():
     return current_status.jsonify()
 
 
 if __name__ == '__main__':
-    current_status = WebStatus()
-    current_status.btn = 'running'
-    '''
-    To do:
-        1. Put LED status into action_btnINIT.
-        2. Put kept module ID 
-        '''
+    current_status = WebStatus.WebStatus()
+    WebStatus.TestFunc(current_status)
 
 
 
@@ -133,6 +98,7 @@ if __name__ == '__main__':
     socketio.init_app(app)
     BUG(f'init of the server : initialize of the web status :', app_bkgrun.get_current_status())
     host='0.0.0.0'
+    host='192.168.50.60'
     port=5001
     print(f'[Web activated] {host}@{port}')
     socketio.run(app,host=host, port=port)
