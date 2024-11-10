@@ -16,7 +16,7 @@ conda config --append channels conda-forge
 envNAME=myPython3p9
 conda create --name $envNAME python=3.9
 conda activate $envNAME
-conda install flask flask-socketio requests sphinx paramiko pyvisa pyyaml flask-wtf myst-parser
+conda install flask flask-socketio requests sphinx paramiko pyvisa pyyaml flask-wtf myst-parser flask-cors
 ```
 
 Or you can load the file `used_packages_conda.txt` for building dependencies.
