@@ -98,7 +98,7 @@ if __name__ == '__main__':
     socketio.init_app(app)
     BUG(f'init of the server : initialize of the web status :', app_bkgrun.get_current_status())
     host='0.0.0.0'
-    host='192.168.50.60'
+    #host='192.168.50.60'
     port=5001
     print(f'[Web activated] {host}@{port}')
     socketio.run(app,host=host, port=port)
