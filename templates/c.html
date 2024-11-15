@@ -3,36 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Run Script</title>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <title>Responsive Button and Message Layout</title>
+    <style>
+        /* Basic page styling */
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Container to center content */
+        .container {
+            max-width: 900px;
+            width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Flexbox wrapper for buttons and message */
+        .button-message-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        /* Button group styling */
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 360px;
+            gap: 10px;
+        }
+
+        .button-group button {
+            width: 120px;
+            padding: 10px;
+            font-size: 14px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        /* Message box styling */
+        .message-box {
+            flex-grow: 1;
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            min-width: 100px;
+            max-width: 400px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 400px) {
+            .button-message-container {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
 </head>
 <body>
-    <button id="runButton">Run Script</button>
-    <button id="CONFIGURE">Configure</button>
-    <button id="RUN">Run</button>
-    <button id="Stop">Stop</button>
-    <button id="DESTROY">Destroy</button>
-    <div id="output"></div>
-    <script>
-        //$(document).ready(function() {
-        //    $('#runButton').click(function() {
-        //        $.ajax({
-        //            type: 'POST',
-        //            url: '/run_script',
-        //            success: function(response) {
-        //                $('#output').text(response);
-        //            },
-        //            error: function(xhr, status, error) {
-        //                alert('Error: ' + error);
-        //            }
-        //        });
-        //    });
-        //});
-        $('#CONFIGURE, #RUN, #STOP, #DESTROY').click(function() {
-            console.log('button pressed');
-            $.post('/send_event', {'button_name': $(this).attr('id')});
-        });
-    </script>
+
+    <div class="container">
+        <div class="button-message-container">
+            <!-- Button Group -->
+            <div class="button-group">
+                <button>Button 1</button>
+                <button>Button 2</button>
+                <button>Button 3</button>
+                <button>Button 4</button>
+                <button>Button 5</button>
+                <button>Button 6</button>
+            </div>
+
+            <!-- Message Box -->
+            <div class="message-box">
+                This is the message area. It will adjust its position and width based on screen size.
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
 
