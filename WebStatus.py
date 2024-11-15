@@ -23,6 +23,7 @@ class WebStatus:
         self.btn = "none"
 
         # LED status, matching to index.html
+        # ToDo : The indicator should be accessed from individual job unit
         '''
         const btnStatusAndColor = {
             "idle": "green",

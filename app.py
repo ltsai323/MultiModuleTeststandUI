@@ -1,23 +1,21 @@
 from flask import Flask, render_template, jsonify, request
 from app_global_variables import _VARS_, _LOG_CENTER_, _JOB_STAT_
+import app_global_variables as gVAR
 import app_bkgrun
 import app_actbtn
 from DebugManager import BUG
 from flask_wtf.csrf import CSRFProtect
 from flask_cors import CORS
-import WebStatus
 
 app = Flask(__name__, static_folder='./static')
+app.config.from_object(gVAR.TestConfig) # initialize global variables
 
 CORS(app, resources={r"/*": {"origins": ["http://127.0.0.1:5001", "http://127.0.0.1:5000"]}})
 # add csrf protect asdf
 app.secret_key = 'your_secret_key'  # Required for CSRF protection. The availability checking required
 csrf = CSRFProtect(app)
 
-current_status = None # initialized at main function()
 
-
-# def current_status() # new function for sockeio
 
 
 
@@ -53,7 +51,9 @@ And `app_bkgrun.py` configures the jobs sent to bkg
 
     # should add fetch() function to index.html that require current status from api/current_status or use "initialize" button
 
-    return render_template('index.html')
+    #return render_template('c.html')
+    return render_template('b.html')
+    #return render_template('index.html')
     #return render_template('index.html', forms = available_form_dict, availableBUTTONs = available_buttons, webSTAT = the_stat)
 
 
@@ -74,12 +74,13 @@ def show_logpage():
 
 @app.route('/btn_initialize', methods=['GET'])
 def btn_initialize():
-    return current_status.jsonify()
+    return gVAR.WEB_STAT.jsonify()
+#return current_status.jsonify()
 
 
 if __name__ == '__main__':
-    current_status = WebStatus.WebStatus()
-    WebStatus.TestFunc(current_status)
+    #current_status = WebStatus.WebStatus()
+    #WebStatus.TestFunc(current_status)
 
 
 
