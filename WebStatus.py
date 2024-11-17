@@ -10,14 +10,16 @@ class WebStatus:
         # btn status, recorded from function_statusButtonMap.js
         '''
         const statusButtonMap = {
-            "none": ["btnINIT"],
-            "initialized": ["btnCON", "btnEXIT"],
-            "connected": ["btnCONF", "btnEXIT"],
-            "configured": ["btnEXEC", "btnCONF", "btnEXIT"],
-            "running": ["btnSTOP", "btnEXIT"],
-            "idle": ["btnCONF", "btnEXIT"],
-            "error": ["btnEXIT"],
-            "halt": ["btnCONN", "btnEXIT"]
+    "none": ["btnCONN"],
+    "connected": ["btnINIT", "btnEXIT"],
+    "initialized": ["btnCONF", "btnEXIT"],
+    "configured": ["btnEXEC", "btnCONF", "btnEXIT"],
+    "running": ["btnSTOP", "btnEXIT"],
+    "stopped": ["btnCONF", "btnEXIT"],
+    "idle": ["btnCONF", "btnEXIT"],
+    "error": ["btnEXIT"],
+    "halt": ["btnINIT", "btnEXIT"],
+    "wait": ["btnEXIT"]
         };
         '''
         self.btn = "none"
