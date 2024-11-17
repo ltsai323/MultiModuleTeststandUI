@@ -24,6 +24,7 @@
     <script src="{{ url_for('static',filename='js/function_buttonStatusMap.js') }}"></script>
     <script src="{{ url_for('static',filename='js/function_LEDStatusMap.js') }}"></script>
     <script src="{{ url_for('static',filename='js/function_trash.js') }}"></script>
+    <script> const socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port); </script>
 
 
 <style>
@@ -80,12 +81,12 @@
         <div class="control-button-container">
             <!-- Button Group -->
             <div class="control-button">
-              <button id="btnINIT">Initialize</button>
-              <input  id="btnCONF" type="submit" form="pymodule_configurations" value="CONFIGURE">
-              <button id="btnSTOP">Stop</button>
-              <button id="btnCONN">Connect</button>
-              <button id="btnEXEC">Start</button>
-              <button id="btnEXIT">Destroy</button>
+              <button id="btnCONN" class="ctrlbtn">Connect</button>
+              <input  id="btnCONF" class="ctrlbtn"type="submit" form="pymodule_configurations" value="CONFIGURE">
+              <button id="btnSTOP" class="ctrlbtn">Stop</button>
+              <button id="btnINIT" class="ctrlbtn">Initialize</button>
+              <button id="btnEXEC" class="ctrlbtn">Start</button>
+              <button id="btnEXIT" class="ctrlbtn">Destroy</button>
             </div>
 
             <!-- Message Box -->
@@ -158,14 +159,14 @@
             <div id="box_ctrlbtns">
                 <div class="vertical">
                     <div class="horizontal">
-                        <button id="btnINIT" class="ctrlbtn" >Initialize</button>
-                        <input  id="btnCONF" type="submit" form="pymodule_configurations" value="CONFIGURE" class="ctrlbtn">
-                        <button id="btnSTOP" class="ctrlbtn" >Stop</button>
+                        <button id="_btnCONN" class="ctrlbtn" >Connect</button>
+                        <input  id="_btnCONF" type="submit" form="pymodule_configurations" value="CONFIGURE" class="ctrlbtn">
+                        <button id="_btnSTOP" class="ctrlbtn" >Stop</button>
                     </div>
                     <div class="horizontal">
-                        <button id="btnCONN" class="ctrlbtn" >Connect</button>
-                        <button id="btnEXEC" class="ctrlbtn" >Start</button>
-                        <button id="btnEXIT" class="ctrlbtn" >Destroy</button>
+                        <button id="_btnINIT" class="ctrlbtn" >Initialize</button>
+                        <button id="_btnEXEC" class="ctrlbtn" >Start</button>
+                        <button id="_btnEXIT" class="ctrlbtn" >Destroy</button>
                     </div>
                 </div>
             </div>
@@ -264,9 +265,8 @@
     // initialize the button status at start up
     updateButtonStates("none");
 </script>
-    <script src="{{ url_for('static',filename='js/action_LEDclicked.js') }}"></script>
-    <script src="{{ url_for('static',filename='js/action_btnINIT.js') }}"></script>
-    <script src="{{ url_for('static',filename='js/action_btnCONFIGURE.js') }}"></script>
     <script src="{{ url_for('static',filename='js/action_periodicUpdate.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/action_LEDclicked.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/action_control_buttons.js') }}"></script>
 </body>
 </html>
