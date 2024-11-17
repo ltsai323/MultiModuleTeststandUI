@@ -1,7 +1,6 @@
 from flask import Flask, render_template, jsonify, request
-from app_global_variables import _VARS_, _LOG_CENTER_, _JOB_STAT_
 import app_global_variables as gVAR
-import app_bkgrun
+#import app_bkgrun
 import app_actbtn
 from DebugManager import BUG
 from flask_wtf.csrf import CSRFProtect
@@ -52,8 +51,8 @@ And `app_bkgrun.py` configures the jobs sent to bkg
     # should add fetch() function to index.html that require current status from api/current_status or use "initialize" button
 
     #return render_template('c.html')
-    return render_template('b.html')
-    #return render_template('index.html')
+    #return render_template('b.html')
+    return render_template('index.html')
     #return render_template('index.html', forms = available_form_dict, availableBUTTONs = available_buttons, webSTAT = the_stat)
 
 
@@ -72,10 +71,8 @@ def show_logpage():
 
     return render_template('show_logpage.html', btnID=button_id, content=content)
 
-@app.route('/btn_initialize', methods=['GET'])
-def btn_initialize():
-    return gVAR.WEB_STAT.jsonify()
-#return current_status.jsonify()
+
+
 
 
 if __name__ == '__main__':
@@ -88,16 +85,16 @@ if __name__ == '__main__':
     from app_socketio import socketio
     # regist functions from app_actbtn.py
     app.register_blueprint(app_actbtn.app_b)
-    app_actbtn.module_init(app_actbtn.app_b)
+    #app_actbtn.module_init(app_actbtn.app_b)
 
     # regist functions from app_bkgrun.py
-    app.register_blueprint(app_bkgrun.app_b)
-    app_bkgrun.module_init(app_bkgrun.app_b)
+    #app.register_blueprint(app_bkgrun.app_b)
+    #app_bkgrun.module_init(app_bkgrun.app_b)
 
     # how do I handle multiple connection? -> Disable duplicated connection?
 
     socketio.init_app(app)
-    BUG(f'init of the server : initialize of the web status :', app_bkgrun.get_current_status())
+    #BUG(f'init of the server : initialize of the web status :', app_bkgrun.get_current_status())
     host='0.0.0.0'
     #host='192.168.50.60'
     port=5001
