@@ -1,13 +1,26 @@
 const statusButtonMap = {
-    "none": ["btnINIT"],
-    "initialized": ["btnCON", "btnEXIT"],
-    "connected": ["btnCONF", "btnEXIT"],
+    "none": ["btnCONN"],
+    "connected": ["btnINIT", "btnEXIT"],
+    "initialized": ["btnCONF", "btnEXIT"],
     "configured": ["btnEXEC", "btnCONF", "btnEXIT"],
     "running": ["btnSTOP", "btnEXIT"],
+    "stopped": ["btnCONF", "btnEXIT"],
     "idle": ["btnCONF", "btnEXIT"],
     "error": ["btnEXIT"],
-    "halt": ["btnCONN", "btnEXIT"]
+    "halt": ["btnINIT", "btnEXIT"],
+    "wait": ["btnEXIT"]
 };
+//    "none":
+//    "connected":
+//    "initialized":
+//    "configured":
+//    "running": Once all jobs are reported as running.
+//    "stopped": Once all jobs are reported as stopped.
+//    "idle":
+//    "error":
+//    "halt": 
+//    "wait": used for initialize / run / stop / destroy buttons clicked. waiting for the result.
+
 
 function updateButtonStates(status) {
     console.log(`[updateButtonStatus] got status ${status}`);
