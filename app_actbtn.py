@@ -5,8 +5,11 @@ import tools.MesgHub as MesgHub
 from tools.LogTool import LOG
 import threading
 from app_global_variables import _VARS_, _LOG_CENTER_, _JOB_STAT_
-import app_bkgrun
+#import app_global_variables as gVAR
+#import app_bkgrun
 
+from flask_socketio import SocketIO, emit
+from pprint import pprint
 from app_socketio import socketio
 
 import sshconn
@@ -18,6 +21,7 @@ import queue
 
 
 from flask import Blueprint
+from flask import current_app
 
 app_b = Blueprint('action_button', __name__)
 
@@ -35,55 +39,61 @@ def Info( mesgHUB:MesgHub.MesgUnit, btnSTAT:str ) -> dict:
             'buttonSTATUS': BUTTON_STATUS[btnSTAT],
             }
 def send_mesg_to_web( name, stat, mesg, err='', btnSTAT='btnclicked' ):
-    app_bkgrun.set_current_status(btnSTAT)
+    #app_bkgrun.set_current_status(btnSTAT)
     return jsonify( {'indicator': name, 'status': stat, 'message': mesg, 'errors': err})
 
 def AddJob(jobTEMPLATE, name, funcNAME):
     n = jobTEMPLATE.format(name)
     func = getattr(_VARS_.cmders[name], funcNAME)
-    app_bkgrun.AddJob(n, func) # need to handle priority
+    #app_bkgrun.AddJob(n, func) # need to handle priority
 def AddJob1(priority,jobTEMPLATE, name, funcNAME):
     n = jobTEMPLATE.format(name)
     func = getattr(_VARS_.cmders[name], funcNAME)
-    app_bkgrun.AddJob1(priority,n, func)
-@app_b.route('/buttonINITIALIZE', methods=['POST'])
-def buttonINITIALIZE():
-    jobTEMPLATE = '{}.Initialize'
+    #app_bkgrun.AddJob1(priority,n, func)
+@app_b.route('/btnCONN', methods=['GET'])
+def btn_connect() -> jsonify:
+    '''
+    Web client needs to click "connect" to fetch current status.
 
-    if DEBUG_MODE:
-        #AddJob(jobTEMPLATE, 'ModulePWRHexaCtrl' , 'Initialize')
-        #AddJob(jobTEMPLATE, 'ModulePWRUpper'    , 'Initialize')
-        #AddJob(jobTEMPLATE, 'ModulePWRLower'    , 'Initialize')
-        AddJob(jobTEMPLATE, 'ctrlpc_bkg'        , 'Initialize')
-        AddJob(jobTEMPLATE, 'ctrlpc_seq'        , 'Initialize')
+    Handles the button clicking. Once the client clicked "btnCONN", the server will send current status through jsonify
 
-        return send_mesg_to_web( name='btnINITIALIZE', stat='buttonClicked', mesg='Initializing python modules')
+    * Output jsonify
+        return jsonify({ 'btnSTATUS': self.btn, 'LEDs': self.LEDs, 'moduleIDs': self.moduleIDs })
+    '''
+    mesg = 'btnCONN clicked! send current webpage status to client'
+    if current_app.config['WEB_STAT'].btn == 'none':
+        mesg = 'btnCONN clicked! you need to initialize all working modules for first'
+        current_app.config['WEB_STAT'].btn = 'connected'
+    current_app.config['MESG_LOG'].info(mesg)
+    return current_app.config['WEB_STAT'].jsonify()
 
-        ### end of DEBUG_MODE
+@socketio.on('btnINIT')
+def btn_initialize():
+    '''
+    Client sends command INITIALIZE to server. That the server should response the current button status
+    
+    Handles the button clicking. Once the client clicked "btnINIT", server side received the command INITIALIZE and update button status
+    '''
+    # orig function
+    # current_app.config['btn'] = 'wait'
+    # AddJob()
 
-    #for job_name, pyMODULE in _VARS_.cmders.items():
-    #    BUG(f'[initializing {job_name}')
-    #    n = jobTEMPLATE.format(job_name)
-    #    app_bkgrun.AddJob(n, pyMODULE.Initialize)
+    ## testing without waiting job asdf
+    current_app.config['btn'] = 'initialized'
 
-    #return send_mesg_to_web( name='btnINITIALIZE', stat='buttonClicked', mesg='Initializing python modules')
-    AddJob(jobTEMPLATE, 'ModulePWRHexaCtrl' , 'Initialize')
-    AddJob(jobTEMPLATE, 'ModulePWRUpper'    , 'Initialize')
-    AddJob(jobTEMPLATE, 'ModulePWRLower'    , 'Initialize')
-    AddJob(jobTEMPLATE, 'ntu8tester'        , 'Initialize')
-
-    return send_mesg_to_web( name='btnINITIALIZE', stat='buttonClicked', mesg='Initializing python modules')
-
-
+    mesg = f'btnINIT clicked! waiting for all module initialized'
+    current_app.config['MESG_LOG'].info(mesg)
+    emit('btnSTATUS', {'btnSTATUS': current_app.config['btn'], 'log': mesg})
 
 @app_b.route('/submit', methods=['POST'])
 def buttonCONFIGURE():
-    print('configured!!!')
     '''
     Configure function:
         When CONFIGURE button clicked from webpage, this function arised.
         There will be a message box raised.
         I should create information let user know the current configurations.
+
+        Indeed this function is implemented by form + submit in html+javascript.
 
         (to do)
         At this stage, the webpage would send module IDs into this function.
@@ -92,137 +102,238 @@ def buttonCONFIGURE():
 
         In the end, the output message forced user check the current configuration.
     '''
-
     IDs = request.form
-    #has = lambda ID: IDs[ID] != "" and IDs[ID] != "module ID"
     has = lambda ID: IDs[ID] != ""
     outMesg = f'''
     Configurations
-    1L {has("moduleID1L")} 1C {has("moduleID1C")} 1R {has("moduleID1R")}
-    2L {has("moduleID2L")} 2C {has("moduleID2C")} 2R {has("moduleID2R")}
-    3L {has("moduleID3L")} 3C {has("moduleID3C")} 3R {has("moduleID3R")}
+    1L {has("moduleID1L")} \t1C {has("moduleID1C")} \t1R {has("moduleID1R")}
+    2L {has("moduleID2L")} \t2C {has("moduleID2C")} \t2R {has("moduleID2R")}
 
     Can I beautify this notification?
     '''
-    return send_mesg_to_web(name='hi', stat='configured', mesg=outMesg)
-    form_dict = AllAvailableInputFields()
+    current_app.config['MESG_LOG'].info(outMesg)
+    
+    ### javascript uses response.status to get contents inside the dict
+    return jsonify( {'status':'success', 'message': outMesg, 'errors': 'no error'} )
 
-    for form_name, form in form_dict.items():
-        if form.validate_on_submit() == False:
-            BUG(f'[validation failed] {form_name}\n    ->  {form.errors}')
-            return send_mesg_to_web( name='configure', stat='error', mesg='Validation failed', err=f'[{form_name}] {form.errors}', btnSTAT='initialized')
+@socketio.on('btnEXEC')
+def btn_start():
+    '''
+    Client sends command INITIALIZE to server. That the server should response the current button status
+    
+    Handles the button clicking. Once the client clicked "btnINIT", server side received the command INITIALIZE and update button status
+    '''
+    # current_app.config['btn'] = 'running'
+    # AddJob()
+    current_app.config['btn'] = 'running' # test without jobs asdf
+    mesg = f'btnEXEC clicked!'
+    current_app.config['MESG_LOG'].info(mesg)
+    emit('btnSTATUS', {'btnSTATUS': current_app.config['btn'], 'log': mesg})
+@socketio.on('btnSTOP')
+def btn_stop():
+    '''
+    Client sends command INITIALIZE to server. That the server should response the current button status
+    
+    Handles the button clicking. Once the client clicked "btnINIT", server side received the command INITIALIZE and update button status
+    '''
+    # current_app.config['btn'] = 'wait'
+    # AddJob()
+    current_app.config['btn'] = 'stopped' # test without jobs asdf
+    mesg = f'btnSTOP clicked! waiting for stop function executed'
+    current_app.config['MESG_LOG'].info(mesg)
 
-    recorded_value = {}
-    for form_name, form in form_dict.items():
-        recorded_value[form_name] = {opt_name: getattr(form, opt_name).data for opt_name in form._fields if opt_name != 'csrf_token' }
-        _VARS_.cmders[form_name].Configure(**recorded_value[form_name])
-        BUG(f'[valid submit - {form_name}]', recorded_value[form_name])  # Process the form data as needed
+    emit('btnSTATUS', {'btnSTATUS': current_app.config['btn'], 'log': mesg})
+@socketio.on('btnEXIT')
+def btn_destroy():
+    '''
+    Client sends command INITIALIZE to server. That the server should response the current button status
+    
+    Handles the button clicking. Once the client clicked "btnINIT", server side received the command INITIALIZE and update button status
+    '''
+    # current_app.config['btn'] = 'wait'
+    # AddJob()
+    current_app.config['btn'] = 'halt' # test without jobs asdf
+    mesg = f'btnEXIT clicked! Destroy all executing modules'
+    current_app.config['MESG_LOG'].info(mesg)
+    emit('btnSTATUS', {'btnSTATUS': current_app.config['btn'], 'log': mesg})
 
-    return send_mesg_to_web( name='configure', stat='success', mesg='Configure Successfully', btnSTAT='configured')
-
-
-@app_b.route('/buttonTEST', methods=['POST'])
-def buttonTEST():
-    jobTEMPLATE = '{}.Test'
-    jobINSTANCE = 'Test'
-
-
-    if DEBUG_MODE:
-        #AddJob(jobTEMPLATE, 'ModulePWRUpper'    , jobINSTANCE)
-        #AddJob(jobTEMPLATE, 'ModulePWRLower'    , jobINSTANCE)
-        #AddJob(jobTEMPLATE, 'ModulePWRHexaCtrl' , jobINSTANCE)
-        AddJob(jobTEMPLATE, 'ctrlpc_bkg'        , jobINSTANCE)
-        AddJob(jobTEMPLATE, 'ctrlpc_seq'        , jobINSTANCE)
-
-        return send_mesg_to_web( name='btnTEST', stat='buttonClicked', mesg='Initializing python modules')
-
-    #for job_name, pyMODULE in _VARS_.cmders.items():
-    #    n = jobTEMPLATE.format(job_name)
-    #    app_bkgrun.AddJob(n, pyMODULE.Test)
-    #return send_mesg_to_web( name='btnTEST', stat='buttonClicked', mesg='Initializing python modules')
-    AddJob(jobTEMPLATE, 'ModulePWRUpper'    , jobINSTANCE)
-    AddJob(jobTEMPLATE, 'ModulePWRLower'    , jobINSTANCE)
-    AddJob(jobTEMPLATE, 'ModulePWRHexaCtrl' , jobINSTANCE)
-    AddJob(jobTEMPLATE, 'ntu8tester'        , jobINSTANCE)
-
-    return send_mesg_to_web( name='btnTEST', stat='buttonClicked', mesg='Initializing python modules')
-
-@app_b.route('/buttonRUN', methods=['POST'])
-def buttonRUN():
-    jobTEMPLATE = '{}.Run'
-    jobINSTANCE = 'Run'
-
-
-    if DEBUG_MODE:
-        #AddJob(jobTEMPLATE, 'ModulePWRUpper'    , jobINSTANCE)
-        #AddJob(jobTEMPLATE, 'ModulePWRLower'    , jobINSTANCE)
-        #AddJob(jobTEMPLATE, 'ModulePWRHexaCtrl' , jobINSTANCE)
-        AddJob(jobTEMPLATE, 'ctrlpc_bkg'        , jobINSTANCE)
-        AddJob(jobTEMPLATE, 'ctrlpc_seq'        , jobINSTANCE)
-
-        return send_mesg_to_web( name='btnRUN', stat='buttonClicked', mesg='Executing jobs')
-
-    AddJob(jobTEMPLATE, 'ModulePWRUpper'    , jobINSTANCE)
-    AddJob(jobTEMPLATE, 'ModulePWRLower'    , jobINSTANCE)
-    AddJob(jobTEMPLATE, 'ModulePWRHexaCtrl' , jobINSTANCE)
-    AddJob(jobTEMPLATE, 'ntu8tester'        , jobINSTANCE)
-
-    return send_mesg_to_web( name='btnRUN', stat='buttonClicked', mesg='Executing jobs')
-
-@app_b.route('/buttonSTOP', methods=['POST'])
-def buttonSTOP():
-    jobTEMPLATE = '{}.Stop'
-    jobINSTANCE = 'Stop'
-    app_bkgrun.ClearJob()
-
-
-    if DEBUG_MODE:
-        AddJob1(0,jobTEMPLATE, 'ctrlpc_seq'        , jobINSTANCE)
-        AddJob1(0,jobTEMPLATE, 'ctrlpc_bkg'        , jobINSTANCE)
-        #AddJob(jobTEMPLATE, 'ModulePWRUpper'    , jobINSTANCE)
-        #AddJob(jobTEMPLATE, 'ModulePWRLower'    , jobINSTANCE)
-        #AddJob(jobTEMPLATE, 'ModulePWRHexaCtrl' , jobINSTANCE)
-
-        return send_mesg_to_web( name='btnSTOP', stat='buttonClicked', mesg='All jobs are stopped')
-
-    #for job_name, pyMODULE in _VARS_.cmders.items():
-    #    n = jobTEMPLATE.format(job_name)
-    #    app_bkgrun.AddJob(n, pyMODULE.Stop)
-    ## prevent button status updated once clicked. Lock it as clicked!
-    #return send_mesg_to_web( name='btnSTOP', stat='buttonClicked', mesg='All jobs are stopped')
-    AddJob(jobTEMPLATE, 'ntu8tester'        , jobINSTANCE)
-    AddJob(jobTEMPLATE, 'ModulePWRUpper'    , jobINSTANCE)
-    AddJob(jobTEMPLATE, 'ModulePWRLower'    , jobINSTANCE)
-    AddJob(jobTEMPLATE, 'ModulePWRHexaCtrl' , jobINSTANCE)
-
-    return send_mesg_to_web( name='btnSTOP', stat='buttonClicked', mesg='All jobs are stopped')
-
-
-@app_b.route('/buttonDESTROY', methods=['POST'])
-def buttonDESTROY():
-    jobTEMPLATE = '{}.Destroy'
-    jobINSTANCE = 'Destroy'
-    app_bkgrun.ClearJob()
-
-
-    if DEBUG_MODE:
-        AddJob1(0,jobTEMPLATE, 'ctrlpc_bkg'        , jobINSTANCE)
-        AddJob1(0,jobTEMPLATE, 'ctrlpc_seq'        , jobINSTANCE)
-        #AddJob(jobTEMPLATE, 'ModulePWRUpper'    , jobINSTANCE)
-        #AddJob(jobTEMPLATE, 'ModulePWRLower'    , jobINSTANCE)
-        #AddJob(jobTEMPLATE, 'ModulePWRHexaCtrl' , jobINSTANCE)
-        return send_mesg_to_web( name='btnDESTROY', stat='buttonClicked', mesg='All jobs are stopped')
-
-
-    #for job_name, pyMODULE in _VARS_.cmders.items():
-    #    n = jobTEMPLATE.format(job_name)
-    #    app_bkgrun.AddJob(n, pyMODULE.Destroy)
-    #return send_mesg_to_web( name='btnDESTROY', stat='buttonClicked', mesg='All jobs are stopped')
-    AddJob(jobTEMPLATE, 'ntu8tester'        , jobINSTANCE)
-    AddJob(jobTEMPLATE, 'ModulePWRUpper'    , jobINSTANCE)
-    AddJob(jobTEMPLATE, 'ModulePWRLower'    , jobINSTANCE)
-    AddJob(jobTEMPLATE, 'ModulePWRHexaCtrl' , jobINSTANCE)
-    return send_mesg_to_web( name='btnDESTROY', stat='buttonClicked', mesg='All jobs are stopped')
+#@app_b.route('/buttonINITIALIZE', methods=['POST'])
+#def buttonINITIALIZE():
+#    jobTEMPLATE = '{}.Initialize'
+#
+#    if DEBUG_MODE:
+#        #AddJob(jobTEMPLATE, 'ModulePWRHexaCtrl' , 'Initialize')
+#        #AddJob(jobTEMPLATE, 'ModulePWRUpper'    , 'Initialize')
+#        #AddJob(jobTEMPLATE, 'ModulePWRLower'    , 'Initialize')
+#        AddJob(jobTEMPLATE, 'ctrlpc_bkg'        , 'Initialize')
+#        AddJob(jobTEMPLATE, 'ctrlpc_seq'        , 'Initialize')
+#
+#        return send_mesg_to_web( name='btnINITIALIZE', stat='buttonClicked', mesg='Initializing python modules')
+#
+#        ### end of DEBUG_MODE
+#
+#    #for job_name, pyMODULE in _VARS_.cmders.items():
+#    #    BUG(f'[initializing {job_name}')
+#    #    n = jobTEMPLATE.format(job_name)
+#    #    app_bkgrun.AddJob(n, pyMODULE.Initialize)
+#
+#    #return send_mesg_to_web( name='btnINITIALIZE', stat='buttonClicked', mesg='Initializing python modules')
+#    AddJob(jobTEMPLATE, 'ModulePWRHexaCtrl' , 'Initialize')
+#    AddJob(jobTEMPLATE, 'ModulePWRUpper'    , 'Initialize')
+#    AddJob(jobTEMPLATE, 'ModulePWRLower'    , 'Initialize')
+#    AddJob(jobTEMPLATE, 'ntu8tester'        , 'Initialize')
+#
+#    return send_mesg_to_web( name='btnINITIALIZE', stat='buttonClicked', mesg='Initializing python modules')
+#
+#
+#
+#@app_b.route('/submit', methods=['POST'])
+#def buttonCONFIGURE():
+#    print('configured!!!')
+#    '''
+#    Configure function:
+#        When CONFIGURE button clicked from webpage, this function arised.
+#        There will be a message box raised.
+#        I should create information let user know the current configurations.
+#
+#        (to do)
+#        At this stage, the webpage would send module IDs into this function.
+#        It is used to setup module into individual working unit.
+#        Furthermore, this stage put decides turn which working unit on and off.
+#
+#        In the end, the output message forced user check the current configuration.
+#    '''
+#
+#    IDs = request.form
+#    #has = lambda ID: IDs[ID] != "" and IDs[ID] != "module ID"
+#    has = lambda ID: IDs[ID] != ""
+#    outMesg = f'''
+#    Configurations
+#    1L {has("moduleID1L")} 1C {has("moduleID1C")} 1R {has("moduleID1R")}
+#    2L {has("moduleID2L")} 2C {has("moduleID2C")} 2R {has("moduleID2R")}
+#    3L {has("moduleID3L")} 3C {has("moduleID3C")} 3R {has("moduleID3R")}
+#
+#    Can I beautify this notification?
+#    '''
+#    return send_mesg_to_web(name='hi', stat='configured', mesg=outMesg)
+#    form_dict = AllAvailableInputFields()
+#
+#    for form_name, form in form_dict.items():
+#        if form.validate_on_submit() == False:
+#            BUG(f'[validation failed] {form_name}\n    ->  {form.errors}')
+#            return send_mesg_to_web( name='configure', stat='error', mesg='Validation failed', err=f'[{form_name}] {form.errors}', btnSTAT='initialized')
+#
+#    recorded_value = {}
+#    for form_name, form in form_dict.items():
+#        recorded_value[form_name] = {opt_name: getattr(form, opt_name).data for opt_name in form._fields if opt_name != 'csrf_token' }
+#        _VARS_.cmders[form_name].Configure(**recorded_value[form_name])
+#        BUG(f'[valid submit - {form_name}]', recorded_value[form_name])  # Process the form data as needed
+#
+#    return send_mesg_to_web( name='configure', stat='success', mesg='Configure Successfully', btnSTAT='configured')
+#
+#
+#@app_b.route('/buttonTEST', methods=['POST'])
+#def buttonTEST():
+#    jobTEMPLATE = '{}.Test'
+#    jobINSTANCE = 'Test'
+#
+#
+#    if DEBUG_MODE:
+#        #AddJob(jobTEMPLATE, 'ModulePWRUpper'    , jobINSTANCE)
+#        #AddJob(jobTEMPLATE, 'ModulePWRLower'    , jobINSTANCE)
+#        #AddJob(jobTEMPLATE, 'ModulePWRHexaCtrl' , jobINSTANCE)
+#        AddJob(jobTEMPLATE, 'ctrlpc_bkg'        , jobINSTANCE)
+#        AddJob(jobTEMPLATE, 'ctrlpc_seq'        , jobINSTANCE)
+#
+#        return send_mesg_to_web( name='btnTEST', stat='buttonClicked', mesg='Initializing python modules')
+#
+#    #for job_name, pyMODULE in _VARS_.cmders.items():
+#    #    n = jobTEMPLATE.format(job_name)
+#    #    app_bkgrun.AddJob(n, pyMODULE.Test)
+#    #return send_mesg_to_web( name='btnTEST', stat='buttonClicked', mesg='Initializing python modules')
+#    AddJob(jobTEMPLATE, 'ModulePWRUpper'    , jobINSTANCE)
+#    AddJob(jobTEMPLATE, 'ModulePWRLower'    , jobINSTANCE)
+#    AddJob(jobTEMPLATE, 'ModulePWRHexaCtrl' , jobINSTANCE)
+#    AddJob(jobTEMPLATE, 'ntu8tester'        , jobINSTANCE)
+#
+#    return send_mesg_to_web( name='btnTEST', stat='buttonClicked', mesg='Initializing python modules')
+#
+#@app_b.route('/buttonRUN', methods=['POST'])
+#def buttonRUN():
+#    jobTEMPLATE = '{}.Run'
+#    jobINSTANCE = 'Run'
+#
+#
+#    if DEBUG_MODE:
+#        #AddJob(jobTEMPLATE, 'ModulePWRUpper'    , jobINSTANCE)
+#        #AddJob(jobTEMPLATE, 'ModulePWRLower'    , jobINSTANCE)
+#        #AddJob(jobTEMPLATE, 'ModulePWRHexaCtrl' , jobINSTANCE)
+#        AddJob(jobTEMPLATE, 'ctrlpc_bkg'        , jobINSTANCE)
+#        AddJob(jobTEMPLATE, 'ctrlpc_seq'        , jobINSTANCE)
+#
+#        return send_mesg_to_web( name='btnRUN', stat='buttonClicked', mesg='Executing jobs')
+#
+#    AddJob(jobTEMPLATE, 'ModulePWRUpper'    , jobINSTANCE)
+#    AddJob(jobTEMPLATE, 'ModulePWRLower'    , jobINSTANCE)
+#    AddJob(jobTEMPLATE, 'ModulePWRHexaCtrl' , jobINSTANCE)
+#    AddJob(jobTEMPLATE, 'ntu8tester'        , jobINSTANCE)
+#
+#    return send_mesg_to_web( name='btnRUN', stat='buttonClicked', mesg='Executing jobs')
+#
+#@app_b.route('/buttonSTOP', methods=['POST'])
+#def buttonSTOP():
+#    jobTEMPLATE = '{}.Stop'
+#    jobINSTANCE = 'Stop'
+#    app_bkgrun.ClearJob()
+#
+#
+#    if DEBUG_MODE:
+#        AddJob1(0,jobTEMPLATE, 'ctrlpc_seq'        , jobINSTANCE)
+#        AddJob1(0,jobTEMPLATE, 'ctrlpc_bkg'        , jobINSTANCE)
+#        #AddJob(jobTEMPLATE, 'ModulePWRUpper'    , jobINSTANCE)
+#        #AddJob(jobTEMPLATE, 'ModulePWRLower'    , jobINSTANCE)
+#        #AddJob(jobTEMPLATE, 'ModulePWRHexaCtrl' , jobINSTANCE)
+#
+#        return send_mesg_to_web( name='btnSTOP', stat='buttonClicked', mesg='All jobs are stopped')
+#
+#    #for job_name, pyMODULE in _VARS_.cmders.items():
+#    #    n = jobTEMPLATE.format(job_name)
+#    #    app_bkgrun.AddJob(n, pyMODULE.Stop)
+#    ## prevent button status updated once clicked. Lock it as clicked!
+#    #return send_mesg_to_web( name='btnSTOP', stat='buttonClicked', mesg='All jobs are stopped')
+#    AddJob(jobTEMPLATE, 'ntu8tester'        , jobINSTANCE)
+#    AddJob(jobTEMPLATE, 'ModulePWRUpper'    , jobINSTANCE)
+#    AddJob(jobTEMPLATE, 'ModulePWRLower'    , jobINSTANCE)
+#    AddJob(jobTEMPLATE, 'ModulePWRHexaCtrl' , jobINSTANCE)
+#
+#    return send_mesg_to_web( name='btnSTOP', stat='buttonClicked', mesg='All jobs are stopped')
+#
+#
+#@app_b.route('/buttonDESTROY', methods=['POST'])
+#def buttonDESTROY():
+#    jobTEMPLATE = '{}.Destroy'
+#    jobINSTANCE = 'Destroy'
+#    app_bkgrun.ClearJob()
+#
+#
+#    if DEBUG_MODE:
+#        AddJob1(0,jobTEMPLATE, 'ctrlpc_bkg'        , jobINSTANCE)
+#        AddJob1(0,jobTEMPLATE, 'ctrlpc_seq'        , jobINSTANCE)
+#        #AddJob(jobTEMPLATE, 'ModulePWRUpper'    , jobINSTANCE)
+#        #AddJob(jobTEMPLATE, 'ModulePWRLower'    , jobINSTANCE)
+#        #AddJob(jobTEMPLATE, 'ModulePWRHexaCtrl' , jobINSTANCE)
+#        return send_mesg_to_web( name='btnDESTROY', stat='buttonClicked', mesg='All jobs are stopped')
+#
+#
+#    #for job_name, pyMODULE in _VARS_.cmders.items():
+#    #    n = jobTEMPLATE.format(job_name)
+#    #    app_bkgrun.AddJob(n, pyMODULE.Destroy)
+#    #return send_mesg_to_web( name='btnDESTROY', stat='buttonClicked', mesg='All jobs are stopped')
+#    AddJob(jobTEMPLATE, 'ntu8tester'        , jobINSTANCE)
+#    AddJob(jobTEMPLATE, 'ModulePWRUpper'    , jobINSTANCE)
+#    AddJob(jobTEMPLATE, 'ModulePWRLower'    , jobINSTANCE)
+#    AddJob(jobTEMPLATE, 'ModulePWRHexaCtrl' , jobINSTANCE)
+#    return send_mesg_to_web( name='btnDESTROY', stat='buttonClicked', mesg='All jobs are stopped')
 
 
 def module_init(app):
