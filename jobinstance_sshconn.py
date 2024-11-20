@@ -41,6 +41,7 @@ def execute_command_with_timeout(ssh_client, logOUT, logERR, command, timeout):
         while True:
             if not IsActivate(ssh_client):
                 logERR.warning('[Abort] SSH Connection was closed. Abort current job')
+                break
 
             # Use select to wait for either stream to have data
             ready_channels, _, _ = select.select([stdout.channel, stderr.channel], [], [], timeout)
