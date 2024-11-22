@@ -214,12 +214,15 @@ def test_jobunit():
     arg_config = {
         'prefix': 'default',
     }
+    arg_const_config = {
+            'ip2': 'ntugrid5.phys.ntu.edu.tw'
+    }
     timeout = 0.4
 
     job_unit = JobInstance(
             host, user, pkey, timeout,
             log_stdout, log_stderr,
-            cmd_template, arg_config, {}) # asdf
+            cmd_template, arg_config, arg_const_config) # asdf
 
     job_unit.Initialize()
     job_unit.Configure( {'prefix': 'confiugred'} )
@@ -243,10 +246,11 @@ def YamlConfiguredJobInstance(yamlLOADEDdict):
         basic_pars = config['basic_parameters']
         cmd_templates = config['cmd_templates']
         cmd_arguments = config['cmd_arguments']
+        cmd_const_arguments = config['cmd_const_arguments']
         job_unit = JobInstance(
                 basic_pars['host'], basic_pars['user'], basic_pars['pkey'], basic_pars['timeout'],
                 log_stdout, log_stderr,
-                cmd_templates, cmd_arguments, {} #asdf
+                cmd_templates, cmd_arguments, cmd_const_arguments
         )
     except KeyError as e:
         raise KeyError(f'Invalid key in yaml config "{ config }"') from e
@@ -261,11 +265,13 @@ basic_parameters:
   pkey: '/Users/noises/.ssh/toNTU8'
 cmd_templates:
   'init': 'echo "connection established"'
-  'run': 'python3 -u main_job.py; echo "config: {prefix}"'
+  'run': 'python3 -u main_job.py; echo "config: {prefix}", echo "additional config: {ip2}"'
   'stop': 'exit'
   'del': ''
 cmd_arguments:
   prefix: default
+cmd_const_arguments:
+  ip2: ntugrid5.phys.ntu.edu.tw
 logging:
   stdout:
     name: out
@@ -317,7 +323,7 @@ logging:
     job_instance.Run()
 if __name__ == "__main__":
     test_direct_run()
-    #exit()
+    exit()
     test_jobunit()
-    #exit()
+    exit()
     test_YamlConfiguredJobInstance()
