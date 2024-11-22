@@ -8,6 +8,7 @@ ntu8_job:
     'init': 'echo "connection established"'
     'run': 'python3 -u main_job.py; echo "config: {prefix}"'
     'stop': 'exit'
+    'del': ''
   cmd_arguments:
     prefix: default
   logging:
