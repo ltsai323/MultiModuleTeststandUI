@@ -1,0 +1,46 @@
+cmdPC:
+  basic_parameters:
+    timeout: 0.4
+    host: 192.168.50.143
+    user: ntucms
+    pkey: 'identity file required'
+  cmd_templates:
+    'init': 'echo connection established'
+    'run': 'cd /home/ntucms/V3LD_hexactrl && ./run.sh {runID}'
+    'stop': ''
+    'del': ''
+  cmd_arguments:
+    runID: ''
+  logging:
+    stdout:
+      name: cmdOUT
+      file: log_cmdPC.txt
+      filters: {}
+    stderr:
+      name: cmdERR
+      file: log_cmdPC.txt
+      filters: {}
+        
+
+hexCtrl:
+  basic_parameters:
+    timeout: 0.4
+    host: 192.168.50.146
+    user: root
+    pkey: 'identity file required'
+  cmd_templates:
+    'init': './turnOn_FW_V3.sh'
+    'run': 'systemctl restart daq-server.service && systemctl restart i2c-server.service'
+    'stop': ''
+    'del': './turnOff.sh'
+      
+  cmd_arguments: {}
+  logging:
+    stdout:
+      name: hexCtrlOUT
+      file: log_hexaCtrl.txt
+      filters: {}
+    stderr:
+      name: hexCtrlERR
+      file: log_hexaCtrl.txt
+      filters: {}

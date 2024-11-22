@@ -6,14 +6,14 @@ basic_parameters:
   pkey: '/Users/noises/.ssh/toNTU8'
 cmd_templates:
   'init': 'echo "connection established"'
-  'run': 'python3 -u main_job.py; echo "config: {prefix}"'
+  'run': 'while true; do echo "{hi_mesg}"; sleep 1; done'
   'stop': 'exit'
 cmd_arguments:
-  prefix: default
+  hi_mesg: hiiii
 logging:
   stdout:
     name: out
-    file: log_stdout.txt
+    file: log_stdout2.txt
     filters:
       - indicator: running
         threshold: 0
@@ -33,7 +33,7 @@ logging:
         filter_method: exact
   stderr:
     name: err
-    file: log_stderr.txt
+    file: log_stderr2.txt
     filters:
       - indicator: running
         threshold: 0
