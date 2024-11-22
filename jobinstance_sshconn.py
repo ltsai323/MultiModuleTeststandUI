@@ -92,10 +92,11 @@ def test_direct_run():
     ssh_client.close()
     log_stdout.info('end of test_direct_run()')
 
-class JobInstance:
+import jobinstance_base
+class JobInstance(jobinstance_base.JobInstanceBase):
     def __init__(self, hostNAME:str, userNAME:str, privateKEYfile:str, timeOUT:float,
                  stdOUT, stdERR,
-                 cmdTEMPLATEs:dict, argCONFIGs:dict):
+                 cmdTEMPLATEs:dict, argCONFIGs:dict, argSETUPs:dict):
 
         self.ssh_client = paramiko.SSHClient()
         self.ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -106,15 +107,31 @@ class JobInstance:
 
         self.log = stdOUT
         self.err = stdERR
-        self.config = argCONFIGs
-        self.cmd_template = cmdTEMPLATEs
+
+        self.set_cmd_template(cmdTEMPLATEs)
+        self.set_config(argCONFIGs)
+        self.set_config_const(argSETUPs)
+    def __del__(self):
+        cmd_del = self.get_full_command_from_cmd_template('del')
+        if cmd_del:
+            try:
+                self.ssh_client.connect(hostname=self.host, username=self.user, pkey=self.pkey)
+                execute_command_with_timeout(self.ssh_client,
+                                            self.log, self.err,
+                                            cmd_del, timeout = 0.4)
+            except Exception as e:
+                self.err.error(f'Unable to send cmd "del":"{ cmd_del }" to server')
+                self.err.error(e)
+                if DEBUG_MODE: raise
+            finally:
+                self.ssh_client.close()
 
     def Initialize(self):
         try:
             self.ssh_client.connect(hostname=self.host, username=self.user, pkey=self.pkey)
             execute_command_with_timeout(self.ssh_client,
                                          self.log, self.err,
-                                         self.cmd_template['init'], timeout = 0.4)
+                                         self.get_full_command_from_cmd_template('init'), timeout = 0.4)
             execute_command_with_timeout(self.ssh_client,
                                          self.log, self.err,
                                          'echo FINISHED', timeout = 0.4)
@@ -124,30 +141,30 @@ class JobInstance:
             if DEBUG_MODE: raise
         finally:
             self.ssh_client.close()
-    def Configure(self, updatedCONF:dict):
+    def Configure(self, updatedCONF:dict) -> bool:
         '''
         Update old argument config only if all configs in old argument config being confirmed.
         If there are some redundant key - value pair in updatedCONF, these configs are ignored.
 
         updatedCONF: dict. It should have the same format with original arg config
         '''
-        valid_keys = [ 1  if oldkey in updatedCONF else 0 for oldkey in self.config.keys() ]
-        if sum(valid_keys) == len(self.config):
-            for key, newval in updatedCONF.items():
-                self.config[key] = newval
-        else:
-            self.err.warning('ConfigureFailed')
-            self.err.warning(f'[InvalidNewConfig] {updatedCONF}')
-            self.err.warning(f'[OrigConfig] {self.config}')
+        for key, value in updatedCONF.items():
+            error_mesg = self.set_config_value(key,value)
+            if error_mesg:
+                self.err.warning(f'[{error_mesg}] Invalid configuration from config: key "{ key }" and value "{ value }".')
+                return False
+        return True
+
+
+        
     def Run(self):
         try:
             self.ssh_client.connect(hostname=self.host, username=self.user, pkey=self.pkey)
 
-            run_cmd = self.cmd_template['run'].format(**self.config)
             if IsActivate(self.ssh_client):
                 execute_command_with_timeout(self.ssh_client,
                                             self.log, self.err,
-                                            run_cmd, timeout = 0.4)
+                                            self.get_full_command_from_cmd_template('run'), timeout = 0.4)
             if IsActivate(self.ssh_client):
                 execute_command_with_timeout(self.ssh_client,
                                             self.log, self.err,
@@ -165,10 +182,7 @@ class JobInstance:
         while IsActivate(self.ssh_client):
             self.ssh_client.close()
             time.sleep(0.2)
-    def Destroy(self):
-        while IsActivate(self.ssh_client):
-            self.ssh_client.close()
-            time.sleep(0.2)
+
 
 def test_jobunit():
     host = 'ntugrid8.phys.ntu.edu.tw'
@@ -194,7 +208,8 @@ def test_jobunit():
     cmd_template = {
         'init': 'echo "connection established"',
         'run': 'python3 -u main_job.py; echo "config: {prefix}"',
-        'stop': 'exit'
+        'stop': '',
+        'del': ''
     }
     arg_config = {
         'prefix': 'default',
@@ -204,13 +219,12 @@ def test_jobunit():
     job_unit = JobInstance(
             host, user, pkey, timeout,
             log_stdout, log_stderr,
-            cmd_template, arg_config)
+            cmd_template, arg_config, {}) # asdf
 
     job_unit.Initialize()
     job_unit.Configure( {'prefix': 'confiugred'} )
     job_unit.Run()
 
-    exit()
 
 def YamlConfiguredJobInstance(yamlLOADEDdict):
     config = yamlLOADEDdict
@@ -232,7 +246,7 @@ def YamlConfiguredJobInstance(yamlLOADEDdict):
         job_unit = JobInstance(
                 basic_pars['host'], basic_pars['user'], basic_pars['pkey'], basic_pars['timeout'],
                 log_stdout, log_stderr,
-                cmd_templates, cmd_arguments
+                cmd_templates, cmd_arguments, {} #asdf
         )
     except KeyError as e:
         raise KeyError(f'Invalid key in yaml config "{ config }"') from e
@@ -249,6 +263,7 @@ cmd_templates:
   'init': 'echo "connection established"'
   'run': 'python3 -u main_job.py; echo "config: {prefix}"'
   'stop': 'exit'
+  'del': ''
 cmd_arguments:
   prefix: default
 logging:
@@ -301,6 +316,8 @@ logging:
     job_instance.Configure( {'prefix': 'confiugred'} )
     job_instance.Run()
 if __name__ == "__main__":
-    #test_direct_run()
-    #test_jobunit()
+    test_direct_run()
+    #exit()
+    test_jobunit()
+    #exit()
     test_YamlConfiguredJobInstance()
