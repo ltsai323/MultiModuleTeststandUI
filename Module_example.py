@@ -51,6 +51,8 @@ def test_YamlConfiguredModuleExample():
 #      'stop': 'exit'
 #    cmd_arguments:
 #      prefix: default
+#    cmd_const_arguments:
+#      prefix2: default2
 #    logging:
 #      stdout:
 #        name: out
