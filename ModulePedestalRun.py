@@ -94,23 +94,21 @@ class Module_example_2sshconnection(ModuleBase.ModuleBase):
     The example module that booking 2 ssh job instance.
     '''
     def __init__(self, yamlLOADEDdict:dict):
-        self.ssh_check = jobinstance_sshconn.YamlConfiguredJobInstance(yamlLOADEDdict['ntu8_check'])
-        self.ssh_job   = jobinstance_sshconn.YamlConfiguredJobInstance(yamlLOADEDdict['ntu8_job'])
+        self.cmdPC   = jobinstance_sshconn.YamlConfiguredJobInstance(yamlLOADEDdict['cmdPC'])
+        self.hexCtrl = jobinstance_sshconn.YamlConfiguredJobInstance(yamlLOADEDdict['hexCtrl'])
     def __del__(self):
-        self.ssh_check.Stop()
-        self.ssh_job  .Stop()
-        del self.ssh_check
-        del self.ssh_job
+        self.cmdPC.Stop()
+        self.hexCtrl.Stop()
+        del self.cmdPC
+        del self.hexCtrl
 
     def Initialize(self):
-        self.ssh_check.Initialize()
-        self.ssh_job.Initialize()
+        self.cmdPC  .Initialize()
+        self.hexCtrl.Initialize()
 
     def Configure(self, updatedCONF:dict):
-        self.ssh_check.Configure(updatedCONF['ntu8_check'])
-        self.ssh_job  .Configure(updatedCONF['ntu8_job'])
-    def show_configurations(self) -> dict:
-        return { 'ntu8_check': self.ssh_check.show_configurations() ,'ntu8_job'  : self.ssh_job  .show_configurations() }
+        self.sshconn.Configure(updatedCONF['ntu8_check'])
+        self.sshconn.Configure(updatedCONF['ntu8_job'])
 
     def Run(self):
         # Put self.ssh_check.Run() in background
@@ -136,13 +134,8 @@ def test_YamlConfiguredModuleExample():
     moduletest = Module_example_2sshconnection(loaded_conf)
 
     moduletest.Initialize()
-    moduletest.Configure( {'ntu8_job'  : {'prefix': 'configured'}, 'ntu8_check': {'asdklj':333} } )
+    #moduletest.Configure( {'ntu8_test': {'prefix': 'configured'} } )
     moduletest.Run()
-
-    print(moduletest.show_configurations())
-
-
-    del moduletest
 
 if __name__ == "__main__":
     test_YamlConfiguredModuleExample()

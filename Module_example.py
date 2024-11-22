@@ -15,20 +15,24 @@ class Module_example(ModuleBase.ModuleBase):
     '''
     def __init__(self, yamlLOADEDdict:dict):
         self.sshconn = jobinstance_sshconn.YamlConfiguredJobInstance(yamlLOADEDdict['ntu8_test'])
+    def __del__(self):
+        self.sshconn.Stop()
+        del self.sshconn
 
     def Initialize(self):
         self.sshconn.Initialize()
 
-    def Configure(self, updatedCONF:dict):
-        self.sshconn.Configure(updatedCONF['ntu8_test'])
+    def Configure(self, updatedCONF:dict) -> bool:
+        is_configured = self.sshconn.Configure(updatedCONF['ntu8_test'])
+        return is_configured
+    def show_configurations(self) -> dict:
+        return { 'ntu8_test': self.sshconn.show_configurations() }
+
 
     def Run(self):
         self.sshconn.Run()
 
     def Stop(self):
-        self.sshconn.Stop()
-
-    def Destroy(self):
         self.sshconn.Stop()
 
 
@@ -100,6 +104,7 @@ def test_YamlConfiguredModuleExample():
     moduletest.Initialize()
     moduletest.Configure( {'ntu8_test': {'prefix': 'configured'} } )
     moduletest.Run()
+    pprint(moduletest.show_configurations())
 
 
     
