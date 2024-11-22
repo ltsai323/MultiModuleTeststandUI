@@ -11,6 +11,7 @@ cmdPC:
     'del': ''
   cmd_arguments:
     runID: ''
+  cmd_const_arguments: {}
   logging:
     stdout:
       name: cmdOUT
@@ -35,6 +36,7 @@ hexCtrl:
     'del': './turnOff.sh'
       
   cmd_arguments: {}
+  cmd_const_arguments: {}
   logging:
     stdout:
       name: hexCtrlOUT
