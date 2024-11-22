@@ -11,6 +11,7 @@ ntu8_job:
     'del': ''
   cmd_arguments:
     prefix: default
+  cmd_const_arguments: {}
   logging:
     stdout:
       name: out_job
@@ -60,8 +61,10 @@ ntu8_check:
     'init': 'echo "connection established"'
     'run': 'while true; do echo "{hi_mesg}"; sleep 1; done'
     'stop': 'exit'
+    'del': ''
   cmd_arguments:
     hi_mesg: hiiii
+  cmd_const_arguments: {}
   logging:
     stdout:
       name: out_check
