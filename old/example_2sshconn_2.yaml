@@ -1,0 +1,50 @@
+
+basic_parameters:
+  timeout: 0.4
+  host: 'ntugrid8.phys.ntu.edu.tw'
+  user: 'ltsai'
+  pkey: '/Users/noises/.ssh/toNTU8'
+cmd_templates:
+  'init': 'echo "connection established"'
+  'run': 'while true; do echo "{hi_mesg}"; sleep 1; done'
+  'stop': 'exit'
+cmd_arguments:
+  hi_mesg: hiiii
+logging:
+  stdout:
+    name: out
+    file: log_stdout2.txt
+    filters:
+      - indicator: running
+        threshold: 0
+        pattern: 'RUNNING'
+        filter_method: exact
+      - indicator: Type0ERROR
+        threshold: 0
+        pattern: '[running] 0'
+        filter_method: exact
+      - indicator: Type3ERROR
+        threshold: 0
+        pattern: '[running] 3'
+        filter_method: contain
+      - indicator: idle
+        threshold: 0
+        pattern: 'FINISHED'
+        filter_method: exact
+  stderr:
+    name: err
+    file: log_stderr2.txt
+    filters:
+      - indicator: running
+        threshold: 0
+        pattern: 'RUNNING'
+        filter_method: exact
+      - indicator: Type0ERROR
+        threshold: 0
+        pattern: '[running] 0'
+        filter_method: exact
+      - indicator: RaiseError
+        threshold: 0
+        pattern: 'Error'
+        filter_method: contain
+        

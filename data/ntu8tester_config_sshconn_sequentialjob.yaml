@@ -25,7 +25,8 @@ parameters:
 
 stagedCMD:
   'TEST':
-    cmd: 'echo {boardtype} ; sleep 5 ; echo {boardID}'
+    #cmd: 'echo "[running] SSH connection activated" ; python3 main_job.py&  wait;  echo "[running] job finished!!!"'
+    cmd: 'echo "[running] SSH connection activated" ; sh main_job.sh ;  echo "[running] job finished!!!"'
     type: 'waiting_for_job_ended' # waiting_for_job_ended or no_waiting
     delay: 2.0
 
