@@ -3,6 +3,16 @@ from abc import ABC, abstractmethod
 VALID_CONFIG = '' # Nothing means it is a valid config
 
 class JobInstanceBase(ABC):
+    '''
+    A Job Instance defined used single function. Define the following functions:
+    :__init__: Initialize this object
+    :__del__:  delete this object. This is used as the "Destroy" action
+    :Initialize: Different from __init__(), this function needs to check all runtime dependencies.
+                 For example, check loaded file, check SSH destination.
+    :Configure: Input a dictionary for update self.config
+    :Run: Run function without any argument. You need to use Configure() to set all arguments.
+    :Stop: Stop the running actions.
+    '''
 
     @abstractmethod
     def __init__(self):
