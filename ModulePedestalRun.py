@@ -23,7 +23,7 @@ def waiting_for_thread_finished(t):
 
 
 
-class Module_example_2sshconnection(ModuleBase.ModuleBase):
+class ModuleExample_2sshconnection(ModuleBase.ModuleBase):
     '''
     The example module that booking 2 ssh job instance.
     '''
@@ -65,10 +65,10 @@ class Module_example_2sshconnection(ModuleBase.ModuleBase):
 
 def test_YamlConfiguredModuleExample():
     import yaml
-    with open('data/module_pedestal_run.yaml','r') as f:
+    with open('data/modulepedestal_run.yaml','r') as f:
         loaded_conf = yaml.safe_load(f)
 
-    moduletest = Module_example_2sshconnection(loaded_conf)
+    moduletest = ModuleExample_2sshconnection(loaded_conf)
 
     moduletest.Initialize()
     #moduletest.Configure( {'ntu8_test': {'prefix': 'configured'} } )
