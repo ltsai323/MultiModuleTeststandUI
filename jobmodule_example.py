@@ -5,11 +5,11 @@ import time
 import LoggingMgr
 from pprint import pprint
 import jobinstance_sshconn
-import ModuleBase
+import jobmodule_base
 
 DEBUG_MODE = True
 
-class Module_example(ModuleBase.ModuleBase):
+class JobModuleExample(jobmodule_base.JobModule_base):
     '''
     The example module that booking a job instance.
     '''
@@ -37,7 +37,7 @@ class Module_example(ModuleBase.ModuleBase):
 
 
 
-def test_YamlConfiguredModuleExample():
+def test_YamlConfiguredJobModuleExample():
 #    yaml_content = '''
 #ntu8_test:
 #    basic_parameters:
@@ -62,11 +62,11 @@ def test_YamlConfiguredModuleExample():
 #            threshold: 0
 #            pattern: 'RUNNING'
 #            filter_method: exact
-#          - indicator: Type0ERROR
+#          - indicator: 'Type0ERROR'
 #            threshold: 0
 #            pattern: '[running] 0'
 #            filter_method: exact
-#          - indicator: Type3ERROR
+#          - indicator: 'Type3ERROR'
 #            threshold: 0
 #            pattern: '[running] 3'
 #            filter_method: contain
@@ -82,7 +82,7 @@ def test_YamlConfiguredModuleExample():
 #            threshold: 0
 #            pattern: 'RUNNING'
 #            filter_method: exact
-#          - indicator: Type0ERROR
+#          - indicator: 'Type0ERROR'
 #            threshold: 0
 #            pattern: '[running] 0'
 #            filter_method: exact
@@ -98,10 +98,10 @@ def test_YamlConfiguredModuleExample():
 #    with open('the_conf.yaml','r') as f:
 #        loaded_conf = yaml.safe_load(f)
     import yaml
-    with open('data/module_example.yaml','r') as f:
+    with open('data/moduleexample.yaml','r') as f:
         loaded_conf = yaml.safe_load(f)
 
-    moduletest = Module_example(loaded_conf)
+    moduletest = JobModuleExample(loaded_conf)
 
     moduletest.Initialize()
     moduletest.Configure( {'ntu8_test': {'prefix': 'configured'} } )
@@ -116,4 +116,4 @@ def test_YamlConfiguredModuleExample():
 
 
 if __name__ == "__main__":
-    test_YamlConfiguredModuleExample()
+    test_YamlConfiguredJobModuleExample()

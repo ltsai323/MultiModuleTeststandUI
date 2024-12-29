@@ -1,14 +1,14 @@
 const statusButtonMap = {
-    "none": ["btnCONN"],
-    "connected": ["btnINIT", "btnEXIT"],
-    "initialized": ["btnCONF", "btnEXIT"],
-    "configured": ["btnEXEC", "btnCONF", "btnEXIT"],
-    "running": ["btnSTOP", "btnEXIT"],
-    "stopped": ["btnCONF", "btnEXIT"],
-    "idle": ["btnCONF", "btnEXIT"],
-    "error": ["btnEXIT"],
-    "halt": ["btnINIT", "btnEXIT"],
-    "wait": ["btnEXIT"]
+    "none": ["#btnCONN", ".jobmode"],
+    "connected": ["#btnINIT", "#btnEXIT", ".jobmode"],
+    "initialized": ["#btnCONF", "#btnEXIT"],
+    "configured": ["#btnEXEC", "#btnCONF", "#btnEXIT"],
+    "running": ["#btnSTOP", "#btnEXIT"],
+    "stopped": ["#btnCONF", "#btnEXIT"],
+    "idle": ["#btnCONF", "#btnEXIT"],
+    "error": ["#btnEXIT"],
+    "halt": ["#btnINIT", "#btnEXIT", ".jobmode"],
+    "wait": ["#btnEXIT"]
 };
 //    "none":
 //    "connected":
@@ -26,12 +26,20 @@ function updateButtonStates(status) {
     console.log(`[updateButtonStatus] got status ${status}`);
     // Disable all buttons initially
     $(".ctrlbtn").prop("disabled", true);
+    $(".jobmode").prop("disabled", true);
 
     // Get the buttons to enable for the current status
     const buttonsToEnable = statusButtonMap[status] || [];
-    buttonsToEnable.forEach(buttonId => {
-        //console.log(`set button ${buttonId} !`);
-        $("#" + buttonId).prop("disabled", false);
+    buttonsToEnable.forEach(btnIdentifier => {
+        //console.log(`set button ${btnIdentifier} !`);
+        //#("#" + btnIdentifier).prop("disabled", false);
+        if ('#' === btnIdentifier[0]) // search ID
+        { document.getElementById(btnIdentifier.slice(1)).disabled = false; }
+        if ('.' === btnIdentifier[0]) // search class
+        {
+          const buttons = document.querySelectorAll(btnIdentifier);
+          if (buttons.length > 0) { buttons.forEach(btn => btn.disabled = false); }
+        }
     });
 }
 

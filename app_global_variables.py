@@ -2,6 +2,7 @@
 import queue
 import WebStatus
 import logging
+from threading import local
 
 class GlobalVars:
     def __init__(self):
@@ -21,6 +22,9 @@ JOB_QUEUE = 'queue.Queue()'
 # Configure the logging
 
 MESG_LOG = 'logging.getLogger("AppLogger")'
+# MESG_LOG.log('hiii')
+# MESG_LOG.warning('jjj')
+
 
 
 
@@ -46,5 +50,6 @@ class TestConfig(BasicConfig):
         datefmt="%Y-%m-%d %H:%M:%S",
     )
     MESG_LOG = logging.getLogger("AppLogger")
+
 
 # use app.config.from_object(TestConfig) to initialize the variables

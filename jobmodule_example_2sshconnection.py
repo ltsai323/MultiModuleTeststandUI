@@ -5,7 +5,7 @@ import time
 import LoggingMgr
 from pprint import pprint
 import jobinstance_sshconn
-import ModuleBase
+import jobmodule_base
 
 DEBUG_MODE = True
 
@@ -89,7 +89,7 @@ def test_YamlConfiguredJobInstance():
 
 
 
-class Module_example_2sshconnection(ModuleBase.ModuleBase):
+class JobModuleExample_2sshconnection(jobmodule_base.JobModule_base):
     '''
     The example module that booking 2 ssh job instance.
     '''
@@ -124,16 +124,20 @@ class Module_example_2sshconnection(ModuleBase.ModuleBase):
         
 
     def Stop(self):
-        self.sshconn.Stop()
+        self.ssh_job  .Stop()
+        self.ssh_check.Stop()
 
 
-
-def test_YamlConfiguredModuleExample():
+def JobModuleFactory(yamlFILE):
     import yaml
-    with open('data/module_example_2sshconnection.yaml','r') as f:
+    with open(yamlFILE,'r') as f:
         loaded_conf = yaml.safe_load(f)
 
-    moduletest = Module_example_2sshconnection(loaded_conf)
+    return JobModuleExample_2sshconnection(loaded_conf)
+
+
+def test_YamlConfiguredJobModuleExample():
+    moduletest = JobModuleFactory('data/moduleexample_2sshconnection.yaml')
 
     moduletest.Initialize()
     moduletest.Configure( {'ntu8_job'  : {'prefix': 'configured'}, 'ntu8_check': {'asdklj':333} } )
@@ -145,4 +149,4 @@ def test_YamlConfiguredModuleExample():
     del moduletest
 
 if __name__ == "__main__":
-    test_YamlConfiguredModuleExample()
+    test_YamlConfiguredJobModuleExample()

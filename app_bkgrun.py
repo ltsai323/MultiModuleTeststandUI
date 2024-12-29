@@ -12,6 +12,7 @@ from app_socketio import socketio
 import requests
 import tools.MesgHub as MesgHub
 from app_global_variables import _LOG_CENTER_, _VARS_
+import app_global_variables as gVAR
 import app_actbtn
 
 
