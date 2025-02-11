@@ -8,7 +8,7 @@ I'm using this file manages the socket variable
 from flask_socketio import SocketIO, emit
 from datetime import datetime
 async_mode = None
-socketio = SocketIO(async_mode=async_mode)
+socketio = SocketIO(async_mode=async_mode, max_http_buffer_size=1e7)
 import app_global_variables as gVAR
 from flask import current_app
 

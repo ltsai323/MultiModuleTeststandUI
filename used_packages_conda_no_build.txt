@@ -1,7 +1,7 @@
 # Generated result from `conda env export --no-builds`
 # This file may be used to create an environment using:
 # $ conda create --name <env> --file <this file>
-name: flask
+# name: flask
 channels:
   - defaults
   - anaconda

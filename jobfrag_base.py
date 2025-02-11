@@ -2,9 +2,9 @@ from abc import ABC, abstractmethod
 
 VALID_CONFIG = '' # Nothing means it is a valid config
 
-class JobInstanceBase(ABC):
+class JobFragBase(ABC):
     '''
-    A Job Instance defined used single function. Define the following functions:
+    A Job Fragment defined used single function. Define the following functions:
     :__init__: Initialize this object
     :__del__:  delete this object. This is used as the "Destroy" action
     :Initialize: Different from __init__(), this function needs to check all runtime dependencies.
