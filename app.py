@@ -29,31 +29,7 @@ This page shows action buttons configured from `app_actbtn.py`.
 And `app_bkgrun.py` configures the jobs sent to bkg
     '''
 
-    # I should delete this block but later
-    # ''' '''
-    # form_dict = app_actbtn.AllAvailableInputFields()
-
-    # available_form_dict = {}
-    # for n, v in form_dict.items():
-    #     field_names = [field.type for field in v]
-    #     if len(field_names) > 1:
-    #         BUG(f'all available fields in [{n}]: ', field_names)
-    #         available_form_dict[n] = v
-
-
-
-    # BUG('get current status : ', app_bkgrun.get_current_status())
-    # available_buttons = app_bkgrun.get_current_status()
-    # the_stat = app_bkgrun.app_b.web_stat
-    # ''' '''
-
-
-    # should add fetch() function to index.html that require current status from api/current_status or use "initialize" button
-
-    #return render_template('c.html')
-    #return render_template('b.html')
     return render_template('index.html')
-    #return render_template('index.html', forms = available_form_dict, availableBUTTONs = available_buttons, webSTAT = the_stat)
 
 
 @app.route('/show_logpage')
@@ -91,12 +67,10 @@ if __name__ == '__main__':
     #app.register_blueprint(app_bkgrun.app_b)
     #app_bkgrun.module_init(app_bkgrun.app_b)
 
-    # how do I handle multiple connection? -> Disable duplicated connection?
-
     socketio.init_app(app)
     #BUG(f'init of the server : initialize of the web status :', app_bkgrun.get_current_status())
     host='0.0.0.0'
-    #host='192.168.50.60'
+    #host='192.168.51.213'
     port=5001
     print(f'[Web activated] {host}@{port}')
     socketio.run(app,host=host, port=port)

@@ -5,6 +5,8 @@
 * [x] Let DynamicForm able to load current values from each pymodule configurations.
 * [ ] Let the webpage loads current button lock status
 ### pymodule message history
-* [ ] Better handle error message.
-* [ ] Build pymodule tab shows error message from individual pymodule only
-* [ ] Record pymodule history for reconnection. (maybe for 10 history?)
+* [x] Better handle error message.
+* [x] Build pymodule tab shows error message from individual pymodule only
+* [x] Record pymodule history for reconnection. (maybe for 10 history?)
+
+### 

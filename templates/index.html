@@ -76,6 +76,22 @@
                 <span id="text">New Board</span>
             </button>
         </div>
+        <div>
+        <form id="radio-form">
+          <label>
+            <input class='jobmode' type="radio" name="mode" value="test" checked>
+            Test
+          </label>
+          <label>
+            <input class='jobmode' type="radio" name="mode" value="mode 1">
+            Mode 1
+          </label>
+          <label>
+            <input class='jobmode' type="radio" name="mode" value="mode 2">
+            Mode 2
+          </label>
+        </form>
+        </div>
 
 
         <div class="control-button-container">
@@ -91,7 +107,7 @@
 
             <!-- Message Box -->
             <div class="message-box">
-                This is the message area. It will adjust its position and width based on screen size.
+                We need to navigate the virtual PCI feed!
             </div>
         </div>
 
@@ -137,129 +153,6 @@
                 </fieldset>
             </form>
         </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        <div class="status-block">
-            <div id="box_ctrlbtns">
-                <div class="vertical">
-                    <div class="horizontal">
-                        <button id="_btnCONN" class="ctrlbtn" >Connect</button>
-                        <input  id="_btnCONF" type="submit" form="pymodule_configurations" value="CONFIGURE" class="ctrlbtn">
-                        <button id="_btnSTOP" class="ctrlbtn" >Stop</button>
-                    </div>
-                    <div class="horizontal">
-                        <button id="_btnINIT" class="ctrlbtn" >Initialize</button>
-                        <button id="_btnEXEC" class="ctrlbtn" >Start</button>
-                        <button id="_btnEXIT" class="ctrlbtn" >Destroy</button>
-                    </div>
-                </div>
-            </div>
-            <div id="statusbox">
-                <p> Here is the log message </p>
-            </div>
-        </div>
-
-
-        <div class='centered-container'>
-        <div class="inputIDblock">
-            <form method="POST" action="/btnCONF" id="pymodule_configurations">
-                <input name="csrf_token" type="hidden" value="{{ csrf_token() }}"/>
-                <!-- <input name="csrf_token" type="hidden" value="{{ csrf_token() }}"/> --!>
-                <fieldset>
-                    <legend>Module ID Settings</legend>
-
-                    <div class="vertical">
-                        <div class="horizontal" id="inputIDrow1">
-                            <div>
-                                <button type="button" class="LED" id="LED1L"></button>
-                                <p>1L</p>
-                                <input class="form-check-input" id="moduleID1L" name="moduleID1L" type="text" placeholder="module ID">
-                            </div>
-                            <div>
-                                <button type="button" class="LED" id="LED1C"></button>
-                                <p>1C</p>
-                                <input class="form-check-input" id="moduleID1C" name="moduleID1C" type="text" placeholder="module ID">
-                            </div>
-                            <div>
-                                <button type="button" class="LED" id="grayLight"></button>
-                                <p>1R</p>
-                                <input class="form-check-input" id="moduleID1R" name="moduleID1R" type="text" placeholder="module ID">
-                            </div>
-                        </div>
-
-                    </div>
-                </fieldset>
-            </form>
-        </div>
-        </div>
-
-
-
-
-        <div> oldOLDOLDOLDOLD </div>
-
-        <div class='container-form'>
-            <form method="POST" action="/btnCONF" id="pymodule_configurations">
-                <input name="csrf_token" type="hidden" value="{{ csrf_token() }}"/>
-                <!-- <input name="csrf_token" type="hidden" value="{{ csrf_token() }}"/> --!>
-                <fieldset>
-                  <legend>Module ID Settings</legend>
-                  <div class="form-grid">
-                    <div class="form-row">
-                        <button type="button" id="LED1L"></button>
-                        <label>1L</label>
-                        <input type="text" placeholder="module ID" name="moduleID1L" id="moduleID1L">
-                    </div>
-                    <div class="form-row">
-                        <button type="button" id="LED1C"></button>
-                        <label>1C</label>
-                        <input type="text" placeholder="module ID" name="moduleID1C" id="moduleID1C">
-                    </div>
-                    <div class="form-row">
-                        <button type="button" id="LED1R"></button>
-                        <label>1R</label>
-                        <input type="text" placeholder="module ID" name="moduleID1R" id="moduleID1R">
-                    </div>
-
-                    <div class="form-row">
-                      <button type="button" class="LED" id="LED2L"></button>
-                      <p>2L</p>
-                      <input  id="moduleID2L" name="moduleID2L" type="text" placeholder="module ID">
-                    </div>
-                    <div class="form-row">
-                      <button type="button" class="LED" id="LED2C"></button>
-                      <p>2C</p>
-                      <input  id="moduleID2C" name="moduleID2C" type="text" placeholder="module ID">
-                    </div>
-                    <div class="form-row">
-                      <button type="button" class="LED" id="grayLight"></button>
-                      <p>2R</p>
-                      <input  id="moduleID2R" name="moduleID2R" type="text" placeholder="module ID">
-                    </div>
-                  </div>
-                </fieldset>
-            </form>
-        </div>
-
-        
-        <h1>Real-time Server Updates</h1>
-        <p id="server-data">Waiting for server response...</p>
     </div> <!-- end of main -->
 <script>
     // initialize the button status at start up

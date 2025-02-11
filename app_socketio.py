@@ -9,6 +9,8 @@ from flask_socketio import SocketIO, emit
 from datetime import datetime
 async_mode = None
 socketio = SocketIO(async_mode=async_mode)
+import app_global_variables as gVAR
+from flask import current_app
 
 
 @socketio.on('soctest')
@@ -16,6 +18,12 @@ def socket_test():
     current_time = datetime.now().strftime("%H:%M:%S")
     emit('soctest_response', {'data': f'Server time: {current_time}'})
 
+
+I = 0
+@socketio.on('socket_get_web_status')
+def socket_get_web_status():
+    emit('socket_get_web_status_response', {'status': current_app.config['WEB_STAT'].btn} )
+    #emit('socket_get_web_status_response', {'status': gVAR.WEB_STAT})
 
 ''' If you got error code 400
 The error raised due to incompatible socket version from socket source and socket client.
