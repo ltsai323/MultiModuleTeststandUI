@@ -30,6 +30,44 @@ python3 app.py
 ```
 then open the link [http://127.0.0.1:5001](http://127.0.0.1:5001)
 
+### run job fragments
+```
+#!/usr/bin/env sh
+python3 jobfrag_sshconn.py
+```
+To create a jobfrag, you need to make a function for your job like function [execute_command_with_timeout()](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/jobfrag_sshconn.py#L21).
+Then you need to test it individually like function [test_direct_run()](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/jobfrag_sshconn.py#L67C5-L67C20).
+
+Pack the function into an inherited class [JobFrag](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/jobfrag_sshconn.py#L95-L96).
+The GUI requires your function implementing the above functions
+```
+import jobfrag_base
+class JobFrag(jobfrag_base.JobFragBase):
+    def __init__(self, hostNAME:str, userNAME:str, privateKEYfile:str, timeOUT:float,
+                 stdOUT, stdERR,
+                 cmdTEMPLATEs:dict, argCONFIGs:dict, argSETUPs:dict):
+        # this function should allow the configurations input parameters
+        pass
+
+    def __del__(self):
+        pass
+
+    def Initialize(self):
+        pass
+
+    def Configure(self, updatedCONF:dict) -> bool:
+        # this function allows a input dictionary that GUI is able to update parameter
+        return True
+
+        
+    def Run(self):
+        pass
+
+    def Stop(self):
+        pass
+```
+such as the function cound be read as a module
+
 # Documents
 https://hep1.phys.ntu.edu.tw/~ltsai/html/index.html
 
