@@ -4,17 +4,17 @@ import select
 import time
 import LoggingMgr
 from pprint import pprint
-import jobinstance_sshconn
+import jobfrag_sshconn
 import jobmodule_base
 
 DEBUG_MODE = True
 
 class JobModuleExample(jobmodule_base.JobModule_base):
     '''
-    The example module that booking a job instance.
+    The example module that booking a job frag.
     '''
     def __init__(self, yamlLOADEDdict:dict):
-        self.sshconn = jobinstance_sshconn.YamlConfiguredJobInstance(yamlLOADEDdict['ntu8_test'])
+        self.sshconn = jobfrag_sshconn.YamlConfiguredJobFrag(yamlLOADEDdict['ntu8_test'])
     def __del__(self):
         self.sshconn.Stop()
         del self.sshconn

@@ -4,7 +4,7 @@ import select
 import time
 import LoggingMgr
 from pprint import pprint
-import jobinstance_sshconn
+import jobfrag_sshconn
 import jobmodule_base
 
 DEBUG_MODE = True
@@ -21,7 +21,7 @@ def waiting_for_thread_finished(t):
 
 
 '''
-def YamlConfiguredJobInstance(yamlLOADEDdict):
+def YamlConfiguredJobFrag(yamlLOADEDdict):
     config = yamlLOADEDdict
     try:
         #### configure the status output
@@ -38,7 +38,7 @@ def YamlConfiguredJobInstance(yamlLOADEDdict):
         basic_pars = config['basic_parameters']
         cmd_templates = config['cmd_templates']
         cmd_arguments = config['cmd_arguments']
-        job_unit = jobinstance_sshconn.JobInstance(
+        job_unit = jobfrag_sshconn.JobFrag(
                 basic_pars['host'], basic_pars['user'], basic_pars['pkey'], basic_pars['timeout'],
                 log_stdout, log_stderr,
                 cmd_templates, cmd_arguments
@@ -55,17 +55,17 @@ def pack_function_to_bkg_exec(func):
     return t
     
     
-def test_YamlConfiguredJobInstance():
+def test_YamlConfiguredJobFrag():
     infile1 = 'data/example_2sshconn_1.yaml'
     infile2 = 'data/example_2sshconn_2.yaml'
     import yaml
 
     with open(infile1,'r') as f:
         loaded_conf1 = yaml.safe_load(f)
-    job_unit1 = YamlConfiguredJobInstance(loaded_conf1)
+    job_unit1 = YamlConfiguredJobFrag(loaded_conf1)
     with open(infile2,'r') as f:
         loaded_conf2 = yaml.safe_load(f)
-    job_unit2 = YamlConfiguredJobInstance(loaded_conf2)
+    job_unit2 = YamlConfiguredJobFrag(loaded_conf2)
 
     job_unit2.Initialize()
     job_unit2.Configure( {'prefix': 'confiugred'} )
@@ -91,11 +91,11 @@ def test_YamlConfiguredJobInstance():
 
 class JobModuleExample_2sshconnection(jobmodule_base.JobModule_base):
     '''
-    The example module that booking 2 ssh job instance.
+    The example module that booking 2 ssh job frag.
     '''
     def __init__(self, yamlLOADEDdict:dict):
-        self.ssh_check = jobinstance_sshconn.YamlConfiguredJobInstance(yamlLOADEDdict['ntu8_check'])
-        self.ssh_job   = jobinstance_sshconn.YamlConfiguredJobInstance(yamlLOADEDdict['ntu8_job'])
+        self.ssh_check = jobfrag_sshconn.YamlConfiguredJobFrag(yamlLOADEDdict['ntu8_check'])
+        self.ssh_job   = jobfrag_sshconn.YamlConfiguredJobFrag(yamlLOADEDdict['ntu8_job'])
     def __del__(self):
         self.ssh_check.Stop()
         self.ssh_job  .Stop()

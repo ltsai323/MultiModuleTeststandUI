@@ -92,8 +92,8 @@ def test_direct_run():
     ssh_client.close()
     log_stdout.info('end of test_direct_run()')
 
-import jobinstance_base
-class JobInstance(jobinstance_base.JobInstanceBase):
+import jobfrag_base
+class JobFrag(jobfrag_base.JobFragBase):
     def __init__(self, hostNAME:str, userNAME:str, privateKEYfile:str, timeOUT:float,
                  stdOUT, stdERR,
                  cmdTEMPLATEs:dict, argCONFIGs:dict, argSETUPs:dict):
@@ -219,7 +219,7 @@ def test_jobunit():
     }
     timeout = 0.4
 
-    job_unit = JobInstance(
+    job_unit = JobFrag(
             host, user, pkey, timeout,
             log_stdout, log_stderr,
             cmd_template, arg_config, arg_const_config) # asdf
@@ -229,7 +229,7 @@ def test_jobunit():
     job_unit.Run()
 
 
-def YamlConfiguredJobInstance(yamlLOADEDdict):
+def YamlConfiguredJobFrag(yamlLOADEDdict):
     config = yamlLOADEDdict
     try:
         #### configure the status output
@@ -247,7 +247,7 @@ def YamlConfiguredJobInstance(yamlLOADEDdict):
         cmd_templates = config['cmd_templates']
         cmd_arguments = config['cmd_arguments']
         cmd_const_arguments = config['cmd_const_arguments']
-        job_unit = JobInstance(
+        job_unit = JobFrag(
                 basic_pars['host'], basic_pars['user'], basic_pars['pkey'], basic_pars['timeout'],
                 log_stdout, log_stderr,
                 cmd_templates, cmd_arguments, cmd_const_arguments
@@ -256,7 +256,7 @@ def YamlConfiguredJobInstance(yamlLOADEDdict):
         raise KeyError(f'Invalid key in yaml config "{ config }"') from e
 
     return job_unit
-def test_YamlConfiguredJobInstance():
+def test_YamlConfiguredJobFrag():
     yaml_content = '''
 basic_parameters:
   timeout: 0.4
@@ -317,13 +317,13 @@ logging:
     with open('the_conf.yaml','r') as f:
         loaded_conf = yaml.safe_load(f)
 
-    job_instance = YamlConfiguredJobInstance(loaded_conf)
-    job_instance.Initialize()
-    job_instance.Configure( {'prefix': 'confiugred'} )
-    job_instance.Run()
+    job_frag = YamlConfiguredJobFrag(loaded_conf)
+    job_frag.Initialize()
+    job_frag.Configure( {'prefix': 'confiugred'} )
+    job_frag.Run()
 if __name__ == "__main__":
     test_direct_run()
     exit()
     test_jobunit()
     exit()
-    test_YamlConfiguredJobInstance()
+    test_YamlConfiguredJobFrag()

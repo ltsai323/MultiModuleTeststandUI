@@ -4,7 +4,7 @@ import select
 import time
 import LoggingMgr
 from pprint import pprint
-import jobinstance_sshconn
+import jobfrag_sshconn
 import jobmodule_base
 import threading_tools
 
@@ -26,11 +26,11 @@ DEBUG_MODE = True
 
 class JobModuleExample_2sshconnection(jobmodule_base.JobModule_base):
     '''
-    The example module that booking 2 ssh job instance.
+    The example module that booking 2 ssh job frag.
     '''
     def __init__(self, yamlLOADEDdict:dict):
-        self.cmdPC   = jobinstance_sshconn.YamlConfiguredJobInstance(yamlLOADEDdict['cmdPC'])
-        self.hexCtrl = jobinstance_sshconn.YamlConfiguredJobInstance(yamlLOADEDdict['hexCtrl'])
+        self.cmdPC   = jobfrag_sshconn.YamlConfiguredJobFrag(yamlLOADEDdict['cmdPC'])
+        self.hexCtrl = jobfrag_sshconn.YamlConfiguredJobFrag(yamlLOADEDdict['hexCtrl'])
     def __del__(self):
         self.cmdPC.Stop()
         self.hexCtrl.Stop()
