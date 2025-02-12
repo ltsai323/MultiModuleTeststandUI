@@ -60,8 +60,18 @@ class JobFrag(jobfrag_base.JobFragBase):
             # Configure RS232 parameters from setups
             self.device.baud_rate = self.setups.get('baud_rate', 9600)
             self.device.data_bits = self.setups.get('data_bits', 8)
-            self.device.stop_bits = self.setups.get('stop_bits', pyvisa.constants.StopBits.one)
-            self.device.parity = self.setups.get('parity', pyvisa.constants.Parity.none)
+
+            stop_bits_value = self.setups.get('stop_bits', 1)
+            if stop_bits_value == 1:
+                self.device.stop_bits = pyvisa.constants.StopBits.one
+            elif stop_bits_value == 2:
+                self.device.stop_bits = pyvisa.constants.StopBits.two
+            elif stop_bits_value == 1.5:
+                self.device.stop_bits = pyvisa.constants.StopBits.one_point_five
+            else:
+                raise ValueError(f"Invalid stop_bits value: {stop_bits_value}")
+
+            # self.device.parity = self.setups.get('parity', pyvisa.constants.Parity.none)
             self.device.timeout = int(self.timeout * 1000)  # Convert to milliseconds
             
             # Send any initialization commands

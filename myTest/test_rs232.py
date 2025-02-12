@@ -12,7 +12,7 @@ def main():
         # Replace 'COM1' with your actual port
         # Windows example: 'COM1'
         # Linux/Mac example: '/dev/ttyUSB0' or '/dev/ttyS0'
-        port = 'COM1'  # Change this to match your setup
+        port = '/dev/ttyUSB0'  # Change this to match your setup
         device = rm.open_resource(f'ASRL{port}::INSTR')
         
         # Set basic parameters

@@ -1,5 +1,5 @@
 import sys
-from your_jobfrag_module import JobFrag  # Replace with your actual module name
+from switch_control import JobFrag  # Replace with your actual module name
 
 def test_power_switch():
     # Basic command templates
