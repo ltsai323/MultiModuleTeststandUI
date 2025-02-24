@@ -55,7 +55,7 @@ class JobModulePowerSupply(jobmodule_base.JobModule_base):
         if self.power_supply:
             try:
                 self.power_supply.write('OUTPUT:STATE ON')
-                voltage = 2.0  # Set desired voltage
+                voltage = 1.5  # Set desired voltage
                 self.power_supply.write(f'VOLTAGE {voltage}')
                 print("Power supply turned on and voltage set.")
                 
