@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #import ruamel.yaml as yaml
 import yaml
-from tools.LogTool import LOG
+from PythonTools.LogTool import LOG
 
 
 ### used functions

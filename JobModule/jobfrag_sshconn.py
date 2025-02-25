@@ -1,6 +1,6 @@
 import select
 import time
-import LoggingMgr
+import PythonTools.LoggingMgr as LoggingMgr
 import paramiko
 from pprint import pprint
 

@@ -1,2 +1,2 @@
-export PYTHONPATH=$PWD:/home/ltsai/workspace/MultiModuletestStandUI/CommandPost
-#export PYTHONPATH=$PWD
+#export PYTHONPATH=$PWD:/home/ltsai/workspace/MultiModuletestStandUI/CommandPost
+export PYTHONPATH=$PWD:$PYTHONPATH

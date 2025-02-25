@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import queue
-import WebStatus
+import PythonTools.WebStatus
 import logging
 from threading import local
 
