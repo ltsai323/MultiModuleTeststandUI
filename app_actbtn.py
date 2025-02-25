@@ -73,7 +73,7 @@ def btn_initialize(data):
     Handles the button clicking. Once the client clicked "btnINIT", server side received the command INITIALIZE and update button status
     '''
     current_app.config['WEB_STAT'].btn = 'wait'
-    import jobmodule_example_2sshconnection as jobmodule
+    import JobModule.jobmodule_example_2sshconnection as jobmodule
     global asdf
     asdf = jobmodule.JobModuleFactory('data/moduleexample_2sshconnection.yaml')
     BkgRunJob(asdf.Initialize, 'initialized')
