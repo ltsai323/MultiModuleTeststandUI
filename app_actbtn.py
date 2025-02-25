@@ -1,12 +1,12 @@
 from flask import Flask, render_template, request, jsonify
 from dataclasses import dataclass
 import socket
-import tools.MesgHub as MesgHub
-from tools.LogTool import LOG
+import PythonTools.MesgHub as MesgHub
+from PythonTools.LogTool import LOG
 import threading
 from app_global_variables import _VARS_, _LOG_CENTER_, _JOB_STAT_
 #import app_bkgrun
-import threading_tools
+import PythonTools.threading_tools as threading_tools
 
 from flask_socketio import SocketIO, emit
 from pprint import pprint

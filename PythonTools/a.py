@@ -2,10 +2,10 @@ import socket
 import threading
 import time
 import sys
-import tools.MesgHub as MesgHub
-from tools.LogTool import LOG
-import tools.StatusDefinition as Status
-import tools.SocketCommands as ConnCMD
+import PythonTools.MesgHub as MesgHub
+from PythonTools.LogTool import LOG
+import PythonTools.StatusDefinition as Status
+import PythonTools.SocketCommands as ConnCMD
 MAX_MESG_LENG = 1024
 SET_TIMEOUT = 3.0 # only used for connection checking and system cmd
 
@@ -26,35 +26,51 @@ MODULE_STATUS = {
         'monitor': 1, # send readout value periodically
         'running': 2, # send message immediately
         }
-class RunningConfigurations:
-    def __init__(self, logFUNC = print ):
-        self.status = 0
-        self.name = 'NotInitialized'
-        self.logFUNC = print
+class __tester:
+    def __init__(self):
+        self.t = None
+    def the_func(self,cmd,rc):
+        print('hi start')
+        print('sleeping for 3 seconds')
+        time.sleep(3)
+        print('sleeping for 5 seconds')
+        time.sleep(5)
+        print('finished')
 
-        self.module_status = MODULE_STATUS['idle']
-    def LOG(self, stat, mesg):
-        self.logFUNC(stat,mesg)
 
-    def SetDefault(self, loadedCONFIGs):
-        for key,val in loadedCONFIGs.configs.items():
-            setattr(self,key,val)
-        self.default_configs = loadedCONFIGs.configs
-    def SetValue(self, key,val):
-        if key == 'runCMD': return # not to update runCMD
-        if hasattr(self,key):
-            setattr(self, key,val)
-            LOG('Config Updated!', 'SetValue()', f'config "{key}" is set to "{val}" now')
-        else:
-            raise IOError(f'RunningConfigurations::SetValue() : input value "{key}" does not exist. Available keys are {self.default_configs.keys()}')
-    def SetValues(self, argSTR):
-        update_list = argSTR.split('|')
-        for update_item in update_list:
-            if update_item == '': continue
-            name,val = update_item.split(':')
-            self.SetValue(name,val)
+from PythonTools.RunningConfigurations import RunningConfigurations as RC
+def start_socket_server(mainfunc, runconf:RC,
+        theADDR='0.0.0.0', thePORT=2000, timeOUT=3):
+    socket_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    socket_server.bind((theADDR,thePORT))
+    socket_server.listen(5)
+
+    runconf.LOG('StartServer', f"Server listening on port {thePORT}...")
+
+    try:
+        while True:
+            socket_client, client_address = socket_server.accept()
+            runconf.socket_client = socket_client
+            runconf.socket_client_is_active = True
+            #runconf.socket_client_stuck_until_job_ended = False
+            runconf.socket_client.settimeout(timeOUT)
+            handle_client_(mainfunc, runconf)
+
+    except KeyboardInterrupt:
+        LOG('Forced Shutdown by Keyboard', 'SingleThreadListening', 'Service is shutting down...')
+    finally:
+        # Close the server socket when done
+        LOG('Close the whole program', 'SingleThreadListening', '')
+        socket_server.close()
+
+class SocketProfile_:
+    def __init__(self, connADDR, connPORT):
+        self.conn_addr = connADDR
+        self.conn_port = connPORT
+        self.socket = None
+
 class SocketProfile:
-    def __init__(self, mainFUNC, runCONFIGs:RunningConfigurations):
+    def __init__(self, mainFUNC, runCONFIGs:RC):
         self.mainfunc = mainFUNC
         self.server_socket_is_active = threading.Event()
         self.client_socket_is_active = threading.Event()
@@ -104,6 +120,40 @@ def SystemCMDs(socketPROFILE:SocketProfile, cmdUNIT:MesgHub.CMDUnit):
     return False
 
 
+def handle_client_(mainfunc, runconf:RC):
+    clientSOCKET = runconf.socket_client
+    try:
+        while runconf.socket_client_is_active:
+            if not runconf.socket_client: break
+            try:
+                # Receive data from the client
+                data = clientSOCKET.recv(MAX_MESG_LENG)
+                if not data or data == b'': continue
+
+                rec_data = MesgHub.GetSingleMesg(data)
+
+                #if MesgHub.IsCMDUnit(rec_data):
+                #    # Process the command in a separate process
+                #    if SystemCMDs(socketPROFILE, rec_data):
+                #        UpdateMesgAndSend(socketPROFILE, clientSOCKET, 'Got SystCMD '+rec_data.cmd)
+                #        continue
+                process = threading.Thread(target=mainfunc, args=(runconf,rec_data,))
+                process.start()
+
+            except socket.timeout:
+                DEBUG_MODE = True
+                if DEBUG_MODE:
+                    # Timeout reached, send current status to the client
+                    status_message = "Timeout reached. Current status: ... (implement your status here)"
+                    runconf.LOG('Status Mesg', 'handle_client', f'Sending command to client : {status_message}')
+
+
+    except Exception as e:
+        runconf.LOG('Exception Raised', 'handle_client', f'Exception found {type(e)}: "{e}"')
+
+    finally:
+        # Close the client socket when done
+        clientSOCKET.close()
 def handle_client(socketPROFILE:SocketProfile, clientSOCKET):
     try:
         while socketPROFILE.client_socket_is_active.is_set():
@@ -195,8 +245,16 @@ def start_server(socketPROFILE:SocketProfile, theADDR=DEFAULT_IP, thePORT=DEFAUL
         server_socket.close()
 
 if __name__ == "__main__":
-    connection_profile = SocketProfile('selfTester',execute_command)
-    start_server(connection_profile)
+    def ll(stat,nnn,mesg):
+        print(stat,nnn,mesg)
+    runconf = RC(ll)
+
+    fake_conf = { 'par1': 1, 'par2': { 'par21': 21, 'par22': 22 }, 'par3': 3, }
+    runconf.SetValues(fake_conf)
+
+    _test = __tester()
+
+    start_socket_server(_test.the_func, runconf )
     '''
     not able to accept second connection if first connection losted.
     I thought this might come from the code keep sending message periodically. And no other connection able to be accepted

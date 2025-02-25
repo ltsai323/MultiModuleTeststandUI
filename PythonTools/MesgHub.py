@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import json
-from tools.LogTool import LOG
-import tools.SocketCommands as SC
+from PythonTools.LogTool import LOG
+import PythonTools.SocketCommands as SC
 LOG_LEVEL = 1
 def BUG(*mesg):
     if LOG_LEVEL < 1:

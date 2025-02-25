@@ -2,7 +2,7 @@ from flask import Flask, render_template, jsonify, request
 import app_global_variables as gVAR
 #import app_bkgrun
 import app_actbtn
-from DebugManager import BUG
+from PythonTools.DebugManager import BUG
 from flask_wtf.csrf import CSRFProtect
 from flask_cors import CORS
 

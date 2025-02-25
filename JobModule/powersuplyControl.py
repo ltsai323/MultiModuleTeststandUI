@@ -2,7 +2,7 @@ import paramiko
 import threading
 import select
 import time
-import LoggingMgr
+import PythonTools.LoggingMgr as LogginsMgr
 from pprint import pprint
 #import jobfrag_sshconn
 #import jobmodule_base
