@@ -1,6 +1,6 @@
-import JobStatManager
-import ConfigHandler
-from  DebugManager import BUG
+import oldcodes.JobStatManager as JobStatManager
+import oldcodes.ConfigHandler  as ConfigHandler
+from PythonTools.DebugManager import BUG
 class JobCMDPack:
     def __init__(self, name:str, jobtype:str,
                  logQUEUE, loadedPARs:ConfigHandler.LoadedParameterFactory):

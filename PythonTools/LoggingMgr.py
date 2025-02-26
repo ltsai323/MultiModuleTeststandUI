@@ -114,5 +114,77 @@ def testfunc_loggers():
     log_stderr.error('[running] 1 asdf')
     log_stderr.error('asldkjfalsdkfasjkdf')
 
+
+def yaml_errortype_factory( yamlDICT:dict ):
+    used_vars = [ 'filterMETHOD', 'errTYPE', 'errTHRESHOLD', 'errPATTERN' ]
+    for v in used_vars:
+        if v not in yamlDICT:
+            raise RuntimeError(f'[InvalidArgument] errortype_factory() requires dictionary containing keys {used_vars}')
+
+    filter_method = yamlDICT['filterMETHOD'].lower()
+    if filter_method == 'contain': return errortype_contain(yamlDICT['errTYPE'],yamlDICT['errTHRESHOLD'],yamlDICT['errPATTERN'])
+    if filter_method == 'exact'  : return errortype_exact(yamlDICT['errTYPE'],yamlDICT['errTHRESHOLD'],yamlDICT['errPATTERN'])
+
+    raise KeyError(f'[Invalid filterMETHOD] input filterMETHOD "{ filterMETHOD }" is rejected from errortype_factory()')
+def YamlConfiguredLoggers(yamlDICT:dict):
+    logout_config = yamlDICT['stdout']
+    stdout_filter_rules = [ errortype_factory(c['filter_method'], c['indicator'],c['threshold'],c['pattern']) for c in logout_config['filters'] ]
+    stdout_filter = ErrorMessageFilter(stdout_filter_rules)
+    log_stdout = configure_logger(logout_config['name'],logout_config['file'], stdout_filter)
+
+    logerr_config = yamlDICT['stderr']
+    stderr_filter_rules = [ errortype_factory(c['filter_method'], c['indicator'],c['threshold'],c['pattern']) for c in logerr_config['filters'] ]
+    stderr_filter = ErrorMessageFilter(stderr_filter_rules)
+    log_stderr = configure_logger(logerr_config['name'],logerr_config['file'], stderr_filter)
+
+    return log_stdout, log_stderr
+
+def testfunc_YamlConfiguredLoggers():
+    yaml_dict =  '''
+stdout:
+  name: out
+  file: log_stdout.txt
+  filters:
+    - indicator: running
+      threshold: 0
+      pattern: 'RUNNING'
+      filter_method: exact
+    - indicator: Type0ERROR
+      threshold: 0
+      pattern: '[running] 0'
+      filter_method: exact
+    - indicator: Type3ERROR
+      threshold: 0
+      pattern: '[running] 3'
+      filter_method: contain
+    - indicator: idle
+      threshold: 0
+      pattern: 'FINISHED'
+      filter_method: exact
+stderr:
+  name: err
+  file: log_stderr.txt
+  filters:
+    - indicator: running
+      threshold: 0
+      pattern: 'RUNNING'
+      filter_method: exact
+    - indicator: Type0ERROR
+      threshold: 0
+      pattern: '[running] 0'
+      filter_method: exact
+    - indicator: RaiseError
+      threshold: 0
+      pattern: 'Error'
+      filter_method: contain
+        '''
+    import yaml
+    loaded_conf = yaml.safe_load(yaml_dict)
+    print(loaded_conf)
+
+    log_stdout, log_stderr = YamlConfiguredLoggers(loaded_conf)
+
+
 if __name__ == "__main__":
-    testfunc_loggers()
+    #testfunc_loggers()
+    testfunc_YamlConfiguredLoggers()
