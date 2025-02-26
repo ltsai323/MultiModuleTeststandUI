@@ -25,21 +25,29 @@ def get_output(log, pipeMESG, mesgCOUNTER = 0):
     log.debug(f'[counter] get_output() got {mesgCOUNTER} messages')
 
 def get_output_withtimeout(log, pipeMESG, timeout = 2):
-    if timeout < 0: # if timeout not set. waiting for the pipe ended
+    if timeout <= 0: # if timeout not set. waiting for the pipe ended
         get_output(log,pipeMESG)
         return
 
-    timeout_stamp = 0
-    thread = threading.Thread(target=get_output, args=(log,pipeMESG, timeout_stamp))
+    SEP = 4 if timeout > 4 else 1
+    SEP_TIMEOUT = int(timeout/SEP)
+
+    timeout_record = 0
+    thread = threading.Thread(target=get_output, args=(log,pipeMESG, timeout_record))
     thread.start()
+
+    terminate_loop = False
     while True:
-        tmp_timeout_stamp = timeout_stamp
-        time.sleep(timeout)
-        if thread.is_alive():
-            if tmp_timeout_stamp == timeout_stamp: # not flip: show timeout
-                log.warning(f'[TIMOUT] BashCMD got a timeout in {timeout} second')
-        else:
-            break
+        tmp_timeout_record = timeout_record
+        for i in range(SEP): # separate the whole timeout in 4 times. check the code finished or not
+            time.sleep(SEP_TIMEOUT)
+            if not thread.is_alive(): # if the code finished in timeout, return
+                terminate_loop = True
+                break
+
+        if terminate_loop: break
+        if tmp_timeout_record == timeout_record: # if timeout_record does not change value: show timeout
+            log.warning(f'[TIMOUT] BashCMD got a timeout in {timeout} second')
     thread.join()
 
             
@@ -247,7 +255,7 @@ def YamlConfiguredJobFrag(yamlLOADEDdict:dict):
         raise KeyError(f'Invalid key in yaml config "{ config }"') from e
 
     return job_frag
-def test_YamlConfiguredJobFrag():
+def testfunc_default_yaml_config():
     yaml_content = '''
 basic_parameters:
     timeout: -1
@@ -301,9 +309,12 @@ logging:
 
     with open('the_conf.yaml','w') as f:
         f.write(yaml_content)
-        print(f'[ExportedYamlFile] yaml file the_conf.yaml saved')
+        print(f'[YamlExport] testfunc_default_yaml_config() generates a default yaml file: the_conf.yaml')
+    exit()
+
+def testfunc_YamlConfiguredJobFrag( inFILE ):
     import yaml
-    with open('the_conf.yaml','r') as f:
+    with open(inFILE,'r') as f:
         loaded_conf = yaml.safe_load(f)
 
     job_frag = YamlConfiguredJobFrag(loaded_conf)
@@ -311,11 +322,17 @@ logging:
     job_frag.Configure( {'prefix': 'confiugred'} )
     job_frag.Run()
     job_frag.Stop()
+    exit()
 
 
 
 
 if __name__ == "__main__":
+    import sys
+    #testfunc_default_yaml_config()
+    testfunc_YamlConfiguredJobFrag(sys.argv[1])
+
+    # for directly run
     logging.basicConfig(level=logging.DEBUG)
 
     logging.info('bash cmd startting')
@@ -325,4 +342,3 @@ if __name__ == "__main__":
     #testfunc_directrun_withtimeout()
     #testfunc_directrun_bkgrun_and_kill()
     #testfunc_pack_JobFrag()
-    test_YamlConfiguredJobFrag()
