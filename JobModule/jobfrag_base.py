@@ -14,9 +14,13 @@ class JobFragBase(ABC):
     :Stop: Stop the running actions.
     '''
 
-    @abstractmethod
     def __init__(self):
         pass
+
+        #self.set_cmd_template(cmdTEMPLATEs)
+        #self.set_config(argCONFIGs)
+        #self.set_config_const(argSETUPs)
+
 
     @abstractmethod
     def __del__(self):
@@ -31,6 +35,18 @@ class JobFragBase(ABC):
     def Configure(self, updatedCONF:dict) -> bool:
         pass
 
+
+        
+
+    @abstractmethod
+    def Run(self):
+        pass
+
+    @abstractmethod
+    def Stop(self):
+        pass
+
+
     def set_cmd_template(self, cmdTEMPLATE:dict):
         self.cmd_template = cmdTEMPLATE
     def set_config(self, conf:dict):
@@ -43,6 +59,10 @@ class JobFragBase(ABC):
             self.config[key] = val
             return VALID_CONFIG
         return 'InvalidKey'
+    def set_logger(self, stdOUT, stdERR):
+        pass
+
+
         
     def show_configurations(self) -> dict:
         return self.config
@@ -52,15 +72,3 @@ class JobFragBase(ABC):
             return self.cmd_template[templateNAME].format(**d)
         except KeyError as e:
             raise KeyError(f'[CMDNotFound] Command "{ templateNAME }" is not registed in cmd_template. The available keys are "{ self.cmd_template.keys() }"') from e
-
-
-        
-
-    @abstractmethod
-    def Run(self):
-        pass
-
-    @abstractmethod
-    def Stop(self):
-        pass
-
