@@ -2,10 +2,10 @@ import socket
 import threading
 import time
 import sys
-import tools.MesgHub as MesgHub
-from tools.LogTool import LOG
-import tools.StatusDefinition as Status
-import tools.SocketCommands as ConnCMD
+import PythonTools.MesgHub as MesgHub
+from PythonTools.LogTool import LOG
+import PythonTools.StatusDefinition as Status
+import PythonTools.SocketCommands as ConnCMD
 MAX_MESG_LENG = 1024
 SET_TIMEOUT = 3.0 # only used for connection checking and system cmd
 

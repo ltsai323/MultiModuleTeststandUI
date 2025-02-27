@@ -10,7 +10,7 @@ from flask_socketio import emit
 from flask import Blueprint
 from app_socketio import socketio
 import requests
-import tools.MesgHub as MesgHub
+import PythonTools.MesgHub as MesgHub
 from app_global_variables import _LOG_CENTER_, _VARS_
 import app_global_variables as gVAR
 import app_actbtn
@@ -19,7 +19,7 @@ import app_actbtn
 
 app_b = Blueprint('bkgrun', __name__)
 
-from DebugManager import BUG
+from PythonTools.DebugManager import BUG
 
 import queue
 job_queue = queue.Queue()

@@ -2,7 +2,7 @@ from flask import Flask, render_template, jsonify, request
 import app_global_variables as gVAR
 #import app_bkgrun
 import app_actbtn
-from DebugManager import BUG
+from PythonTools.DebugManager import BUG
 from flask_wtf.csrf import CSRFProtect
 from flask_cors import CORS
 
@@ -29,7 +29,9 @@ This page shows action buttons configured from `app_actbtn.py`.
 And `app_bkgrun.py` configures the jobs sent to bkg
     '''
 
-    return render_template('index.html')
+    #return render_template('index.html')
+    #return render_template('index_db.html')
+    return render_template('index2.html')
 
 
 @app.route('/show_logpage')

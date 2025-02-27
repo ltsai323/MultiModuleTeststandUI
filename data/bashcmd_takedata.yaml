@@ -1,18 +1,15 @@
 
 basic_parameters:
-  timeout: 0.4
-  host: 'ntugrid8.phys.ntu.edu.tw'
-  user: 'ltsai'
-  pkey: '/Users/noises/.ssh/toNTU8'
+    timeout: 20
 cmd_templates:
-  'init': 'echo "connection established"'
-  'run': 'python3 -u main_job.py; echo "config: {prefix}", echo "additional config: {ip2}"'
-  'stop': 'exit'
+  'init': ''
+  'run': 'sh $BASH_SCRIPT_FOLDER/step4.takedata.sh ; exit'
+  'stop': ''
   'del': ''
 cmd_arguments:
   prefix: default
 cmd_const_arguments:
-  ip2: ntugrid5.phys.ntu.edu.tw
+  noconstarg: none
 logging:
   stdout:
     name: out
