@@ -12,6 +12,7 @@ from flask_socketio import SocketIO, emit
 from pprint import pprint
 from app_socketio import socketio
 
+
 #import sshconn
 #import bashcmd
 #import rs232cmder_powersupply as rs232cmder
@@ -66,16 +67,17 @@ def BkgJob_Executing():
 
     
 @socketio.on('btnINIT')
-def btn_initialize(data):
+def btn_initialize():
     '''
     Client sends command INITIALIZE to server. That the server should response the current button status
     
     Handles the button clicking. Once the client clicked "btnINIT", server side received the command INITIALIZE and update button status
     '''
     current_app.config['WEB_STAT'].btn = 'wait'
-    import JobModule.jobmodule_example_2sshconnection as jobmodule
+    from JobModule.joborganization_takedata import JobOrganization
+    #from JobModule.joborganization_example import JobOrganization
     global asdf
-    asdf = jobmodule.JobModuleFactory('data/moduleexample_2sshconnection.yaml')
+    asdf = JobOrganization()
     BkgRunJob(asdf.Initialize, 'initialized')
 
 
@@ -107,7 +109,7 @@ def buttonCONFIGURE():
     1L {has("moduleID1L")} \t1C {has("moduleID1C")} \t1R {has("moduleID1R")}
     2L {has("moduleID2L")} \t2C {has("moduleID2C")} \t2R {has("moduleID2R")}
 
-    Can I beautify this notification?
+    asdf BUT CURRENTLY NO ANY EFFECT asdf
     '''
     current_app.config['WEB_STAT'].btn = 'configured'
     current_app.config['MESG_LOG'].info(outMesg)

@@ -2,7 +2,7 @@
 if [ "$BASH_SCRIPT_FOLDER" == "" ]; then echo "[EnvironmentFailure] Required variable BASH_SCRIPT_FOLDER not set. Load use_python_lib.sh"; exit; fi
 source $BASH_SCRIPT_FOLDER/step0.functions.sh
 
-exec_at_ctrlpc 'pkill -9 python3 ; pkill daq-client; daq-client'
+exec_at_ctrlpc 'pkill daq-client'
 #ssh ctrlpc 'ls'
 
 ### errors

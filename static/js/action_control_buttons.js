@@ -96,7 +96,7 @@ function button_clicking2_socketIO(btnID) {
 }
 
 button_clicking_fetch    ('btnCONN');
-button_clicking2_socketIO('btnINIT');
+button_clicking_socketIO('btnINIT');
 button_clicking_configure('btnCONF');
 button_clicking_socketIO ('btnEXEC');
 button_clicking_socketIO ('btnSTOP');

@@ -1,8 +1,9 @@
 #!/usr/bin/env sh
-source step0.functions.sh
+if [ "$BASH_SCRIPT_FOLDER" == "" ]; then echo "[EnvironmentFailure] Required variable BASH_SCRIPT_FOLDER not set. Load use_python_lib.sh"; exit; fi
+source $BASH_SCRIPT_FOLDER/step0.functions.sh
 
-exec_at_kria 'systemctl restart i2c-server.service && systemctl restart daq-server.service'
-exec_at_kria 'systemctl status i2c-server.service && systemctl status daq-server.service'
+if [ "$1" == "check" ]; then exec_at_kria 'systemctl status i2c-server.service && systemctl status daq-server.service'; fi
+if [ "$1" == "reload" ]; then exec_at_kria 'systemctl restart i2c-server.service && systemctl restart daq-server.service'; fi
 
 <<LISTED_OUTPUT_MESG
 " SUC

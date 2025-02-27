@@ -1,5 +1,7 @@
 #!/usr/bin/env sh
-source step0.functions.sh
+if [ "$BASH_SCRIPT_FOLDER" == "" ]; then echo "[EnvironmentFailure] Required variable BASH_SCRIPT_FOLDER not set. Load use_python_lib.sh"; exit fi
+source $BASH_SCRIPT_FOLDER/step0.functions.sh
+
 exec_at_ctrlpc 'daq-client'
 #ssh ctrlpc 'ls'
 
