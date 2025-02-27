@@ -13,7 +13,7 @@ DEBUG_MODE = True
 def load_yaml(f):
     with open(f,'r') as fIN:
         return yaml.safe_load(fIN)
-class JobOrganizationExample(joborganization_base.JobOrganization_base):
+class JobOrganization(joborganization_base.JobOrganization_base):
     '''
     The example module that booking a job frag.
     '''
@@ -46,8 +46,8 @@ class JobOrganizationExample(joborganization_base.JobOrganization_base):
 
 
 
-def test_YamlConfiguredJobOrganizationExample():
-    moduletest = JobOrganizationExample()
+def test_YamlConfiguredJobOrganization():
+    moduletest = JobOrganization()
 
     moduletest.Initialize()
     moduletest.Configure( {'testssh': {'prefix': 'configured'} } )
@@ -62,4 +62,4 @@ def test_YamlConfiguredJobOrganizationExample():
 
 
 if __name__ == "__main__":
-    test_YamlConfiguredJobOrganizationExample()
+    test_YamlConfiguredJobOrganization()
