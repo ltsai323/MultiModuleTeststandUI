@@ -132,17 +132,18 @@ class Switch(jobfrag_base.JobFragBase):
             
             # Execute command
             self.device.write(cmd)
+            self.stdout.write(f"Power status: {operation}\n")
             
-            # Wait for specified duration
-            time.sleep(duration)
-            
-            # Execute opposite command if needed
-            opposite_cmd = self.cmd_templates.get('off' if operation == 'on' else 'on')
-            if opposite_cmd:
-                self.device.write(opposite_cmd)
-            
-            self.stdout.write(f"Power {operation} cycle completed\n")
-            self.is_running = False
+            ### # Wait for specified duration
+            ### time.sleep(duration)
+            ### 
+            ### # Execute opposite command if needed
+            ### opposite_cmd = self.cmd_templates.get('off' if operation == 'on' else 'on')
+            ### if opposite_cmd:
+            ###     self.device.write(opposite_cmd)
+            ### 
+            ### self.stdout.write(f"Power {operation} cycle completed\n")
+            ### self.is_running = False
             return True
             
         except Exception as e:
