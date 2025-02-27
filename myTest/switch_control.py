@@ -3,7 +3,7 @@ import pyvisa
 import time
 from typing import TextIO, Dict, Any
 
-class JobFrag(jobfrag_base.JobFragBase):
+class Switch(jobfrag_base.JobFragBase):
     def __init__(self, hostNAME: str, userNAME: str, privateKEYfile: str, timeOUT: float,
                  stdOUT: TextIO, stdERR: TextIO,
                  cmdTEMPLATEs: Dict[str, str], argCONFIGs: Dict[str, Any], argSETUPs: Dict[str, Any]):

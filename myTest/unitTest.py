@@ -1,5 +1,5 @@
 import sys
-from switch_control import JobFrag  # Replace with your actual module name
+from switch_control import Switch  # Replace with your actual module name
 
 def test_power_switch():
     # Basic command templates
@@ -24,8 +24,8 @@ def test_power_switch():
         'stop_bits': 1
     }
 
-    # Create JobFrag instance
-    job = JobFrag(
+    # Create Switch instance
+    job = Switch(
         hostNAME='/dev/ttyUSB0',  # Change to your port
         userNAME='',              # Not used for RS232
         privateKEYfile='',        # Not used for RS232
