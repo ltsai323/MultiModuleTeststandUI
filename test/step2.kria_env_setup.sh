@@ -1,10 +1,11 @@
 #!/usr/bin/env sh
-source step0.functions.sh
+if [ "$BASH_SCRIPT_FOLDER" == "" ]; then echo "[EnvironmentFailure] Required variable BASH_SCRIPT_FOLDER not set. Load use_python_lib.sh"; exit; fi
+source $BASH_SCRIPT_FOLDER/step0.functions.sh
 
 exec_at_kria 'firewall-cmd --add-port=5555/tcp --add-port=6000/tcp --add-port=8888/tcp --add-port=8080/tcp' || the_exit "[step2] Kria failed to open firewall"
 exec_at_kria 'fw-loader load /opt/cms-hgcal-firmware/hgc-test-systems/hexaboard-hd-tester-v2p0-trophy-v2/' || the_exit "[step2] Kria failed to load firmware for HD hexaboard"
 #exec_at_kria 'fw-loader load /opt/cms-hgcal-firmware/hgc-test-systems/hexaboard-hd-tester-v2p0-trophy-v3/ && systemctl restart i2c-server.service && systemctl restart daq-server.service'
-#exec_at_kria 'systemctl restart i2c-server.service && systemctl restart daq-server.service'
+exec_at_kria 'systemctl restart i2c-server.service && systemctl restart daq-server.service'
 exec_at_kria 'systemctl status i2c-server.service && systemctl status daq-server.service'
 
 <<LISTED_OUTPUT_MESG
