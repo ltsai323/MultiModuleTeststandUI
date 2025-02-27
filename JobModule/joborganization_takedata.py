@@ -26,11 +26,11 @@ class JobOrganization(joborganization_base.JobOrganization_base):
     The example module that booking a job frag.
     '''
     def __init__(self):
-        loadedYAMLdict = load_yaml('bashcmd_kriaenv.yaml')
+        loadedYAMLdict = load_yaml('data/bashcmd_kriaenv.yaml')
         self.kriaenv       = bashcmd.YamlConfiguredJobFrag(loadedYAMLdict)
-        loadedYAMLdict = load_yaml('bashcmd_daqclient.yaml')
+        loadedYAMLdict = load_yaml('data/bashcmd_daqclient.yaml')
         self.par_daqclient = bashcmd.YamlConfiguredJobFrag(loadedYAMLdict)
-        loadedYAMLdict = load_yaml('bashcmd_takedata.yaml')
+        loadedYAMLdict = load_yaml('data/bashcmd_takedata.yaml')
         self.ser_takedata  = bashcmd.YamlConfiguredJobFrag(loadedYAMLdict)
     def __del__(self):
         delfunc(self, 'ser_takedata')
