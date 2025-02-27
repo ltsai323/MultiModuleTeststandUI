@@ -17,14 +17,16 @@ def run_bash_cmd_at_background(command:str, mergeSTDERRandSTDOUT=True):
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=-1, shell=True)
     return process
 
-def get_output(log, pipeMESG, mesgCOUNTER = 0):
+def get_output(log, pipeMESG, mesgCOUNTER = 0, extTERMINATING = threading.Event()):
     mesgCOUNTER = 0
     for line in iter(pipeMESG.readline, b''):
         log.info(line.decode().rstrip())
         mesgCOUNTER += 1 # when mesg received, +1. Such as the outside function is able to check whether NO ANY MESSAGE from pipe message
+        if extTERMINATING.is_set(): break
     log.debug(f'[counter] get_output() got {mesgCOUNTER} messages')
 
-def get_output_withtimeout(log, pipeMESG, timeout = 2):
+def get_output_withtimeout(log, bkgPROC, timeout = 2):
+    pipeMESG = bkgPROC.stdout
     if timeout <= 0: # if timeout not set. waiting for the pipe ended
         get_output(log,pipeMESG)
         return
@@ -33,7 +35,8 @@ def get_output_withtimeout(log, pipeMESG, timeout = 2):
     SEP_TIMEOUT = int(timeout/SEP)
 
     timeout_record = 0
-    thread = threading.Thread(target=get_output, args=(log,pipeMESG, timeout_record))
+    ext_terminating = threading.Event()
+    thread = threading.Thread(target=get_output, args=(log,pipeMESG, timeout_record, ext_terminating))
     thread.start()
 
     terminate_loop = False
@@ -41,7 +44,8 @@ def get_output_withtimeout(log, pipeMESG, timeout = 2):
         tmp_timeout_record = timeout_record
         for i in range(SEP): # separate the whole timeout in 4 times. check the code finished or not
             time.sleep(SEP_TIMEOUT)
-            if not thread.is_alive(): # if the code finished in timeout, return
+            if not thread.is_alive() or bkgPROC.poll() is not None: # if the code finished in timeout, return
+                ext_terminating.set()
                 terminate_loop = True
                 break
 
@@ -105,7 +109,7 @@ def testfunc_directrun_showerr():
     exit()
 def testfunc_directrun_withtimeout():
     proc = run_bash_cmd_at_background('echo aaaaaa && sleep 5 && echo a2 && sleep 5 && echo finished', True)
-    get_output_withtimeout(logging,proc.stdout, 2)
+    get_output_withtimeout(logging,proc, 2)
     print('[FINISHED] the job success finished')
     exit()
 def testfunc_directrun_usingLoggingMgr():
@@ -159,6 +163,16 @@ class JobFrag(jobfrag_base.JobFragBase):
         self.log.debug('[BashCMD] __del__() destroy everything.')
         if self.proc is not None:
             terminate_the_process(self.proc, 2) # terminate job using 2 second timeout
+
+        cmd = self.get_full_command_from_cmd_template('stop')
+        if cmd != '':
+            proc = run_bash_cmd_at_background(cmd, False)
+            get_output(self.log,proc.stdout)
+
+        cmd = self.get_full_command_from_cmd_template('del')
+        if cmd != '':
+            proc = run_bash_cmd_at_background(cmd, False)
+            get_output(self.log,proc.stdout)
         self.log.debug('[BashCMD] __del__() destroy everything accomplished.')
 
     def Initialize(self):
@@ -189,10 +203,13 @@ class JobFrag(jobfrag_base.JobFragBase):
         self.log.debug(f'[BashCMD] Run() start running cmd')
 
         cmd = self.get_full_command_from_cmd_template('run')
-        if cmd == '': raise RuntimeError(f'[BashCMD] No any bash command found in Run()')
+        if cmd == '':
+            self.log.debug(f'[BashCMD] Run() start running but NO ANY COMMAND FOUND')
+            return  # not to raise run time error
+            raise RuntimeError(f'[BashCMD] No any bash command found in Run()')
 
         proc = run_bash_cmd_at_background(cmd, False)
-        get_output_withtimeout(self.log,proc.stdout, self.job_timeout)
+        get_output_withtimeout(self.log,proc, self.job_timeout)
         self.log.debug(f'[BashCMD] Run() running finished')
 
 
@@ -231,9 +248,15 @@ def testfunc_pack_JobFrag():
             cmdTEMPLATEs = cmd_template, argCONFIGs = arg_config, argSETUPs = arg_const_config
     )
 
+    print('\n\n>>>>>>>>>>>\nA INITIALIZE <<<<<<<<<<\n\n')
     job.Initialize()
+    print('\n\n>>>>>>>>>>>\nA RUN        <<<<<<<<<<\n\n')
     job.Run()
+    print('\n\n>>>>>>>>>>>\nA STOP       <<<<<<<<<<\n\n')
     job.Stop()
+    print('\n\n>>>>>>>>>>>\nA DEL        <<<<<<<<<<\n\n')
+    del job
+    print('\n\n>>>>>>>>>>>\nA END        <<<<<<<<<<\n\n')
 
 
 def YamlConfiguredJobFrag(yamlLOADEDdict:dict):
@@ -318,10 +341,16 @@ def testfunc_YamlConfiguredJobFrag( inFILE ):
         loaded_conf = yaml.safe_load(f)
 
     job_frag = YamlConfiguredJobFrag(loaded_conf)
+    print('\n\n>>>>>>>>>>> INITIALIZE <<<<<<<<<<\n\n')
     job_frag.Initialize()
     job_frag.Configure( {'prefix': 'confiugred'} )
+    print('\n\n>>>>>>>>>>> RUN        <<<<<<<<<<\n\n')
     job_frag.Run()
+    print('\n\n>>>>>>>>>>> STOP       <<<<<<<<<<\n\n')
     job_frag.Stop()
+    print('\n\n>>>>>>>>>>> DEL        <<<<<<<<<<\n\n')
+    #del job_frag
+    print('\n\n>>>>>>>>>>> END        <<<<<<<<<<\n\n')
     exit()
 
 
