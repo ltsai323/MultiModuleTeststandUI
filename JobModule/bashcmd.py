@@ -164,10 +164,10 @@ class JobFrag(jobfrag_base.JobFragBase):
         if self.proc is not None:
             terminate_the_process(self.proc, 2) # terminate job using 2 second timeout
 
-        cmd = self.get_full_command_from_cmd_template('stop')
-        if cmd != '':
-            proc = run_bash_cmd_at_background(cmd, False)
-            get_output(self.log,proc.stdout)
+        #cmd = self.get_full_command_from_cmd_template('stop')
+        #if cmd != '':
+        #    proc = run_bash_cmd_at_background(cmd, False)
+        #    get_output(self.log,proc.stdout)
 
         cmd = self.get_full_command_from_cmd_template('del')
         if cmd != '':
