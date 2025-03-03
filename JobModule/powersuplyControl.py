@@ -121,7 +121,7 @@ if __name__ == "__main__":
     Example of how to run the module with a YAML configuration file.
     '''
     # Specify the YAML config file
-    config_file = "data/LV_power_supply_config.yaml"
+    config_file = "../data/LV_power_supply_config.yaml"
     
     # Create instance with config file
     job_module = JobModulePowerSupply(config_file)
