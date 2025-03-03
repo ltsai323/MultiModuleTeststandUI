@@ -1,6 +1,6 @@
 import select
 import time
-import LoggingMgr
+import PythonTools.LoggingMgr as LoggingMgr
 import paramiko
 from pprint import pprint
 
@@ -92,7 +92,7 @@ def test_direct_run():
     ssh_client.close()
     log_stdout.info('end of test_direct_run()')
 
-import jobfrag_base
+import JobModule.jobfrag_base as jobfrag_base
 class JobFrag(jobfrag_base.JobFragBase):
     def __init__(self, hostNAME:str, userNAME:str, privateKEYfile:str, timeOUT:float,
                  stdOUT, stdERR,
@@ -219,17 +219,17 @@ def test_jobunit():
     }
     timeout = 0.4
 
-    job_unit = JobFrag(
+    job_frag = JobFrag(
             host, user, pkey, timeout,
             log_stdout, log_stderr,
             cmd_template, arg_config, arg_const_config) # asdf
 
-    job_unit.Initialize()
-    job_unit.Configure( {'prefix': 'confiugred'} )
-    job_unit.Run()
+    job_frag.Initialize()
+    job_frag.Configure( {'prefix': 'confiugred'} )
+    job_frag.Run()
 
 
-def YamlConfiguredJobFrag(yamlLOADEDdict):
+def YamlConfiguredJobFrag(yamlLOADEDdict:dict):
     config = yamlLOADEDdict
     try:
         #### configure the status output
@@ -247,7 +247,7 @@ def YamlConfiguredJobFrag(yamlLOADEDdict):
         cmd_templates = config['cmd_templates']
         cmd_arguments = config['cmd_arguments']
         cmd_const_arguments = config['cmd_const_arguments']
-        job_unit = JobFrag(
+        job_frag = JobFrag(
                 basic_pars['host'], basic_pars['user'], basic_pars['pkey'], basic_pars['timeout'],
                 log_stdout, log_stderr,
                 cmd_templates, cmd_arguments, cmd_const_arguments
@@ -255,7 +255,7 @@ def YamlConfiguredJobFrag(yamlLOADEDdict):
     except KeyError as e:
         raise KeyError(f'Invalid key in yaml config "{ config }"') from e
 
-    return job_unit
+    return job_frag
 def test_YamlConfiguredJobFrag():
     yaml_content = '''
 basic_parameters:

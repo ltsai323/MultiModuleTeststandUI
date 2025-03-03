@@ -1,0 +1,50 @@
+
+basic_parameters:
+    timeout: 3
+cmd_templates:
+  'init': 'sh $BASH_SCRIPT_FOLDER/step1.turnon_board_pwr.sh && sh $BASH_SCRIPT_FOLDER/step2.kria_env_setup.sh'
+  'run': ''
+  'stop': ''
+  'del': 'sh $BASH_SCRIPT_FOLDER/step10.turnoff_board_pwr.sh'
+cmd_arguments:
+  prefix: default
+cmd_const_arguments:
+  noconstarg: none
+logging:
+  stdout:
+    name: out
+    file: log_stdout.txt
+    filters:
+      - indicator: running
+        threshold: 0
+        pattern: 'RUNNING'
+        filter_method: exact
+      - indicator: Type0ERROR
+        threshold: 0
+        pattern: '[running] 0'
+        filter_method: exact
+      - indicator: Type3ERROR
+        threshold: 0
+        pattern: '[running] 3'
+        filter_method: contain
+      - indicator: idle
+        threshold: 0
+        pattern: 'FINISHED'
+        filter_method: exact
+  stderr:
+    name: err
+    file: log_stderr.txt
+    filters:
+      - indicator: running
+        threshold: 0
+        pattern: 'RUNNING'
+        filter_method: exact
+      - indicator: Type0ERROR
+        threshold: 0
+        pattern: '[running] 0'
+        filter_method: exact
+      - indicator: RaiseError
+        threshold: 0
+        pattern: 'Error'
+        filter_method: contain
+        

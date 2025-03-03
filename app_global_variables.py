@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import queue
-import WebStatus
+import PythonTools.WebStatus as WebStatus
 import logging
 from threading import local
 
@@ -32,6 +32,9 @@ class BasicConfig:
     DEBUG = True
     WEB_STAT = WebStatus.WebStatus()
     JOB_QUEUE = queue.Queue()
+    JOB_THREAD = None
+    JOB_NEXT = None
+
 
     logging.basicConfig(
         level=logging.INFO,
@@ -43,6 +46,8 @@ class TestConfig(BasicConfig):
     DEBUG = True
     WEB_STAT = WebStatus.WebStatus()
     JOB_QUEUE = queue.Queue()
+    JOB_THREAD = None
+    JOB_NEXT = None
 
     logging.basicConfig(
         level=logging.DEBUG,

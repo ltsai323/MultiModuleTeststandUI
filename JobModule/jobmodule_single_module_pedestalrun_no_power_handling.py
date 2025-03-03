@@ -2,11 +2,13 @@ import paramiko
 import threading
 import select
 import time
-import LoggingMgr
+import PythonTools.LoggingMgr as LoggingMgr
 from pprint import pprint
-import jobfrag_sshconn
-import jobmodule_base
-import threading_tools
+#import jobfrag_sshconn
+#import jobmodule_base
+import JobModule.jobfrag_sshconn as jobfrag_sshconn
+import JobModule.jobmodule_base  as jobmodule_base
+import PythonTools.threading_tools as threading_tools
 
 DEBUG_MODE = True
 
