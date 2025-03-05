@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from threading import Event
 
 VALID_CONFIG = '' # Nothing means it is a valid config
 
@@ -15,11 +16,10 @@ class JobFragBase(ABC):
     '''
 
     def __init__(self):
+        '''
+        The constructor accepts arguments for configuring the python software.
+        '''
         pass
-
-        #self.set_cmd_template(cmdTEMPLATEs)
-        #self.set_config(argCONFIGs)
-        #self.set_config_const(argSETUPs)
 
 
     @abstractmethod
@@ -28,7 +28,10 @@ class JobFragBase(ABC):
 
 
     @abstractmethod
-    def Initialize(self):
+    def Initialize(self, stopTRIG=Event()):
+        '''
+        this function might be terminated. A stopTRIG as the input buttons.
+        '''
         pass
 
     @abstractmethod
@@ -39,7 +42,10 @@ class JobFragBase(ABC):
         
 
     @abstractmethod
-    def Run(self):
+    def Run(self, stopTRIG=Event()):
+        '''
+        this function might be terminated. A stopTRIG as the input buttons.
+        '''
         pass
 
     @abstractmethod
