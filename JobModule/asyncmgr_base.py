@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 
 class AsyncManager(ABC):
     def __init__(self):
-        weakref.finalize(self, self._cleanup)
+        weakref.finalize(self, self._cleanup) # add a weak reference to __del__()
 
 
     ### env setup ON
@@ -21,6 +21,13 @@ class AsyncManager(ABC):
     @abstractmethod
     def Configure(self):
         raise NotImplementedError('Configure() requires to be implemented.')
+
+    @abstractmethod
+    def show_configurations(self) -> dict:
+        '''
+        Showing all configurations required in this class
+        '''
+        pass
     
     ### run stage ON
     @abstractmethod

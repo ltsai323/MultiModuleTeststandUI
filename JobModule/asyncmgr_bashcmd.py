@@ -1,7 +1,7 @@
 import asyncio
 import weakref
 import logging
-from asyncmgr import AsyncManager
+from asyncmgr_base import AsyncManager
 
 class AsyncBashManager(AsyncManager):
     async def _run_bash_cmd(self, cmd):
@@ -65,6 +65,8 @@ class AsyncBashManager(AsyncManager):
 
 
     def Configure(self):
+        pass
+    def show_configurations(self):
         pass
 
     async def Run(self):
