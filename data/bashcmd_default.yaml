@@ -3,7 +3,7 @@ basic_parameters:
     timeout: 3
 cmd_templates:
   'init': ''
-  'run': 'sh scripts/a.sh 2>&1'
+  'run': 'echo sleeping 100 second ; sleep 100; sh scripts/a.sh 2>&1'
   'stop': ''
   'del': ''
 cmd_arguments:
