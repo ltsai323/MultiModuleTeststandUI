@@ -111,12 +111,12 @@ def terminate_the_process(proc, log, timeOUT=2):
 
 
 def testfunc_directrun_bkgrun_and_kill():
-    proc = run_bash_cmd_at_background('echo aaaaaa && sleep 100 && echo finisehd')
+    proc = run_bash_cmd_at_background('echo aaaaaa && sleep 10 && echo finisehd')
     stop_trig = threading.Event()
     thread = threading.Thread(target=get_output, args=(logging,proc.stdout, stop_trig))
     thread.start()
 
-    time.sleep(5)
+    time.sleep(1)
     print('[after sleep] kill job')
     stop_trig.set()
     terminate_the_process(proc, logging)
@@ -174,21 +174,28 @@ def testfunc_directrun_usingLoggingMgr():
 import JobModule.jobfrag_base as jobfrag_base
 class JobFrag(jobfrag_base.JobFragBase):
     def __init__(self,  jobTIMEOUT:float,
+                 templateCMDinit:str,
+                 templateCMDdel:str,
+                 templateCMDrun:str,
+                 templateCMDstop:str,
+                 argCONFIGs:dict, constargCONFIGs:dict,
                  stdOUT, stdERR,
-                 cmdTEMPLATEs:dict, argCONFIGs:dict, argSETUPs:dict):
+                 ):
+        cmdTEMPLATEs = {
+                'init': templateCMDinit,
+                'del' : templateCMDdel,
+                'run' : templateCMDrun,
+                'stop': templateCMDstop,
+        }
+        
+        super(JobFrag,self).__init__( cmdTEMPLATEs, argCONFIGs, constargCONFIGs, stdOUT,stdERR )
 
         self.job_timeout = jobTIMEOUT
 
-        self.log = stdOUT
-        self.err = stdERR
-
-        self.set_cmd_template(cmdTEMPLATEs)
-        self.set_config(argCONFIGs)
-        self.set_config_const(argSETUPs)
-
         self.proc = None
     def __del__(self):
-        self.log.debug('[BashCMD] __del__() destroy everything.')
+        print('[BashCMD] __del__() destroy everything.')
+        #self.log.debug('[BashCMD] __del__() destroy everything.')
         if self.proc is not None:
             terminate_the_process(self.proc, self.log, 2) # terminate job using 2 second timeout
 
@@ -219,7 +226,7 @@ class JobFrag(jobfrag_base.JobFragBase):
         updatedCONF: dict. It should have the same format with original arg config
         '''
         for key, value in updatedCONF.items():
-            error_mesg = self.set_config_value(key,value)
+            error_mesg = self.set_value_to_config(key,value)
             if error_mesg:
                 self.err.warning(f'[{error_mesg}] Invalid configuration from config: key "{ key }" and value "{ value }".')
                 return False
@@ -276,9 +283,13 @@ def testfunc_pack_JobFrag():
 
     job = JobFrag(
             jobTIMEOUT = timeout,
-            stdOUT = logger, stdERR = logger,
-            cmdTEMPLATEs = cmd_template, argCONFIGs = arg_config, argSETUPs = arg_const_config
-    )
+                templateCMDinit = cmd_template['init'],
+                templateCMDdel  = cmd_template['del' ],
+                templateCMDrun  = cmd_template['run' ],
+                templateCMDstop = cmd_template['stop'],
+                argCONFIGs=arg_config,constargCONFIGs=arg_const_config,
+                stdOUT=logger, stdERR=logger
+        )
 
     print('\n\n>>>>>>>>>>>\nA INITIALIZE <<<<<<<<<<\n\n')
     job.Initialize()
@@ -303,8 +314,12 @@ def YamlConfiguredJobFrag(yamlLOADEDdict:dict):
         cmd_const_arguments = config['cmd_const_arguments']
         job_frag = JobFrag(
                 basic_pars['timeout'],
-                log_stdout, log_stderr,
-                cmd_templates, cmd_arguments, cmd_const_arguments
+                templateCMDinit = cmd_templates['init'],
+                templateCMDdel  = cmd_templates['del' ],
+                templateCMDrun  = cmd_templates['run' ],
+                templateCMDstop = cmd_templates['stop'],
+                argCONFIGs=cmd_arguments,constargCONFIGs=cmd_const_arguments,
+                stdOUT=log_stdout,stdERR=log_stderr,
         )
     except KeyError as e:
         raise KeyError(f'Invalid key in yaml config "{ config }"') from e
@@ -423,5 +438,5 @@ if __name__ == "__main__":
     #testfunc_directrun()
     #testfunc_directrun_showerr()
     #testfunc_directrun_withtimeout()
-    testfunc_directrun_bkgrun_and_kill()
-    #testfunc_pack_JobFrag()
+    #testfunc_directrun_bkgrun_and_kill()
+    testfunc_pack_JobFrag()

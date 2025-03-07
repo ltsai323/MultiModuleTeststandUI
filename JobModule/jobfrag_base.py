@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from threading import Event
 
 VALID_CONFIG = '' # Nothing means it is a valid config
+ERRORCODE_INVALID_CONFIG = 'InvalidConfig'
 
 class JobFragBase(ABC):
     '''
@@ -15,11 +16,11 @@ class JobFragBase(ABC):
     :Stop: Stop the running actions.
     '''
 
-    def __init__(self):
-        '''
-        The constructor accepts arguments for configuring the python software.
-        '''
-        pass
+    def __init__(self, cmdTEMPLATEs:dict, argCONFIGs:dict, constargCONFIGs:dict, logOUT, logERR):
+        self.set_cmd_template(cmdTEMPLATEs)
+        self.set_config(argCONFIGs)
+        self.set_config_const(constargCONFIGs)
+        self.set_logger(logOUT,logERR)
 
 
     @abstractmethod
@@ -59,22 +60,28 @@ class JobFragBase(ABC):
         self.config = conf
     def set_config_const(self, confCONST:dict):
         self.config_const = confCONST
-    def set_config_value(self, key:str, val) -> str:
+
+    def set_value_to_config(self, key:str, val) -> str:
         if key in self.config.keys():
             # add additional validator here
             self.config[key] = val
             return VALID_CONFIG
-        return 'InvalidKey'
-    def set_logger(self, stdOUT, stdERR):
-        pass
+        return ERRORCODE_INVALID_CONFIG
 
 
         
     def show_configurations(self) -> dict:
         return self.config
+    def show_all_configurations(self):
+        self.log.info(f'[Configs] variant = {self.config} and Constant = {self.config_const}')
+
     def get_full_command_from_cmd_template(self, templateNAME) -> dict:
         d = self.config_const | self.config # | operation requiring python3p9
         try:
             return self.cmd_template[templateNAME].format(**d)
         except KeyError as e:
             raise KeyError(f'[CMDNotFound] Command "{ templateNAME }" is not registed in cmd_template. The available keys are "{ self.cmd_template.keys() }"') from e
+
+    def set_logger(self, stdOUT, stdERR):
+        self.log = stdOUT
+        self.err = stdERR
