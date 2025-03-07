@@ -65,10 +65,12 @@ async def SetPowerStat_GWINSTEK_GPP3323(tag, resource, cmd):
             'ISET2:1.0',
             'LOAD1:CV',  # control mode CV
             'LOAD2:CV',
-            'OUTPUT:STATE ON', # power on
+            'OUTPUT1:STATE ON', # power on
+            'OUTPUT2:STATE ON', # power on
             ],
         'poweroff': [
-            'OUTPUT:STATE OFF', # power off
+            'OUTPUT1:STATE OFF', # power off
+            'OUTPUT2:STATE OFF', # power off
             ]
     }
     try:
@@ -112,7 +114,7 @@ if __name__ == "__main__":
          t = asyncio.create_task(IVMonitor_GWINSTEK_GPP3323('hhh', DEVICE_ADDRESS, '') )
          await t.Await()
 
-    asyncio.run( ff() )
+    #asyncio.run( ff() )
 
     #asyncio.run( SetPowerStat_GWINSTEK_GPP3323('hhh', DEVICE_ADDRESS, 'poweron') )
-    #asyncio.run( SetPowerStat_GWINSTEK_GPP3323('hhh', DEVICE_ADDRESS, 'poweroff') )
+    asyncio.run( SetPowerStat_GWINSTEK_GPP3323('hhh', DEVICE_ADDRESS, 'poweroff') )
