@@ -23,7 +23,8 @@ used_cmds = [
 
     'stop_bashjob1', # restart i2c-server.service and daq-server.service
 
-    'destroy_pwrjob1', # turn off LV powerU
+    'destroy_bashjob1',
+    'destroy_pwrjob2', # turn off LV powerU
         ]
 
 def init_job(clsCONF, flag):
@@ -90,9 +91,13 @@ def destroy_job(clsCONF, flag):
     async def job_content(clsCONF,flag):
         flag.value = STAT_RUNNING
 
+        tag,cmd = clsCONF.CMDTag_and_FormattedCMD('destroy_bashjob1')
+        if cmd:
+            bashjob1 = loop.create_task( bashcmd(tag,cmd) )
+            await bashjob1
         if not testmode:
             dev1 = "ASRL/dev/ttyUSB0::INSTR"
-            tag,cmd = clsCONF.CMDTag_and_FormattedCMD('destroy_pwrjob1')
+            tag,cmd = clsCONF.CMDTag_and_FormattedCMD('destroy_pwrjob2')
             cmd = 'poweroff' # asdf
             if cmd: await SetPowerStat(tag, dev1, cmd)
 
