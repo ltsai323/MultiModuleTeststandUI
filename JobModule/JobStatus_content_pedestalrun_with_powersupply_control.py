@@ -12,7 +12,7 @@ from JobModule.powersupply_GWINSTEK_GPP3323 import IVMonitor_GWINSTEK_GPP3323 as
 from JobModule.powersupply_GWINSTEK_GPP3323 import SetPowerStat_GWINSTEK_GPP3323 as SetPowerStat
 
 
-testmode = Flse
+testmode = False
 used_cmds = [
     'init_bashjob1', # restart i2c-server.service and daq-server.service
     'init_pwrjob2',  # turn on LV powerU

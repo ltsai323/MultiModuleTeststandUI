@@ -7,7 +7,9 @@ from JobModule.JobStatus_base import STAT_RUNNING, STAT_BKG_RUN, STAT_FUNCEND, S
 from PythonTools.MyLogging_BashJob1 import log
 from PythonTools.MyLogging_BashJob1 import log as bashlog
 from JobModule._BashCMD import bashcmd, BashJob
-from JobModule.JobStatus_content_example_run2bashcmd import init_job, run_job, stop_job, destroy_job, used_cmds
+#from JobModule.JobStatus_content_example_run2bashcmd import init_job, run_job, stop_job, destroy_job, used_cmds
+from JobModule.JobStatus_content_pedestalrun_with_powersupply_control import init_job, run_job, stop_job, destroy_job, used_cmds
+
 
 
 
