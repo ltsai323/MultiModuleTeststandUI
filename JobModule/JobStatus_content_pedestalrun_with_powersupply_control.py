@@ -14,12 +14,12 @@ from JobModule.powersupply_GWINSTEK_GPP3323 import SetPowerStat_GWINSTEK_GPP3323
 
 testmode = False
 used_cmds = [
-    'init_bashjob1', # restart i2c-server.service and daq-server.service
-    'init_pwrjob2',  # turn on LV powerU
+    'init_pwrjob1',  # turn on LV powerU
+    'init_bashjob2', # restart i2c-server.service and daq-server.service
     'init_bashjob9', # kria power on && start daq-client
 
     'run_pwrjob1',  # turn on IV monitoring on LV powerU
-    'run_bashjob9', # take data
+    'run_bashjob2', # take data
 
     'stop_bashjob1', # restart i2c-server.service and daq-server.service
 
@@ -31,18 +31,20 @@ def init_job(clsCONF, flag):
     async def job_content(clsCONF, flag):
         loop = asyncio.get_running_loop()
         flag.value = STAT_RUNNING
-        tag,cmd = clsCONF.CMDTag_and_FormattedCMD('init_bashjob1')
         tasks = []
-        if cmd: await bashcmd(tag,cmd)
-
         if not testmode:
             dev1 = "ASRL/dev/ttyUSB0::INSTR"
-            tag,cmd = clsCONF.CMDTag_and_FormattedCMD('init_pwrjob2')
+            tag,cmd = clsCONF.CMDTag_and_FormattedCMD('init_pwrjob1')
             cmd = 'poweron' # asdf
 
             if cmd: tasks.append(
                     loop.create_task( SetPowerStat(tag, dev1, cmd) )
                                 )
+        tag,cmd = clsCONF.CMDTag_and_FormattedCMD('init_bashjob2')
+        if cmd:
+            bashjob2 = await bashcmd(tag,cmd)
+            await bashjob2.Await()
+
 
         for task in tasks: await task
 
@@ -66,8 +68,13 @@ def run_job(clsCONF, flag):
             tag,cmd = clsCONF.CMDTag_and_FormattedCMD('run_pwrjob1')
             if cmd: pwrjob1 = loop.create_task( IVMonitor(tag, dev1, cmd) )
 
-        tag,cmd = clsCONF.CMDTag_and_FormattedCMD('run_bashjob9')
-        if cmd: bashjob9 = loop.create_task( bashcmd(tag,cmd) )
+        tag,cmd = clsCONF.CMDTag_and_FormattedCMD('run_bashjob2')
+        if cmd:
+            #bashjob2 = loop.create_task( bashcmd(tag,cmd) )
+            bashjob2 = await bashcmd(tag,cmd) # direct run
+            await bashjob2.Await()
+        #tag,cmd = clsCONF.CMDTag_and_FormattedCMD('run_bashjob9')
+        #if cmd: bashjob9 = loop.create_task( bashcmd(tag,cmd) )
 
         flag.value = STAT_BKG_RUN # tag this job should be running in background
 
@@ -76,6 +83,7 @@ def run_job(clsCONF, flag):
 def stop_job(clsCONF, flag):
     async def job_content(clsCONF,flag):
         flag.value = STAT_RUNNING
+        loop = asyncio.get_running_loop()
 
         tag,cmd = clsCONF.CMDTag_and_FormattedCMD('stop_bashjob1')
         if cmd:
@@ -90,6 +98,7 @@ def stop_job(clsCONF, flag):
 def destroy_job(clsCONF, flag):
     async def job_content(clsCONF,flag):
         flag.value = STAT_RUNNING
+        loop = asyncio.get_running_loop()
 
         tag,cmd = clsCONF.CMDTag_and_FormattedCMD('destroy_bashjob1')
         if cmd:

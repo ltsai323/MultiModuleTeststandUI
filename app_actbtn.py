@@ -47,21 +47,16 @@ def btn_connect() -> jsonify:
         from JobModule.JobStatus_main import JobStatus_Startup
         from JobModule.JobStatus_base import JobStatus, JobConf
 
-step0.functions.sh
-sh test/step1.turnon_board_pwr.sh && sh test/step2.kria_env_setup.sh && sh test/step3.daqclient.sh
-        cmd_templates = {
-                'init_bashjob1': '',
-                'init_bashjob2': 'echo hi22 {constVar}',
-                'run_bashjob1': 'echo hi running',
-                'run_bashjob2': 'echo hi22 running',
-                'stop_bashjob1': 'kk',
 
-                'init_bashjob1': '',
-                'init_pwrjob2':  'poweron',
-                'init_bashjob9': 'sh test/step1.turnon_board_pwr.sh && sh test/step2.kria_env_setup.sh && sh test/step3.daqclient.sh',
+        cmd_templates = {
+
+                'init_pwrjob1':  'poweron',
+                'init_bashjob2': 'sh test/step1.turnon_board_pwr.sh && sh test/step2.kria_env_setup.sh',
+                #'init_bashjob9': ' sh test/step3.daqclient.sh',
+                'init_bashjob9': 'daq-client',
 
                 'run_pwrjob1': '',
-                'run_bashjob9': 'sh test/step4.takedata.sh',
+                'run_bashjob2': 'sh test/step4.takedata.sh',
 
                 'stop_bashjob1': 'echo stopping',
 
