@@ -71,7 +71,6 @@ def btn_connect() -> jsonify:
                 'constVar': 'this is constant variable',
         }
         jobconf = JobConf(cmd_templates, cmd_arg, cmd_const)
-        #jobconf.ValidCheck(*used_cmds )
         current_app.jobinstance = JobStatus_Startup(jobconf)
         
     current_app.config['WEB_STAT'].btn = current_app.jobinstance.status
