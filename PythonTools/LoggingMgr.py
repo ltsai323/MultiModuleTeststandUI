@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import logging
+DEBUG_MODE = True # control the console output show DEBUG or INFO
 
 class errortype:
     def __init__(self, errTYPE:str, errTHRESHOLD:int, errPATTERN:str):
@@ -74,21 +75,42 @@ class ErrorMessageFilter(logging.Filter):
         return True # False to forbid this message
 
 # Configure separate loggers for stdout and stderr
-def configure_logger(name, log_file, errMESGfilter:ErrorMessageFilter):
+def configure_logger2(name, log_file, errMESGfilter:ErrorMessageFilter):
     logger = logging.getLogger(name)
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG) # log file always read DEBUG
 
     # File handler for logging
-    file_handler = logging.FileHandler(log_file)
-    file_handler.setFormatter(logging.Formatter(f"%(asctime)s [{name} - %(levelname)s] %(message)s"))
+    if log_file:
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setFormatter(logging.Formatter(f"%(asctime)s %(levelname)s: %(message)s"))
 
-    # Add custom filter
-    file_handler.addFilter(errMESGfilter)
-    logger.addHandler(file_handler)
+        # Add custom filter
+        file_handler.addFilter(errMESGfilter)
+        logger.addHandler(file_handler)
 
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
-    #console_handler.setLevel(logging.ERROR)
+    console_handler.setLevel(logging.DEBUG if DEBUG_MODE else logging.INFO)
+    console_handler.setFormatter(logging.Formatter(f"%(asctime)s %(levelname)s: %(message)s"))
+    # Add custom filter
+    console_handler.addFilter(errMESGfilter)
+    logger.addHandler(console_handler)
+
+    return logger
+def configure_logger(name, log_file, errMESGfilter:ErrorMessageFilter):
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.DEBUG) # log file always read DEBUG
+
+    # File handler for logging
+    if log_file:
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setFormatter(logging.Formatter(f"%(asctime)s [{name} - %(levelname)s] %(message)s"))
+
+        # Add custom filter
+        file_handler.addFilter(errMESGfilter)
+        logger.addHandler(file_handler)
+
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.DEBUG if DEBUG_MODE else logging.INFO)
     console_handler.setFormatter(logging.Formatter(f"%(asctime)s [{name} %(levelname)s] %(message)s"))
     # Add custom filter
     console_handler.addFilter(errMESGfilter)

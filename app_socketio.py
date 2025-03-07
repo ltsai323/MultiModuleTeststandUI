@@ -20,10 +20,25 @@ def socket_test():
 
 
 I = 0
+_status_ = [
+ 'startup',
+ 'initializing',
+ 'initialized',
+ 'configured'
+ 'running',
+ 'destroyed',
+ ]
 @socketio.on('socket_get_web_status')
 def socket_get_web_status():
-    emit('socket_get_web_status_response', {'status': current_app.config['WEB_STAT'].btn} )
-    #emit('socket_get_web_status_response', {'status': gVAR.WEB_STAT})
+    print(f'[CURRENT STSUS] {current_app.config["WEB_STAT"].btn}')
+    if not hasattr(current_app, 'jobinstance'):
+        emit('socket_get_web_status_response', {'status': 'none'} )
+        return
+
+    current_app.jobinstance = current_app.jobinstance.fetch_current_obj()
+    print(f'[CURRENT JOBINST] {current_app.jobinstance.status}')
+    newstatus = current_app.jobinstance.status
+    emit('socket_get_web_status_response', {'status': current_app.jobinstance.status})
 
 ''' If you got error code 400
 The error raised due to incompatible socket version from socket source and socket client.
