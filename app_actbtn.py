@@ -44,9 +44,8 @@ def btn_connect() -> jsonify:
         pass
     else:
         mesg = 'btnCONN clicked! you need to initialize all working modules for first'
-        from JobModule.JobStatus_example_2ssh_connection import JobStatus_Startup
+        from JobModule.JobStatus_main import JobStatus_Startup
         from JobModule.JobStatus_base import JobStatus, JobConf
-        from JobModule.JobStatus_strategy1 import used_cmds
 
         cmd_templates = {
                 'init_bashjob1': 'echo hi {initVar1}',
@@ -72,7 +71,7 @@ def btn_connect() -> jsonify:
                 'constVar': 'this is constant variable',
         }
         jobconf = JobConf(cmd_templates, cmd_arg, cmd_const)
-        jobconf.ValidCheck(*used_cmds )
+        #jobconf.ValidCheck(*used_cmds )
         current_app.jobinstance = JobStatus_Startup(jobconf)
         
     current_app.config['WEB_STAT'].btn = current_app.jobinstance.status

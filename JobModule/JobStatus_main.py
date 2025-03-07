@@ -7,7 +7,7 @@ from JobModule.JobStatus_base import STAT_RUNNING, STAT_BKG_RUN, STAT_FUNCEND, S
 from PythonTools.MyLogging_BashJob1 import log
 from PythonTools.MyLogging_BashJob1 import log as bashlog
 from JobModule._BashCMD import bashcmd, BashJob
-from JobModule.JobStatus_strategy1 import init_job, run_job, stop_job, destroy_job, used_cmds
+from JobModule.JobStatus_content_example_run2bashcmd import init_job, run_job, stop_job, destroy_job, used_cmds
 
 
 
@@ -34,6 +34,7 @@ class JobStatus_Startup(JobStatus):
     def __init__(self, jobCONF:JobConf): # asdfasdfasdf
         super().__init__(None)
         self.bkgjob_init_flag = multiprocessing.Value('i', STAT_INVALID)
+        jobCONF.ValidCheck(*used_cmds)
         self.config = jobCONF
     def fetch_current_obj(self):
         if self.bkgjob_init_flag.value <= 0:
@@ -258,11 +259,16 @@ class JobStatus_Destroyed(JobStatus):
 
 def testfunc_JobStatus_whole_flow():
     cmd_templates = {
-            'init_bashjob1': 'echo hi {initVar1}',
-            'init_bashjob2': 'echo hi22 {constVar}',
-            'run_bashjob1': 'echo hi running',
-            'run_bashjob2': 'echo hi22 running',
-            'stop_bashjob1': 'kk'
+    'init_bashjob1'     : 'echo hi {initVar1}',
+    'init_pwrjob2'      : 'poweron',
+    'init_bashjob9'     : 'echo hi 999',
+
+    'run_pwrjob1'       : 'kkk',
+    'run_bashjob9'      : 'echo jjj {constVar}',
+
+    'stop_bashjob1'     : '',
+
+    'destroy_pwrjob1'   : 'poweroff',
     }
     cmd_arg = {
             'initVar1': 'this is initVar1',
@@ -271,7 +277,6 @@ def testfunc_JobStatus_whole_flow():
             'constVar': 'this is constant variable',
     }
     jobconf = JobConf(cmd_templates, cmd_arg, cmd_const)
-    jobconf.ValidCheck(*used_cmds )
     job = JobStatus_Startup(jobconf)
     job.Initialize()
     input("Put enter to stop all program")
