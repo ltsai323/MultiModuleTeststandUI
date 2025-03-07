@@ -19,7 +19,6 @@ from app_socketio import socketio
 #import rs232cmder as rs232cmder
 import queue
 
-asdf = None
 
 
 
@@ -40,29 +39,45 @@ def btn_connect() -> jsonify:
         return jsonify({ 'btnSTATUS': self.btn, 'LEDs': self.LEDs, 'moduleIDs': self.moduleIDs })
     '''
     mesg = 'btnCONN clicked! send current webpage status to client'
-    if current_app.config['WEB_STAT'].btn == 'none':
+    if hasattr(current_app, 'jobinstance'):
+        ### keep original status
+        pass
+    else:
         mesg = 'btnCONN clicked! you need to initialize all working modules for first'
-        current_app.config['WEB_STAT'].btn = 'connected'
+        from JobModule.JobStatus_example_2ssh_connection import JobStatus_Startup
+        from JobModule.JobStatus_base import JobStatus, JobConf
+        from JobModule.JobStatus_strategy1 import used_cmds
+
+        cmd_templates = {
+                'init_bashjob1': 'echo hi {initVar1}',
+                'init_bashjob2': 'echo hi22 {constVar}',
+                'run_bashjob1': 'echo hi running',
+                'run_bashjob2': 'echo hi22 running',
+                'stop_bashjob1': 'kk',
+                'init_bashjob1': 'echo initinalizing',
+                'init_pwrjob2':  'poweron',
+                'init_bashjob9': 'echo initializing 2',
+
+                'run_pwrjob1': '',
+                'run_bashjob9': 'echo running; sleep 5; echo run ended',
+
+                'stop_bashjob1': 'echo stopping',
+
+                'destroy_pwrjob1': 'poweroff',
+        }
+        cmd_arg = {
+                'initVar1': 'this is initVar1',
+        }
+        cmd_const = {
+                'constVar': 'this is constant variable',
+        }
+        jobconf = JobConf(cmd_templates, cmd_arg, cmd_const)
+        jobconf.ValidCheck(*used_cmds )
+        current_app.jobinstance = JobStatus_Startup(jobconf)
+        
+    current_app.config['WEB_STAT'].btn = current_app.jobinstance.status
     current_app.config['MESG_LOG'].info(mesg)
     return current_app.config['WEB_STAT'].jsonify()
-
-
-JOB_THREADING = None # threading.Threads()
-def BkgRunJob(func, outSTATUS):
-    '''
-    Set status as wait until jobs finished.
-    '''
-    print(f'\n\nasdf {outSTATUS}\n\n')
-    def run_job(app, func,outSTAT):
-        with app.app_context():
-            func()
-            if asdf != None:
-                app.config['WEB_STAT'].btn = outSTAT
-    global JOB_THREADING
-    JOB_THREADING = threading_tools.pack_function_to_bkg_exec(run_job, (current_app._get_current_object(), func,outSTATUS))
-def BkgJob_Executing():
-    global JOB_THREADING
-    return t.is_alive()
 
 
     
@@ -73,17 +88,15 @@ def btn_initialize():
     
     Handles the button clicking. Once the client clicked "btnINIT", server side received the command INITIALIZE and update button status
     '''
-    current_app.config['WEB_STAT'].btn = 'wait'
-    from JobModule.joborganization_takedata import JobOrganization
-    #from JobModule.joborganization_example import JobOrganization
-    global asdf
-    asdf = JobOrganization()
-    BkgRunJob(asdf.Initialize, 'initialized')
+    current_app.jobinstance = current_app.jobinstance.fetch_current_obj()
+    current_app.jobinstance.Initialize()
+    current_app.jobinstance = current_app.jobinstance.fetch_current_obj()
+
 
 
     mesg = f'btnINIT clicked! waiting for all module initialized'
     current_app.config['MESG_LOG'].info(mesg)
-    emit('btnSTATUS', {'btnSTATUS': current_app.config['WEB_STAT'].btn, 'log': mesg})
+    emit('btnSTATUS', {'btnSTATUS': current_app.jobinstance.status, 'log': mesg})
 
 @app_b.route('/submit', methods=['POST'])
 def buttonCONFIGURE():
@@ -111,12 +124,15 @@ def buttonCONFIGURE():
 
     asdf BUT CURRENTLY NO ANY EFFECT asdf
     '''
-    current_app.config['WEB_STAT'].btn = 'configured'
+    current_app.jobinstance = current_app.jobinstance.fetch_current_obj()
+    current_app.jobinstance.Configure({'initVar1': 'configured'})
+    current_app.jobinstance = current_app.jobinstance.fetch_current_obj()
+
     current_app.config['MESG_LOG'].info(outMesg)
     
     ### javascript uses response.status to get contents inside the dict
     return jsonify( {'status':'success', 'message': outMesg} )
-    return jsonify( {'status':'type1 error', 'errors': 'blah blah'} )
+    #return jsonify( {'status':'type1 error', 'errors': 'blah blah'} )
 
 @socketio.on('btnEXEC')
 def btn_start():
@@ -125,12 +141,13 @@ def btn_start():
     
     Handles the button clicking. Once the client clicked "btnINIT", server side received the command INITIALIZE and update button status
     '''
-    current_app.config['WEB_STAT'].btn = 'running'
-    BkgRunJob(asdf.Run, 'idle')
+    current_app.jobinstance = current_app.jobinstance.fetch_current_obj()
+    current_app.jobinstance.Run()
+    current_app.jobinstance = current_app.jobinstance.fetch_current_obj()
 
     mesg = f'[btnEXEC] running all jobs'
     current_app.config['MESG_LOG'].info(mesg)
-    emit('btnSTATUS', {'btnSTATUS': current_app.config['WEB_STAT'].btn, 'log': mesg})
+    emit('btnSTATUS', {'btnSTATUS': current_app.jobinstance.status, 'log': mesg})
 @socketio.on('btnSTOP')
 def btn_stop():
     '''
@@ -138,16 +155,16 @@ def btn_stop():
     
     Handles the button clicking. Once the client clicked "btnINIT", server side received the command INITIALIZE and update button status
     '''
-    current_app.config['WEB_STAT'].btn = 'wait' # test without jobs asdf
+    current_app.jobinstance = current_app.jobinstance.fetch_current_obj()
     mesg = f'[btnSTOP] stopping all jobs'
+    emit('btnSTATUS', {'btnSTATUS': current_app.jobinstance.status, 'log': mesg})
+    current_app.jobinstance.Stop()
+    current_app.jobinstance = current_app.jobinstance.fetch_current_obj()
     current_app.config['MESG_LOG'].info(mesg)
-    emit('btnSTATUS', {'btnSTATUS': current_app.config['WEB_STAT'].btn, 'log': mesg})
 
-    asdf.Stop()
-    current_app.config['WEB_STAT'].btn = 'stopped' # test without jobs asdf
     mesg = f'[btnSTOP] all job finished'
     current_app.config['MESG_LOG'].info(mesg)
-    emit('btnSTATUS', {'btnSTATUS': current_app.config['WEB_STAT'].btn, 'log': mesg})
+    emit('btnSTATUS', {'btnSTATUS': current_app.jobinstance.status, 'log': mesg})
 @socketio.on('btnEXIT')
 def btn_destroy():
     '''
@@ -155,19 +172,17 @@ def btn_destroy():
     
     Handles the button clicking. Once the client clicked "btnINIT", server side received the command INITIALIZE and update button status
     '''
-    current_app.config['WEB_STAT'].btn = 'wait'
-    global asdf
-    del asdf
-    asdf = None
+    current_app.jobinstance = current_app.jobinstance.fetch_current_obj()
+    current_app.jobinstance.Destroy()
+    current_app.jobinstance = current_app.jobinstance.fetch_current_obj()
     mesg = f'[btnEXIT] Destroying job module'
     current_app.config['MESG_LOG'].info(mesg)
-    emit('btnSTATUS', {'btnSTATUS': current_app.config['WEB_STAT'].btn, 'log': mesg})
+    emit('btnSTATUS', {'btnSTATUS': current_app.jobinstance.status, 'log': mesg})
 
-    current_app.config['WEB_STAT'].btn = 'halt' # test without jobs asdf
 
     mesg = f'[btnEXIT] Destroyed'
     current_app.config['MESG_LOG'].info(mesg)
-    emit('btnSTATUS', {'btnSTATUS': current_app.config['WEB_STAT'].btn, 'log': mesg})
+    emit('btnSTATUS', {'btnSTATUS': current_app.jobinstance.status, 'log': mesg})
 
 
 
