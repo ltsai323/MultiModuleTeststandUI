@@ -22,12 +22,12 @@ async def IVMonitor(instr,cmds):
         while True:
             command = "MEAS:CURR?"  # Send command get current
             instr.write(cmds["I"])  # Send command
-            meas_I = instr.read()  # Read response
+            meas_I = instr.read().strip()  # Read response
 
             instr.write(cmds["V"])  # Send command get voltage
-            meas_V = instr.read()  # Read response
+            meas_V = instr.read().strip()  # Read response
             
-            print(f'[MeasuredIV] V({meas_V} and I({meas_I})')
+            print(f'[MeasuredIV] V({meas_V}) and I({meas_I})')
 
             await asyncio.sleep(2)  # Wait 1 second before sending again
 
@@ -76,7 +76,7 @@ async def SetPowerStat_GWINSTEK_GPP3323(tag, resource, cmd):
     except KeyError as e:
         raise KeyError(f'[Invalid Key] input key "{ cmd }" is not available in "{ commands.keys() }"') from e
 
-    rs232 = RS232Dev()
+    rs232 = RS232Dev(tag)
     instr = rs232.rm.open_resource(resource)
     # Set baud rate and other parameters if needed
     instr.baud_rate = 9600
@@ -86,7 +86,7 @@ async def SetPowerStat_GWINSTEK_GPP3323(tag, resource, cmd):
     return rs232
 async def IVMonitor_GWINSTEK_GPP3323(tag, resource, cmd):
     ''' this is a bkg running function. This function never neded '''
-    rs232 = RS232Dev()
+    rs232 = RS232Dev(tag)
     instr = rs232.rm.open_resource(resource)
     # Set baud rate and other parameters if needed
     instr.baud_rate = 9600
@@ -95,6 +95,7 @@ async def IVMonitor_GWINSTEK_GPP3323(tag, resource, cmd):
     cmds = { 'I': 'MEAS:CURR?', 'V': 'MEAS:VOLT?' }
     task = asyncio.create_task(IVMonitor(instr, cmds))
     rs232.SetTask(task)
+
     return rs232
 
 
@@ -104,6 +105,14 @@ async def IVMonitor_GWINSTEK_GPP3323(tag, resource, cmd):
 
 if __name__ == "__main__":
     DEVICE_ADDRESS = "ASRL/dev/ttyUSB0::INSTR"
-    #asyncio.run( IVMonitor_GWINSTEK_GPP3323('hhh', DEVICE_ADDRESS, '') )
+    async def ff():
+         bbb = await IVMonitor_GWINSTEK_GPP3323('hhh', DEVICE_ADDRESS, '')
+         await bbb.Await()
+         return
+         t = asyncio.create_task(IVMonitor_GWINSTEK_GPP3323('hhh', DEVICE_ADDRESS, '') )
+         await t.Await()
+
+    asyncio.run( ff() )
+
     #asyncio.run( SetPowerStat_GWINSTEK_GPP3323('hhh', DEVICE_ADDRESS, 'poweron') )
     #asyncio.run( SetPowerStat_GWINSTEK_GPP3323('hhh', DEVICE_ADDRESS, 'poweroff') )
