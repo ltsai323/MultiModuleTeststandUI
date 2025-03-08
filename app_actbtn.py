@@ -49,14 +49,14 @@ def btn_connect() -> jsonify:
 
 
         cmd_templates = {
-
                 'init_pwrjob1':  'poweron',
                 'init_bashjob2': 'sh test/step1.turnon_board_pwr.sh && sh test/step2.kria_env_setup.sh',
                 #'init_bashjob9': ' sh test/step3.daqclient.sh',
                 'init_bashjob9': 'daq-client',
 
-                'run_pwrjob1': '',
+                'run_pwrjob1': 'blah',
                 'run_bashjob2': 'sh test/step4.takedata.sh',
+                #'run_bashjob2': 'sh ~/hii_run.sh',
 
                 'stop_bashjob1': 'echo stopping',
 
