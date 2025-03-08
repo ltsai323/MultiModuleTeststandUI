@@ -29,31 +29,33 @@ used_cmds = [
 
 def init_job(clsCONF, flag):
     async def job_content(clsCONF, flag):
-        loop = asyncio.get_running_loop()
         flag.value = STAT_RUNNING
-        tasks = []
         if not testmode:
             dev1 = "ASRL/dev/ttyUSB0::INSTR"
             tag,cmd = clsCONF.CMDTag_and_FormattedCMD('init_pwrjob1')
             cmd = 'poweron' # asdf
 
-            if cmd: tasks.append(
-                    loop.create_task( SetPowerStat(tag, dev1, cmd) )
-                                )
+            if cmd:
+                init_pwrjob1 = await SetPowerStat(tag, dev1, cmd)
+                await init_pwrjob1.Await()
+
         tag,cmd = clsCONF.CMDTag_and_FormattedCMD('init_bashjob2')
         if cmd:
             bashjob2 = await bashcmd(tag,cmd)
             await bashjob2.Await()
 
 
-        for task in tasks: await task
 
         tag,cmd = clsCONF.CMDTag_and_FormattedCMD('init_bashjob9')
-        if cmd: bashjob9 = loop.create_task( bashcmd(tag,cmd) )
+        if cmd:
+            log.debug(f'[init_bashjob9] got command "{cmd}"\n\n\n')
+            bashjob9 = await bashcmd(tag,cmd)
 
-        #await bashjob9.Await()
-        flag.value = STAT_BKG_RUN # tag this job should be running in background
-        #flag.value = STAT_FUNCEND
+            flag.value = STAT_BKG_RUN # tag this job should be running in background
+            await bashjob9.Await()
+            log.debug(f'[init_bashjob9] got command "{cmd}"   EXECTION FINISHED')
+
+        flag.value = STAT_FUNCEND
 
     asyncio.run(job_content(clsCONF, flag) )
 
@@ -61,34 +63,36 @@ def init_job(clsCONF, flag):
 def run_job(clsCONF, flag):
     async def job_content(clsCONF,flag):
         flag.value = STAT_RUNNING
-        loop = asyncio.get_running_loop()
 
         if not testmode:
             dev1 = "ASRL/dev/ttyUSB0::INSTR"
             tag,cmd = clsCONF.CMDTag_and_FormattedCMD('run_pwrjob1')
-            if cmd: pwrjob1 = loop.create_task( IVMonitor(tag, dev1, cmd) )
+            #if cmd: pwrjob1 = asyncio.create_task( IVMonitor(tag, dev1, cmd) )
+            if cmd:
+                pwrjob1 = await IVMonitor(tag, dev1, cmd)
+                ### this is a monitoring job. Not to use await
 
         tag,cmd = clsCONF.CMDTag_and_FormattedCMD('run_bashjob2')
         if cmd:
-            #bashjob2 = loop.create_task( bashcmd(tag,cmd) )
             bashjob2 = await bashcmd(tag,cmd) # direct run
             await bashjob2.Await()
         #tag,cmd = clsCONF.CMDTag_and_FormattedCMD('run_bashjob9')
-        #if cmd: bashjob9 = loop.create_task( bashcmd(tag,cmd) )
+        #if cmd: bashjob9 = asyncio.create_task( bashcmd(tag,cmd) )
 
-        flag.value = STAT_BKG_RUN # tag this job should be running in background
+        # asdf since bashjob2 finished. I should terminate pwrjob1
+        flag.value = STAT_FUNCEND # tag this job should be running in background
 
     asyncio.run( job_content(clsCONF,flag) )
 
 def stop_job(clsCONF, flag):
     async def job_content(clsCONF,flag):
         flag.value = STAT_RUNNING
-        loop = asyncio.get_running_loop()
 
         tag,cmd = clsCONF.CMDTag_and_FormattedCMD('stop_bashjob1')
         if cmd:
-            bashjob1 = loop.create_task( bashcmd(tag,cmd) )
-            await bashjob1
+            #bashjob1 = asyncio.create_task( bashcmd(tag,cmd) )
+            bashjob1 = await bashcmd(tag,cmd)
+            await bashjob1.Await()
 
         flag.value = STAT_FUNCEND # tag this job should be running in background
 
@@ -98,12 +102,12 @@ def stop_job(clsCONF, flag):
 def destroy_job(clsCONF, flag):
     async def job_content(clsCONF,flag):
         flag.value = STAT_RUNNING
-        loop = asyncio.get_running_loop()
 
         tag,cmd = clsCONF.CMDTag_and_FormattedCMD('destroy_bashjob1')
         if cmd:
-            bashjob1 = loop.create_task( bashcmd(tag,cmd) )
-            await bashjob1
+            #bashjob1 = asyncio.create_task( bashcmd(tag,cmd) )
+            bashjob1 = await bashcmd(tag,cmd)
+            await bashjob1.Await()
         if not testmode:
             dev1 = "ASRL/dev/ttyUSB0::INSTR"
             tag,cmd = clsCONF.CMDTag_and_FormattedCMD('destroy_pwrjob2')
