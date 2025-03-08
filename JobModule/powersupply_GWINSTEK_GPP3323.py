@@ -61,8 +61,8 @@ async def SetPowerStat_GWINSTEK_GPP3323(tag, resource, cmd):
         'poweron': [
             'VSET1:1.5', # set maximum voltage to 1.5V
             'VSET2:1.5',
-            'ISET1:1.0', # set maximum current to 1.0A
-            'ISET2:1.0',
+            'ISET1:1.5', # set maximum current to 1.5A
+            'ISET2:1.5',
             'LOAD1:CV',  # control mode CV
             'LOAD2:CV',
             'OUTPUT1:STATE ON', # power on
@@ -110,11 +110,8 @@ if __name__ == "__main__":
     async def ff():
          bbb = await IVMonitor_GWINSTEK_GPP3323('hhh', DEVICE_ADDRESS, '')
          await bbb.Await()
-         return
-         t = asyncio.create_task(IVMonitor_GWINSTEK_GPP3323('hhh', DEVICE_ADDRESS, '') )
-         await t.Await()
 
     #asyncio.run( ff() )
 
-    #asyncio.run( SetPowerStat_GWINSTEK_GPP3323('hhh', DEVICE_ADDRESS, 'poweron') )
-    asyncio.run( SetPowerStat_GWINSTEK_GPP3323('hhh', DEVICE_ADDRESS, 'poweroff') )
+    asyncio.run( SetPowerStat_GWINSTEK_GPP3323('hhh', DEVICE_ADDRESS, 'poweron') )
+    #asyncio.run( SetPowerStat_GWINSTEK_GPP3323('hhh', DEVICE_ADDRESS, 'poweroff') )
