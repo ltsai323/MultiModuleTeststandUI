@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import logging
-DEBUG_MODE = True # control the console output show DEBUG or INFO
+DEBUG_MODE = False # control the console output show DEBUG or INFO
 
 class errortype:
     def __init__(self, errTYPE:str, errTHRESHOLD:int, errPATTERN:str):
@@ -75,8 +75,8 @@ class ErrorMessageFilter(logging.Filter):
         return True # False to forbid this message
 
 # Configure separate loggers for stdout and stderr
-def configure_logger2(name, log_file, errMESGfilter:ErrorMessageFilter):
-    logger = logging.getLogger(name)
+def configure_logger2(loggerNAME, log_file, errMESGfilter:ErrorMessageFilter):
+    logger = logging.getLogger(loggerNAME)
     logger.setLevel(logging.DEBUG) # log file always read DEBUG
 
     # File handler for logging
@@ -96,6 +96,46 @@ def configure_logger2(name, log_file, errMESGfilter:ErrorMessageFilter):
     logger.addHandler(console_handler)
 
     return logger
+
+def configure_logger_by_yamlDICT(yamlCONTENT:str):
+    ''' you can input code piece
+    with open(yamlFILE, 'r') as fREAD:
+        configure_logger_by_yamlDICT(fREAD)
+
+    or the example string yaml_content
+    '''
+#yaml_content = '''
+#name: bashjob
+#file: log_stdout.txt
+#filters:
+#- indicator: running
+#  threshold: 0
+#  pattern: 'RUNNING'
+#  filter_method: exact
+#- indicator: Type0ERROR
+#  threshold: 0
+#  pattern: '[running] 0'
+#  filter_method: exact
+#- indicator: Type3ERROR
+#  threshold: 0
+#  pattern: '[running] 3'
+#  filter_method: contain
+#- indicator: idle
+#  threshold: 0
+#  pattern: 'FINISHED'
+#  filter_method: exact
+#'''
+
+
+    
+    import yaml
+    conf = yaml.safe_load(yamlCONTENT)
+
+
+    stdout_filter_rules = [ errortype_factory(c['filter_method'], c['indicator'],c['threshold'],c['pattern']) for c in conf['filters'] ]
+    stdout_filter = ErrorMessageFilter(stdout_filter_rules)
+    log_stdout = configure_logger2(conf['name'],conf['file'], stdout_filter)
+    return log_stdout
 def configure_logger(name, log_file, errMESGfilter:ErrorMessageFilter):
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG) # log file always read DEBUG
