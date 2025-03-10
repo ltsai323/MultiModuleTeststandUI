@@ -3,6 +3,7 @@ import logging
 from PythonTools.MyLogging_BashJob1 import log
 import multiprocessing
 
+STAT_INERROR = -2
 STAT_INVALID = -1
 STAT_RUNNING =  0
 STAT_FUNCEND =  1 # job is finished
@@ -45,6 +46,8 @@ class JobConf:
 
         for key,cmd_template in self.cmd_template.items():
             self.GetFormattedCMD(key)
+    def Config(self, configKEY) -> str:
+        return self.GetFormattedCMD(configKEY)
 
 
         

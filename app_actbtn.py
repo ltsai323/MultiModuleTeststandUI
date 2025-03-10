@@ -2,9 +2,9 @@ from flask import Flask, render_template, request, jsonify
 from dataclasses import dataclass
 import socket
 import PythonTools.MesgHub as MesgHub
-from PythonTools.LogTool import LOG
 import threading
 from app_global_variables import _VARS_, _LOG_CENTER_, _JOB_STAT_
+from PythonTools.MyLogging_BashJob1 import log
 #import app_bkgrun
 import PythonTools.threading_tools as threading_tools
 
@@ -13,10 +13,6 @@ from pprint import pprint
 from app_socketio import socketio
 
 
-#import sshconn
-#import bashcmd
-#import rs232cmder_powersupply as rs232cmder
-#import rs232cmder as rs232cmder
 import queue
 
 
@@ -44,47 +40,28 @@ def btn_connect() -> jsonify:
         pass
     else:
         mesg = 'btnCONN clicked! you need to initialize all working modules for first'
-        from JobModule.JobStatus_main import JobStatus_Startup
-        from JobModule.JobStatus_base import JobStatus, JobConf
-
-
-        cmd_templates = {
-                'init_pwrjob1':  'poweron',
-                'init_bashjob2': 'sh test/step1.turnon_board_pwr.sh && sh test/step2.kria_env_setup.sh',
-                #'init_bashjob9': ' sh test/step3.daqclient.sh',
-                'init_bashjob9': 'daq-client',
-
-                'run_pwrjob1': 'blah',
-                'run_bashjob2': 'sh test/step4.takedata.sh',
-                #'run_bashjob2': 'sh ~/hii_run.sh',
-
-                'stop_bashjob1': 'echo stopping',
-
-                'destroy_bashjob1': 'sh test/step30.kill_daqclient.sh && sh test/step10.turnoff_board_pwr.sh',
-                'destroy_pwrjob2': 'poweroff',
-        }
-        cmd_arg = {
-                'initVar1': 'this is initVar1',
-        }
-        cmd_const = {
-                'constVar': 'this is constant variable',
-        }
-        jobconf = JobConf(cmd_templates, cmd_arg, cmd_const)
-        current_app.jobinstance = JobStatus_Startup(jobconf)
+        from JobModule.JobStatus_main import JobStatusFactory
+        current_app.jobinstance = JobStatusFactory('data/JobStatus_content_example_run2bashcmd.yaml')
         
     current_app.config['WEB_STAT'].btn = current_app.jobinstance.status
     current_app.config['MESG_LOG'].info(mesg)
+    socketio.emit("start_periodic_update")
     return current_app.config['WEB_STAT'].jsonify()
 
 
     
 @socketio.on('btnINIT')
-def btn_initialize():
+def btn_initialize(data):
     '''
     Client sends command INITIALIZE to server. That the server should response the current button status
     
     Handles the button clicking. Once the client clicked "btnINIT", server side received the command INITIALIZE and update button status
+
+    Receiving data.get('jobmode', 'default') to get running info from radio form
     '''
+    jobmode = data.get('jobmode', '')
+    log.info(f'[Initialize Button] Set jobmode to "{ jobmode }"')
+
     current_app.jobinstance = current_app.jobinstance.fetch_current_obj()
     current_app.jobinstance.Initialize()
     current_app.jobinstance = current_app.jobinstance.fetch_current_obj()

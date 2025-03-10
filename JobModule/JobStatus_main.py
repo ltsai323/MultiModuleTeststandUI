@@ -3,12 +3,12 @@ import multiprocessing
 import signal
 import logging
 from JobModule.JobStatus_base import JobStatus, JobConf
-from JobModule.JobStatus_base import STAT_RUNNING, STAT_BKG_RUN, STAT_FUNCEND, STAT_INVALID
+from JobModule.JobStatus_base import STAT_RUNNING, STAT_BKG_RUN, STAT_FUNCEND, STAT_INVALID, STAT_INERROR
 from PythonTools.MyLogging_BashJob1 import log
 from PythonTools.MyLogging_BashJob1 import log as bashlog
 from JobModule._BashCMD import bashcmd, BashJob
-#from JobModule.JobStatus_content_example_run2bashcmd import init_job, run_job, stop_job, destroy_job, used_cmds
-from JobModule.JobStatus_content_pedestalrun_with_powersupply_control import init_job, run_job, stop_job, destroy_job, used_cmds
+from JobModule.JobStatus_content_example_run2bashcmd import init_job, run_job, stop_job, destroy_job, used_cmds, JobConfig_fromYAML
+#from JobModule.JobStatus_content_pedestalrun_with_powersupply_control import init_job, run_job, stop_job, destroy_job, used_cmds, JobConfig_fromYAML
 
 
 
@@ -39,19 +39,18 @@ class JobStatus_Startup(JobStatus):
         jobCONF.ValidCheck(*used_cmds)
         self.config = jobCONF
     def fetch_current_obj(self):
-        if self.bkgjob_init_flag.value <= 0:
+        if self.bkgjob_init_flag.value < 0:
             log.debug(f'[StayCurrentObj] Keeps status "{self.status}"')
             return self
         log.debug(f'[NewObj] Move to new object "JobStatus_Initializing". Initializing object from JobStatus_Startup')
         return JobStatus_Initializing(self)
-        
+
     def Initialize(self):
         log.debug(f'[InitializeCMD] Initializing current job from status "{ self.status }"')
         if self.bkgjob_init_flag.value != STAT_INVALID:
-            log.warning(f'[Initializing] The job is initializing ... Please use fetch_current_obj() to fetch current object')
+            log.debug(f'[Initializing] The job is initializing ... Please use fetch_current_obj() to fetch current object')
             return
         
-        #init_job(self.config, self.bkgjob_init_flag)
         self.bkgjob_init_process = multiprocessing.Process(target=init_job, args=(self.config, self.bkgjob_init_flag))
         self.bkgjob_init_process.start()
 
@@ -79,12 +78,18 @@ class JobStatus_Initializing(JobStatus):
     status = 'initializing'
     def __init__(self, prevSTATobj):
         super().__init__(prevSTATobj)
-        if not hasattr(self, 'bkgjob_init_flag'   ): raise RuntimeError('[InvalidObject] JobStatus_Initializing() requires class attribute "bkgjob_init_flag"')
-        if not hasattr(self, 'bkgjob_init_process'): raise RuntimeError('[InvalidObject] JobStatus_Initializing() requires class attribute "bkgjob_init_process"')
+        if not hasattr(self, 'bkgjob_init_flag'   ):
+            log.error('[InvalideObject] JobStatus_Initializing() requires class attribute "bkgjob_init_flag" in __init__()')
+        if not hasattr(self, 'bkgjob_init_process'):
+            log.error('[InvalidObject] JobStatus_Initializing() requires class attribute "bkgjob_init_process" in __init__()')
     def fetch_current_obj(self):
         if not hasattr(self, 'bkgjob_init_flag'):
-            log.debug(f'[ObjectDestroyed] Move object to JobStatus_Destroyed')
-            return JobStatus_Destroyed(self)
+            log.error(f'[RuntimeError] no running initializing job in JobStatus_Initializing() object')
+            return JobStatus_Error(self)
+
+        if self.bkgjob_init_flag.value <= STAT_INERROR:
+            log.error('[InitializeError] Initialize() process raised error.')
+            return self
 
         if self.bkgjob_init_flag.value <= 0:
             log.debug(f'[StayCurrentObj] Keeps status "{self.status}"')
@@ -257,6 +262,38 @@ class JobStatus_Destroyed(JobStatus):
         #init_job(self.config, self.bkgjob_init_flag)
         self.bkgjob_init_process = multiprocessing.Process(target=init_job, args=(self.config, self.bkgjob_init_flag))
         self.bkgjob_init_process.start()
+
+class JobStatus_Error(JobStatus):
+    status = 'error'
+    def __init__(self, prevSTATobj):
+        super().__init__(prevSTATobj)
+
+    def fetch_current_obj(self):
+        if hasattr(self, 'bkgjob_init_flag'   ): return self
+        if hasattr(self, 'bkgjob_init_process'): return self
+        if hasattr(self, 'bkgjob_main_flag'   ): return self
+        if hasattr(self, 'bkgjob_main_process'): return self
+
+        return JobStatus_Destroyed(self)
+        
+    def Destroy(self):
+        log.debug(f'[DestroyCMD] Destroying from status "{ self.status }"')
+        destroy_process(self, 'bkgjob_main_process')
+        destroy_flag   (self, 'bkgjob_main_flag'   )
+        destroy_process(self, 'bkgjob_init_process')
+        destroy_flag   (self, 'bkgjob_init_flag'   )
+
+        self.destroy_flag = multiprocessing.Value('i', STAT_INVALID)
+        self.destroy_process = multiprocessing.Process(target=destroy_job, args=(self.config, self.destroy_flag))
+        self.destroy_process.start()
+        self.destroy_process.join()
+        delattr(self, 'destroy_flag')
+        delattr(self, 'destroy_process')
+
+def JobStatusFactory(yamlFILE:str):
+    with open(yamlFILE, 'r') as fIN:
+        jobconfig = JobConfig_fromYAML(fIN)
+        return JobStatus_Startup(jobconfig)
 
 
 def testfunc_JobStatus_whole_flow():
