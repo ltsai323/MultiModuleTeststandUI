@@ -35,6 +35,10 @@ async def bashcmd(tag, cmd):
     task = asyncio.create_task(_read_output(tag,process))
     return BashJob(tag, process, task)
 
+def InitChecking():
+    failed_reason = ''
+    return failed_reason # skip init checking
+
 if __name__ == "__main__":
     async def aa():
         bb = await bashcmd('test', "for a in {1..100}; do echo aa; sleep 0.5;done")

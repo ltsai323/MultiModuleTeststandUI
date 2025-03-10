@@ -101,8 +101,16 @@ async def IVMonitor_GWINSTEK_GPP3323(tag, resource, cmd):
     return rs232
 
 
-    
-
+def InitChecking(dev):
+    failed_reason = ''
+    try:
+        rm = pyvisa.ResourceManager()
+        instr = rm.open_resource(dev)
+    except serial.serialutil.SerialException as e:
+        failed_reason = f'Unable to find RS232 device from "{ dev }"'
+    finally:
+        rm.close()
+        return failed_reason
 
 
 if __name__ == "__main__":
