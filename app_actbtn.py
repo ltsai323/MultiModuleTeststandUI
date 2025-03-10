@@ -44,33 +44,8 @@ def btn_connect() -> jsonify:
         pass
     else:
         mesg = 'btnCONN clicked! you need to initialize all working modules for first'
-        from JobModule.JobStatus_main import JobStatus_Startup
-        from JobModule.JobStatus_base import JobStatus, JobConf
-
-
-        cmd_templates = {
-                'init_pwrjob1':  'poweron',
-                'init_bashjob2': 'sh test/step1.turnon_board_pwr.sh && sh test/step2.kria_env_setup.sh',
-                #'init_bashjob9': ' sh test/step3.daqclient.sh',
-                'init_bashjob9': 'daq-client',
-
-                'run_pwrjob1': 'blah',
-                'run_bashjob2': 'sh test/step4.takedata.sh',
-                #'run_bashjob2': 'sh ~/hii_run.sh',
-
-                'stop_bashjob1': 'echo stopping',
-
-                'destroy_bashjob1': 'sh test/step30.kill_daqclient.sh && sh test/step10.turnoff_board_pwr.sh',
-                'destroy_pwrjob2': 'poweroff',
-        }
-        cmd_arg = {
-                'initVar1': 'this is initVar1',
-        }
-        cmd_const = {
-                'constVar': 'this is constant variable',
-        }
-        jobconf = JobConf(cmd_templates, cmd_arg, cmd_const)
-        current_app.jobinstance = JobStatus_Startup(jobconf)
+        from JobModule.JobStatus_main import JobStatusFactory
+        current_app.jobinstance = JobStatusFactory('data/JobStatus_content_example_run2bashcmd.yaml')
         
     current_app.config['WEB_STAT'].btn = current_app.jobinstance.status
     current_app.config['MESG_LOG'].info(mesg)
