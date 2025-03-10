@@ -29,9 +29,8 @@ This page shows action buttons configured from `app_actbtn.py`.
 And `app_bkgrun.py` configures the jobs sent to bkg
     '''
 
-    #return render_template('index.html')
-    #return render_template('index_db.html')
-    return render_template('index2.html')
+    return render_template('index.html')
+    #return render_template('index.ref.html')
 
 
 @app.route('/show_logpage')
