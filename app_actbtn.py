@@ -14,6 +14,7 @@ from app_socketio import socketio
 
 
 import queue
+from JobModule.JobStatus_main import JobStatus_JobSelect
 
 
 
@@ -35,17 +36,18 @@ def btn_connect() -> jsonify:
         return jsonify({ 'btnSTATUS': self.btn, 'LEDs': self.LEDs, 'moduleIDs': self.moduleIDs })
     '''
     mesg = 'btnCONN clicked! send current webpage status to client'
+    if hasattr(current_app, 'connected'):
+        current_app.connected = True
+
     if hasattr(current_app, 'jobinstance'):
         ### keep original status
         pass
     else:
-        mesg = 'btnCONN clicked! you need to initialize all working modules for first'
-        from JobModule.JobStatus_main import JobStatusFactory
-        current_app.jobinstance = JobStatusFactory('data/JobStatus_content_example_run2bashcmd.yaml')
+        current_app.jobinstance = JobStatus_JobSelect()
+        current_app.config['WEB_STAT'].btn = current_app.jobinstance.status
         
-    current_app.config['WEB_STAT'].btn = current_app.jobinstance.status
+        socketio.emit("start_periodic_update")
     current_app.config['MESG_LOG'].info(mesg)
-    socketio.emit("start_periodic_update")
     return current_app.config['WEB_STAT'].jsonify()
 
 
@@ -57,14 +59,21 @@ def btn_initialize(data):
     
     Handles the button clicking. Once the client clicked "btnINIT", server side received the command INITIALIZE and update button status
 
-    Receiving data.get('jobmode', 'default') to get running info from radio form
+    Receiving data.get('jobmode', 'test') to get running info from radio form
     '''
-    jobmode = data.get('jobmode', '')
+    jobmode = data.get('jobmode', 'test')
     log.info(f'[Initialize Button] Set jobmode to "{ jobmode }"')
+    print(f'\n\n\n[ status1 ] {current_app.jobinstance.status} \n\n ')
+
+    current_app.jobinstance = current_app.jobinstance.Factory(jobmode)
+    print(f'\n\n\n[ status2 ] {current_app.jobinstance.status} \n\n ')
 
     current_app.jobinstance = current_app.jobinstance.fetch_current_obj()
+    print(f'\n\n\n[ status3 ] {current_app.jobinstance.status} \n\n ')
     current_app.jobinstance.Initialize()
+    print(f'\n\n\n[ status4 ] {current_app.jobinstance.status} \n\n ')
     current_app.jobinstance = current_app.jobinstance.fetch_current_obj()
+    print(f'\n\n\n[ status5 ] {current_app.jobinstance.status} \n\n ')
 
 
 
