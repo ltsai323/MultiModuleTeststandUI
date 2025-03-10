@@ -14,43 +14,48 @@ from JobModule.powersupply_GWINSTEK_GPP3323 import SetPowerStat_GWINSTEK_GPP3323
 
 testmode = False
 used_cmds = [
-    'init_bashjob1', # restart i2c-server.service and daq-server.service
-    'init_pwrjob2',  # turn on LV powerU
+    'init_pwrjob1',  # turn on LV powerU
+    'init_bashjob2', # restart i2c-server.service and daq-server.service
     'init_bashjob9', # kria power on && start daq-client
 
     'run_pwrjob1',  # turn on IV monitoring on LV powerU
-    'run_bashjob9', # take data
+    'run_bashjob2', # take data
 
     'stop_bashjob1', # restart i2c-server.service and daq-server.service
 
-    'destroy_pwrjob1', # turn off LV powerU
+    'destroy_bashjob1',
+    'destroy_pwrjob2', # turn off LV powerU
         ]
 
 def init_job(clsCONF, flag):
     async def job_content(clsCONF, flag):
-        loop = asyncio.get_running_loop()
         flag.value = STAT_RUNNING
-        tag,cmd = clsCONF.CMDTag_and_FormattedCMD('init_bashjob1')
-        tasks = []
-        if cmd: await bashcmd(tag,cmd)
-
         if not testmode:
             dev1 = "ASRL/dev/ttyUSB0::INSTR"
-            tag,cmd = clsCONF.CMDTag_and_FormattedCMD('init_pwrjob2')
+            tag,cmd = clsCONF.CMDTag_and_FormattedCMD('init_pwrjob1')
             cmd = 'poweron' # asdf
 
-            if cmd: tasks.append(
-                    loop.create_task( SetPowerStat(tag, dev1, cmd) )
-                                )
+            if cmd:
+                init_pwrjob1 = await SetPowerStat(tag, dev1, cmd)
+                await init_pwrjob1.Await()
 
-        for task in tasks: await task
+        tag,cmd = clsCONF.CMDTag_and_FormattedCMD('init_bashjob2')
+        if cmd:
+            bashjob2 = await bashcmd(tag,cmd)
+            await bashjob2.Await()
+
+
 
         tag,cmd = clsCONF.CMDTag_and_FormattedCMD('init_bashjob9')
-        if cmd: bashjob9 = loop.create_task( bashcmd(tag,cmd) )
+        if cmd:
+            log.debug(f'[init_bashjob9] got command "{cmd}"\n\n\n')
+            bashjob9 = await bashcmd(tag,cmd)
 
-        #await bashjob9.Await()
-        flag.value = STAT_BKG_RUN # tag this job should be running in background
-        #flag.value = STAT_FUNCEND
+            flag.value = STAT_BKG_RUN # tag this job should be running in background
+            await bashjob9.Await()
+            log.debug(f'[init_bashjob9] got command "{cmd}"   EXECTION FINISHED')
+
+        flag.value = STAT_FUNCEND
 
     asyncio.run(job_content(clsCONF, flag) )
 
@@ -58,17 +63,24 @@ def init_job(clsCONF, flag):
 def run_job(clsCONF, flag):
     async def job_content(clsCONF,flag):
         flag.value = STAT_RUNNING
-        loop = asyncio.get_running_loop()
 
         if not testmode:
             dev1 = "ASRL/dev/ttyUSB0::INSTR"
             tag,cmd = clsCONF.CMDTag_and_FormattedCMD('run_pwrjob1')
-            if cmd: pwrjob1 = loop.create_task( IVMonitor(tag, dev1, cmd) )
+            #if cmd: pwrjob1 = asyncio.create_task( IVMonitor(tag, dev1, cmd) )
+            if cmd:
+                pwrjob1 = await IVMonitor(tag, dev1, cmd)
+                ### this is a monitoring job. Not to use await
 
-        tag,cmd = clsCONF.CMDTag_and_FormattedCMD('run_bashjob9')
-        if cmd: bashjob9 = loop.create_task( bashcmd(tag,cmd) )
+        tag,cmd = clsCONF.CMDTag_and_FormattedCMD('run_bashjob2')
+        if cmd:
+            bashjob2 = await bashcmd(tag,cmd) # direct run
+            await bashjob2.Await()
+        #tag,cmd = clsCONF.CMDTag_and_FormattedCMD('run_bashjob9')
+        #if cmd: bashjob9 = asyncio.create_task( bashcmd(tag,cmd) )
 
-        flag.value = STAT_BKG_RUN # tag this job should be running in background
+        # asdf since bashjob2 finished. I should terminate pwrjob1
+        flag.value = STAT_FUNCEND # tag this job should be running in background
 
     asyncio.run( job_content(clsCONF,flag) )
 
@@ -78,8 +90,9 @@ def stop_job(clsCONF, flag):
 
         tag,cmd = clsCONF.CMDTag_and_FormattedCMD('stop_bashjob1')
         if cmd:
-            bashjob1 = loop.create_task( bashcmd(tag,cmd) )
-            await bashjob1
+            #bashjob1 = asyncio.create_task( bashcmd(tag,cmd) )
+            bashjob1 = await bashcmd(tag,cmd)
+            await bashjob1.Await()
 
         flag.value = STAT_FUNCEND # tag this job should be running in background
 
@@ -90,9 +103,14 @@ def destroy_job(clsCONF, flag):
     async def job_content(clsCONF,flag):
         flag.value = STAT_RUNNING
 
+        tag,cmd = clsCONF.CMDTag_and_FormattedCMD('destroy_bashjob1')
+        if cmd:
+            #bashjob1 = asyncio.create_task( bashcmd(tag,cmd) )
+            bashjob1 = await bashcmd(tag,cmd)
+            await bashjob1.Await()
         if not testmode:
             dev1 = "ASRL/dev/ttyUSB0::INSTR"
-            tag,cmd = clsCONF.CMDTag_and_FormattedCMD('destroy_pwrjob1')
+            tag,cmd = clsCONF.CMDTag_and_FormattedCMD('destroy_pwrjob2')
             cmd = 'poweroff' # asdf
             if cmd: await SetPowerStat(tag, dev1, cmd)
 

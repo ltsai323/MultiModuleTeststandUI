@@ -27,6 +27,9 @@ const statusButtonMap = {
 
 function updateButtonStates(status) {
     console.log(`[updateButtonStatus] got status ${status}`);
+    //document.getElementById('server-status-content').innerHTML = status;
+    $('#server-status-content').text(status);
+
     // Disable all buttons initially
     $(".ctrlbtn").prop("disabled", true);
     $(".jobmode").prop("disabled", true);

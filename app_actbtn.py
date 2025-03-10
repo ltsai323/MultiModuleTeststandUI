@@ -47,22 +47,21 @@ def btn_connect() -> jsonify:
         from JobModule.JobStatus_main import JobStatus_Startup
         from JobModule.JobStatus_base import JobStatus, JobConf
 
-        cmd_templates = {
-                'init_bashjob1': 'echo hi {initVar1}',
-                'init_bashjob2': 'echo hi22 {constVar}',
-                'run_bashjob1': 'echo hi running',
-                'run_bashjob2': 'echo hi22 running',
-                'stop_bashjob1': 'kk',
-                'init_bashjob1': 'echo initinalizing',
-                'init_pwrjob2':  'poweron',
-                'init_bashjob9': 'echo initializing 2',
 
-                'run_pwrjob1': '',
-                'run_bashjob9': 'echo running; sleep 5; echo run ended',
+        cmd_templates = {
+                'init_pwrjob1':  'poweron',
+                'init_bashjob2': 'sh test/step1.turnon_board_pwr.sh && sh test/step2.kria_env_setup.sh',
+                #'init_bashjob9': ' sh test/step3.daqclient.sh',
+                'init_bashjob9': 'daq-client',
+
+                'run_pwrjob1': 'blah',
+                'run_bashjob2': 'sh test/step4.takedata.sh',
+                #'run_bashjob2': 'sh ~/hii_run.sh',
 
                 'stop_bashjob1': 'echo stopping',
 
-                'destroy_pwrjob1': 'poweroff',
+                'destroy_bashjob1': 'sh test/step30.kill_daqclient.sh && sh test/step10.turnoff_board_pwr.sh',
+                'destroy_pwrjob2': 'poweroff',
         }
         cmd_arg = {
                 'initVar1': 'this is initVar1',
