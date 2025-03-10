@@ -1,0 +1,14 @@
+cmd_templates:
+    init_bashjob1: 'echo initialing'
+    init_bashjob9: 'for a in {{1..100}}; do echo init {INITvar} $a; sleep 1.0; done'
+
+    run_bashjob9: 'for a in {{1..100}}; do echo running {RUNvar} $a; sleep 0.4; done'
+
+    stop_bashjob1: 'echo STOPPED'
+
+    destroy_bashjob1: 'echo DESTROYED'
+cmd_arg:
+    INITvar: 'this is initVar1'
+cmd_const:
+    RUNvar: 'this is constant variable'
+
