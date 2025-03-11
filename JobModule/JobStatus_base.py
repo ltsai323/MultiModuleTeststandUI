@@ -87,9 +87,3 @@ class JobStatus:
         log.debug('Destroy is not allowed')
         return
 
-    def set_command_arguments(self, key, val):
-        if key in self.config:
-            self.config[key] = val
-        else:
-            log.warning(f'[InvalidConfig] Config "{ key }" is invalid')
-

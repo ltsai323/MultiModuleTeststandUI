@@ -100,6 +100,10 @@ def buttonCONFIGURE():
     '''
     IDs = request.form
     has = lambda ID: IDs[ID] != ""
+    print(f'\n\n\n[IDs type] {type(IDs)}')
+    print(f'\n\n\n[IDs type] {type(IDs.to_dict())}')
+    print(IDs.to_dict())
+
     outMesg = f'''
     Configurations
     1L {has("moduleID1L")} \t1C {has("moduleID1C")} \t1R {has("moduleID1R")}
@@ -108,7 +112,7 @@ def buttonCONFIGURE():
     asdf BUT CURRENTLY NO ANY EFFECT asdf
     '''
     current_app.jobinstance = current_app.jobinstance.fetch_current_obj()
-    current_app.jobinstance.Configure({'initVar1': 'configured'})
+    current_app.jobinstance.Configure(IDs.to_dict())
     current_app.jobinstance = current_app.jobinstance.fetch_current_obj()
 
     current_app.config['MESG_LOG'].info(outMesg)

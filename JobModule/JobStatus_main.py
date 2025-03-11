@@ -146,6 +146,7 @@ class JobStatus_Initialized(JobStatus):
     def Configure(self, confDICT):
         log.debug(f'[ConfigureCMD] set runtime variable to arguments from status "{ self.status }"')
         self.config.Configure(confDICT)
+        print(f'\n\n\n\n\n\nJobStatus_main :: {self.config.AllArgs}\n\n\n\n\n\n') # asdf
         self.configured = True
 
     def Destroy(self):
@@ -183,6 +184,7 @@ class JobStatus_Configured(JobStatus):
     def Configure(self, confDICT):
         log.debug(f'[ConfigureCMD] set runtime variable to arguments from status "{ self.status }"')
         self.config.Configure(confDICT)
+        print(f'\n\n\n\n\n\nJobStatus_main :: {self.config.AllArgs}\n\n\n\n\n\n') # asdf
         return  # JobStatus_Configured would not generate another JobStatus_Configured object
     def Run(self):
         log.debug(f'[RunCMD] Running current job from status "{ self.status }"')
