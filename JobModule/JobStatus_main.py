@@ -33,7 +33,6 @@ class JobStatus_JobSelect(JobStatus):
         pass
 
     def Factory(self, jobMODE):
-        if hasattr(self, 'job_startup'): return
         return JobStatusFactory(jobMODE)
         
 
@@ -41,11 +40,10 @@ class JobStatus_JobSelect(JobStatus):
 
 class JobStatus_Startup(JobStatus):
     status = 'startup'
-    def __init__(self, jobCONF:JobConf): # asdfasdfasdf
+    def __init__(self, funcPOOL, jobCONF:JobConf): # asdfasdfasdf
     #def __init__(self, funcPOOL, jobCONF:JobConf): # asdfasdfasdf
         super().__init__(None)
-        #self.func_pool = funcPOOL
-        self.func_pool = jobtest
+        self.func_pool = funcPOOL
         self.bkgjob_init_flag = multiprocessing.Value('i', STAT_INVALID)
         jobCONF.ValidCheck(*self.func_pool.used_cmds)
         self.config = jobCONF
@@ -66,7 +64,7 @@ class JobStatus_Startup(JobStatus):
         self.bkgjob_init_process.start()
 
 def testfunc_JobStatus_Startup():
-    job = JobStatus_Startup()
+    job = JobStatus_Startup(jobtest, thejobconf) # to be recovered
     job.Initialize()
     #job.Run()
     input("Put enter to stop all program\n\n")
@@ -306,7 +304,7 @@ def JobStatusFactory(jobMODE:str):
 
     with open(yaml_file, 'r') as fIN:
         jobconfig = func_pool.JobConfig_fromYAML(fIN)
-        return JobStatus_Startup(jobconfig)
+        return JobStatus_Startup(func_pool, jobconfig)
 
 
 def testfunc_JobStatus_whole_flow():
@@ -329,7 +327,7 @@ def testfunc_JobStatus_whole_flow():
             'constVar': 'this is constant variable',
     }
     jobconf = JobConf(cmd_templates, cmd_arg, cmd_const)
-    job = JobStatus_Startup(jobconf)
+    job = JobStatus_Startup(jobtest, jobconf)
     job.Initialize()
     input("Put enter to stop all program")
     print(f'[current status] job.bkgjob_init_flag = {job.bkgjob_init_flag.value}')

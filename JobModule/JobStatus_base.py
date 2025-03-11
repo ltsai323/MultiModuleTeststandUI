@@ -42,6 +42,9 @@ class JobConf:
         #invalid_cmd_list = [ idx if cmd not in self.cmd_template for idx,cmd in enumerate(requiredCMDs)]
         invalid_cmd_list = [ cmd for idx,cmd in enumerate(requiredCMDs) if cmd not in self.cmd_template]
         if len(invalid_cmd_list) > 0:
+            log.error(f'[requiredCMDs] {requiredCMDs}')
+            log.error(f'[configCMDs] {self.cmd_template.keys()}')
+            log.error(f'[MissingCMD] the command "{invalid_cmd_list}" does not matched requiredCMDs')
             raise RuntimeError(f'[InvalidConfiguration] the command "{invalid_cmd_list}" used in program but not in cmd_template')
 
         for key,cmd_template in self.cmd_template.items():
