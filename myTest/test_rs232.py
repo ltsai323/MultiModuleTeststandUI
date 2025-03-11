@@ -25,11 +25,11 @@ def main():
         
         # Simple test: Send ON, wait, then OFF
         print("Sending ON command...")
-        device.write('ON')
+        device.write('RELAY ON')
         time.sleep(2)  # Wait 2 seconds
         
         print("Sending OFF command...")
-        device.write('OFF')
+        device.write('a')
         
         # Close connection
         device.close()

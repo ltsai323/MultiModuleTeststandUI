@@ -4,10 +4,10 @@ from switch_control import Switch  # Replace with your actual module name
 def test_power_switch():
     # Basic command templates
     cmd_templates = {
-        'init': '*RST',      # Reset command (modify based on your switch)
-        'on': 'ON',          # ON command
-        'off': 'OFF',        # OFF command
-        'stop': 'ABORT'      # Stop command
+        'init': '*RST', # Reset command (modify based on your switch)
+        'on': 'A',      # 'RELAY ON'
+        'off': 'a',     # 'RELAY OFF'
+        'stop': 'ABORT' # Stop command
     }
 
     # Basic configuration
