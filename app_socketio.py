@@ -21,6 +21,7 @@ def socket_test():
 
 I = 0
 _status_ = [
+ 'none',
  'startup',
  'initializing',
  'initialized',
@@ -30,13 +31,12 @@ _status_ = [
  ]
 @socketio.on('socket_get_web_status')
 def socket_get_web_status():
-    print(f'[CURRENT STSUS] {current_app.config["WEB_STAT"].btn}')
+
     if not hasattr(current_app, 'jobinstance'):
         emit('socket_get_web_status_response', {'status': 'none'} )
         return
 
     current_app.jobinstance = current_app.jobinstance.fetch_current_obj()
-    print(f'[CURRENT JOBINST] {current_app.jobinstance.status}')
     newstatus = current_app.jobinstance.status
     emit('socket_get_web_status_response', {'status': current_app.jobinstance.status})
 

@@ -1,15 +1,15 @@
 const statusButtonMap = {
     "none": ["#btnCONN", ".jobmode"],
-    "connected": ["#btnINIT", "#btnEXIT", ".jobmode"],
-    "startup"  : ["#btnINIT", "#btnEXIT", ".jobmode"],
-    "initialiing": ["#btnEXIT"],
+    "job_select": ["#btnINIT", "#btnEXIT", ".jobmode"],
+    "startup"  : ["#btnEXIT"],
+    'initializing': ["#btnEXIT"],
     "initialized": ["#btnCONF", "#btnEXIT"],
     "configured": ["#btnEXEC", "#btnCONF", "#btnEXIT"],
     "running": ["#btnSTOP", "#btnEXIT"],
     "stopped": ["#btnCONF", "#btnEXIT"], // asdf
     "idle": ["#btnCONF", "#btnEXIT"], // asdf
     "error": ["#btnEXIT"],
-    "destroyed": ["#btnINIT", "#btnEXIT", ".jobmode"],
+    // "destroyed": ["#btnINIT", "#btnEXIT", ".jobmode"],
     "halt": ["#btnINIT", "#btnEXIT", ".jobmode"], // asdf
     "wait": ["#btnEXIT"] // asdf
 };
@@ -32,7 +32,8 @@ function updateButtonStates(status) {
 
     // Disable all buttons initially
     $(".ctrlbtn").prop("disabled", true);
-    $(".jobmode").prop("disabled", true);
+    document.querySelectorAll(".jobmode").forEach( opt => opt.disabled = true );
+
 
     // Get the buttons to enable for the current status
     const buttonsToEnable = statusButtonMap[status] || [];

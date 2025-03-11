@@ -61,7 +61,7 @@ async def SetPowerStat_GWINSTEK_GPP3323(tag, resource, cmd):
         'poweron': [
             'VSET1:1.5', # set maximum voltage to 1.5V
             'VSET2:1.5',
-            'ISET1:1.5', # set maximum current to 1.5A
+            'ISET1:2.5', # set maximum current to 2.5A # analog channel required 2.5A
             'ISET2:1.5',
             'LOAD1:CV',  # control mode CV
             'LOAD2:CV',
