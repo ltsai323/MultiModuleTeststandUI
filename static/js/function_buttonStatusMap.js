@@ -1,14 +1,17 @@
 const statusButtonMap = {
     "none": ["#btnCONN", ".jobmode"],
     "connected": ["#btnINIT", "#btnEXIT", ".jobmode"],
+    "startup"  : ["#btnINIT", "#btnEXIT", ".jobmode"],
+    "initialiing": ["#btnEXIT"],
     "initialized": ["#btnCONF", "#btnEXIT"],
     "configured": ["#btnEXEC", "#btnCONF", "#btnEXIT"],
     "running": ["#btnSTOP", "#btnEXIT"],
-    "stopped": ["#btnCONF", "#btnEXIT"],
-    "idle": ["#btnCONF", "#btnEXIT"],
+    "stopped": ["#btnCONF", "#btnEXIT"], // asdf
+    "idle": ["#btnCONF", "#btnEXIT"], // asdf
     "error": ["#btnEXIT"],
-    "halt": ["#btnINIT", "#btnEXIT", ".jobmode"],
-    "wait": ["#btnEXIT"]
+    "destroyed": ["#btnINIT", "#btnEXIT", ".jobmode"],
+    "halt": ["#btnINIT", "#btnEXIT", ".jobmode"], // asdf
+    "wait": ["#btnEXIT"] // asdf
 };
 //    "none":
 //    "connected":
@@ -24,6 +27,9 @@ const statusButtonMap = {
 
 function updateButtonStates(status) {
     console.log(`[updateButtonStatus] got status ${status}`);
+    //document.getElementById('server-status-content').innerHTML = status;
+    $('#server-status-content').text(status);
+
     // Disable all buttons initially
     $(".ctrlbtn").prop("disabled", true);
     $(".jobmode").prop("disabled", true);
@@ -42,22 +48,4 @@ function updateButtonStates(status) {
         }
     });
 }
-
-//$(document).ready(function() {
-//    // Initial status check
-//    updateButtonStates("none");
-//    //$.getJSON('/status', function(data) {
-//    //    updateButtonStates(data.status);
-//    //});
-//
-//    // Poll the status every 5 seconds for real-time updates
-//    setInterval(function() {
-//        updateButtonStates("connected"); }, 5000);
-//    // getJSON for low frequency updating
-//    //setInterval(function() {
-//    //    $.getJSON('/status', function(data) {
-//    //        updateButtonStates(data.status);
-//    //    });
-//    //}, 5000);
-//});
 

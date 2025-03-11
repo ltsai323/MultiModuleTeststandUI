@@ -73,20 +73,15 @@ function button_clicking_configure(btnID) {
 
 function button_clicking_socketIO(btnID) {
   document.getElementById(btnID).addEventListener("click", function() {
-    socket.emit(btnID); // socketio uses the same name as button ID
-    // read feedback after request sent
-    socket.on('btnSTATUS', (data) => {
-      console.log(data.log);
-      updateButtonStates(data.btnSTATUS);
-    });
-  });
-}
-function button_clicking2_socketIO(btnID) {
-  document.getElementById(btnID).addEventListener("click", function() {
-    // Get the selected radio button value
-    const selectedOption = document.querySelector('input[name="mode"]:checked').value;
+    if ( btnID == "btnINIT" ) {
+      // Get the selected radio button value
+      // for button INITIALIZE : Collect radio field "jobmodule" selecting the job mode.
+      const selectedOption = document.querySelector('input[name="jobmode"]:checked').value;
 
-    socket.emit(btnID, {mode: selectedOption}); // socketio uses the same name as button ID
+      socket.emit(btnID, {jobmode: selectedOption}); // socketio uses the same name as button ID
+        
+    } else { socket.emit(btnID); }
+
     // read feedback after request sent
     socket.on('btnSTATUS', (data) => {
       console.log(data.log);
@@ -96,7 +91,7 @@ function button_clicking2_socketIO(btnID) {
 }
 
 button_clicking_fetch    ('btnCONN');
-button_clicking_socketIO('btnINIT');
+button_clicking_socketIO ('btnINIT');
 button_clicking_configure('btnCONF');
 button_clicking_socketIO ('btnEXEC');
 button_clicking_socketIO ('btnSTOP');

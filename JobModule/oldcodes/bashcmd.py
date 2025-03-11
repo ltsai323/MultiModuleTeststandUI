@@ -4,6 +4,7 @@ import subprocess
 import JobModule.jobfrag_base as jobfrag_base
 import PythonTools.LoggingMgr as LoggingMgr
 import logging
+from PythonTools.threading_tools import ThreadingTools
 
 
 
@@ -16,6 +17,10 @@ def run_bash_cmd_at_background(command:str, mergeSTDERRandSTDOUT=True):
     else:
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=-1, shell=True)
     return process
+def process_is_alive(thePROCESS):
+    if thePROCESS is None: return False
+    print(f'[check_process] process {thePROCESS}')
+    return True if thePROCESS.poll() is None else False
 
 def get_output(log, pipeMESG, mesgCOUNTER = 0, extTERMINATING = threading.Event()):
     mesgCOUNTER = 0
@@ -25,7 +30,7 @@ def get_output(log, pipeMESG, mesgCOUNTER = 0, extTERMINATING = threading.Event(
         if extTERMINATING.is_set(): break
     log.debug(f'[counter] get_output() got {mesgCOUNTER} messages')
 
-def get_output_withtimeout(log, bkgPROC, timeout = 2):
+def get_output_withtimeout(log, bkgPROC, timeout = 2, stopTRIG=threading.Event()):
     pipeMESG = bkgPROC.stdout
     if timeout <= 0: # if timeout not set. waiting for the pipe ended
         get_output(log,pipeMESG)
@@ -36,27 +41,46 @@ def get_output_withtimeout(log, bkgPROC, timeout = 2):
 
     timeout_record = 0
     ext_terminating = threading.Event()
-    thread = threading.Thread(target=get_output, args=(log,pipeMESG, timeout_record, ext_terminating))
-    thread.start()
+    getmesg = threading.Thread(target=get_output, args=(log,pipeMESG, timeout_record, ext_terminating))
+    getmesg.start()
 
+    ### terminate_loop is  ( bkgPROC finished || stopTRIG set )
     terminate_loop = False
-    while True:
+    asdfasdf = 10
+    while True: ## timeout looping
         tmp_timeout_record = timeout_record
         for i in range(SEP): # separate the whole timeout in 4 times. check the code finished or not
             time.sleep(SEP_TIMEOUT)
-            if not thread.is_alive() or bkgPROC.poll() is not None: # if the code finished in timeout, return
-                ext_terminating.set()
+
+            process_alive = process_is_alive(bkgPROC)
+            getmesg_alive = getmesg.is_alive()
+
+
+            if getmesg_alive and process_alive:
+                pass
+            else:
+                log.debug(f'[JobTermiated] get_output_withtimeout() is terminated due to getmesg.is_alive({getmesg.is_alive()})  or bkgPROC is alive ({process_is_alive(bkgPROC)}) is not None')
                 terminate_loop = True
                 break
-
-        if terminate_loop: break
         if tmp_timeout_record == timeout_record: # if timeout_record does not change value: show timeout
             log.warning(f'[TIMOUT] BashCMD got a timeout in {timeout} second')
-    thread.join()
+            log.debug(f'[TIMOUT] BashCMD got a timeout in {timeout} second and current message : bkgPROC is alive ({process_is_alive(bkgPROC)}) and getmesg_alive({getmesg.is_alive()})')
 
-            
-            
-            
+        asdfasdf -= 1
+        log.debug(f'[selfTerminator] counter {asdfasdf}')
+        if asdfasdf < 0:
+            log.debug(f'[selfTerminator] self stop triggered!')
+            terminate_loop = True
+
+        if stopTRIG.is_set(): terminate_loop = True
+        if terminate_loop:
+            log.debug(f'[TerminateLoop] Received termination in get_output_withtimeout(). Terminating the looping...')
+            ext_terminating.set() ## kill get_message
+            terminate_the_process(bkgPROC, log, 2) ## kill process
+            stopTRIG.set()
+            break ## kill timeout looping
+    return
+
 
 
 def terminate_the_process(proc, log, timeOUT=2):
@@ -65,18 +89,20 @@ def terminate_the_process(proc, log, timeOUT=2):
     log.info(f'[TerminateBashCMD] Terminating this job')
     proc.terminate()
     time.sleep(0.7)
+    log.debug(f'[terminate_the_process] process is still alive ? {process_is_alive(proc)}')
+
     # If the process terminated. return
-    if proc.poll() is not None: return
+    if not process_is_alive(proc): return
     log.info(f'[TerminateBashCMD] Terminating takes time, waiting for timer {timeOUT} second')
 
     # if the process is still running, waiting for timeout
     time.sleep(timeOUT)
-    if proc.poll() is not None: return
+    if not process_is_alive(proc): return
     log.info(f'[TerminateBashCMD] Job cannot terminate in {timeout} second, force kill it')
 
     # if the process is still running, force kill the process and waiting for eneded
     proc.kill()
-    if proc.poll() is None: process.wait()
+    if not process_is_alive(proc): return
     log.info(f'[TerminateBashCMD] Force killed job')
     return
 
@@ -85,12 +111,14 @@ def terminate_the_process(proc, log, timeOUT=2):
 
 
 def testfunc_directrun_bkgrun_and_kill():
-    proc = run_bash_cmd_at_background('echo aaaaaa && sleep 5 && echo a2 && sleep 5 && echo finished')
-    thread = threading.Thread(target=get_output, args=(logging,proc.stdout))
+    proc = run_bash_cmd_at_background('echo aaaaaa && sleep 10 && echo finisehd')
+    stop_trig = threading.Event()
+    thread = threading.Thread(target=get_output, args=(logging,proc.stdout, stop_trig))
     thread.start()
 
-    time.sleep(10)
+    time.sleep(1)
     print('[after sleep] kill job')
+    stop_trig.set()
     terminate_the_process(proc, logging)
     print('[after sleep] job killed')
     thread.join()
@@ -146,28 +174,35 @@ def testfunc_directrun_usingLoggingMgr():
 import JobModule.jobfrag_base as jobfrag_base
 class JobFrag(jobfrag_base.JobFragBase):
     def __init__(self,  jobTIMEOUT:float,
+                 templateCMDinit:str,
+                 templateCMDdel:str,
+                 templateCMDrun:str,
+                 templateCMDstop:str,
+                 argCONFIGs:dict, constargCONFIGs:dict,
                  stdOUT, stdERR,
-                 cmdTEMPLATEs:dict, argCONFIGs:dict, argSETUPs:dict):
+                 ):
+        cmdTEMPLATEs = {
+                'init': templateCMDinit,
+                'del' : templateCMDdel,
+                'run' : templateCMDrun,
+                'stop': templateCMDstop,
+        }
+        
+        super(JobFrag,self).__init__( cmdTEMPLATEs, argCONFIGs, constargCONFIGs, stdOUT,stdERR )
 
         self.job_timeout = jobTIMEOUT
 
-        self.log = stdOUT
-        self.err = stdERR
-
-        self.set_cmd_template(cmdTEMPLATEs)
-        self.set_config(argCONFIGs)
-        self.set_config_const(argSETUPs)
-
         self.proc = None
     def __del__(self):
-        self.log.debug('[BashCMD] __del__() destroy everything.')
+        print('[BashCMD] __del__() destroy everything.')
+        #self.log.debug('[BashCMD] __del__() destroy everything.')
         if self.proc is not None:
-            terminate_the_process(self.proc, 2) # terminate job using 2 second timeout
+            terminate_the_process(self.proc, self.log, 2) # terminate job using 2 second timeout
 
-        cmd = self.get_full_command_from_cmd_template('stop')
-        if cmd != '':
-            proc = run_bash_cmd_at_background(cmd, False)
-            get_output(self.log,proc.stdout)
+        #cmd = self.get_full_command_from_cmd_template('stop')
+        #if cmd != '':
+        #    proc = run_bash_cmd_at_background(cmd, False)
+        #    get_output(self.log,proc.stdout)
 
         cmd = self.get_full_command_from_cmd_template('del')
         if cmd != '':
@@ -175,7 +210,7 @@ class JobFrag(jobfrag_base.JobFragBase):
             get_output(self.log,proc.stdout)
         self.log.debug('[BashCMD] __del__() destroy everything accomplished.')
 
-    def Initialize(self):
+    def Initialize(self, stopTRIG=threading.Event()):
         cmd = self.get_full_command_from_cmd_template('init')
         if cmd != '':
             proc = run_bash_cmd_at_background(cmd, False)
@@ -191,7 +226,7 @@ class JobFrag(jobfrag_base.JobFragBase):
         updatedCONF: dict. It should have the same format with original arg config
         '''
         for key, value in updatedCONF.items():
-            error_mesg = self.set_config_value(key,value)
+            error_mesg = self.set_value_to_config(key,value)
             if error_mesg:
                 self.err.warning(f'[{error_mesg}] Invalid configuration from config: key "{ key }" and value "{ value }".')
                 return False
@@ -199,7 +234,7 @@ class JobFrag(jobfrag_base.JobFragBase):
 
 
         
-    def Run(self):
+    def Run(self, stopTRIG=threading.Event()):
         self.log.debug(f'[BashCMD] Run() start running cmd')
 
         cmd = self.get_full_command_from_cmd_template('run')
@@ -209,20 +244,24 @@ class JobFrag(jobfrag_base.JobFragBase):
             raise RuntimeError(f'[BashCMD] No any bash command found in Run()')
 
         proc = run_bash_cmd_at_background(cmd, False)
-        get_output_withtimeout(self.log,proc, self.job_timeout)
+        get_output_withtimeout(self.log,proc, self.job_timeout, stopTRIG)
         self.log.debug(f'[BashCMD] Run() running finished')
 
 
     def Stop(self):
         self.log.debug(f'[BashCMD] Stop() terminating job')
         if self.proc is not None:
-            terminate_the_process(self.proc, 10) # terminate job using 10 second timeout
+            terminate_the_process(self.proc, self.log, 10) # terminate job using 10 second timeout
 
         cmd = self.get_full_command_from_cmd_template('stop')
         if cmd != '':
             proc = run_bash_cmd_at_background(cmd, False)
             get_output(self.log,proc.stdout)
         self.log.debug(f'[BashCMD] Stop() job terminated')
+        if self.proc == None:
+            self.log.debug(f'[BashCMD] Stop() status. self.proc is None')
+        else:
+            self.log.debug(f'[BashCMD] Stop() status. self.proc is running ? {process_is_alive(self.proc)}')
 
 def testfunc_pack_JobFrag():
     logger = logging
@@ -244,9 +283,13 @@ def testfunc_pack_JobFrag():
 
     job = JobFrag(
             jobTIMEOUT = timeout,
-            stdOUT = logger, stdERR = logger,
-            cmdTEMPLATEs = cmd_template, argCONFIGs = arg_config, argSETUPs = arg_const_config
-    )
+                templateCMDinit = cmd_template['init'],
+                templateCMDdel  = cmd_template['del' ],
+                templateCMDrun  = cmd_template['run' ],
+                templateCMDstop = cmd_template['stop'],
+                argCONFIGs=arg_config,constargCONFIGs=arg_const_config,
+                stdOUT=logger, stdERR=logger
+        )
 
     print('\n\n>>>>>>>>>>>\nA INITIALIZE <<<<<<<<<<\n\n')
     job.Initialize()
@@ -271,8 +314,12 @@ def YamlConfiguredJobFrag(yamlLOADEDdict:dict):
         cmd_const_arguments = config['cmd_const_arguments']
         job_frag = JobFrag(
                 basic_pars['timeout'],
-                log_stdout, log_stderr,
-                cmd_templates, cmd_arguments, cmd_const_arguments
+                templateCMDinit = cmd_templates['init'],
+                templateCMDdel  = cmd_templates['del' ],
+                templateCMDrun  = cmd_templates['run' ],
+                templateCMDstop = cmd_templates['stop'],
+                argCONFIGs=cmd_arguments,constargCONFIGs=cmd_const_arguments,
+                stdOUT=log_stdout,stdERR=log_stderr,
         )
     except KeyError as e:
         raise KeyError(f'Invalid key in yaml config "{ config }"') from e
@@ -353,13 +400,35 @@ def testfunc_YamlConfiguredJobFrag( inFILE ):
     print('\n\n>>>>>>>>>>> END        <<<<<<<<<<\n\n')
     exit()
 
+def testfunc_YamlConfiguredJobFrag_with_termination( inFILE ):
+    import yaml
+    with open(inFILE,'r') as f:
+        loaded_conf = yaml.safe_load(f)
+
+    job_frag = YamlConfiguredJobFrag(loaded_conf)
+    print('\n\n>>>>>>>>>>> INITIALIZE <<<<<<<<<<\n\n')
+    job_frag.Initialize()
+    job_frag.Configure( {'prefix': 'confiugred'} )
+    print('\n\n>>>>>>>>>>> RUN        <<<<<<<<<<\n\n')
+    ext_term = threading.Event()
+    bkg_run_thread = ThreadingTools(job_frag.Run, ext_term)
+    bkg_run_thread.BkgRun()
+    time.sleep(5)
+    print('\n\n>>>>>>>>>>> STOP in 2s <<<<<<<<<<\n\n')
+    #job_frag.Stop()
+    ext_term.set()
+    print(f'ext trigger set!')
+    print('\n\n>>>>>>>>>>> END        <<<<<<<<<<\n\n')
+    time.sleep(10)
+    exit()
 
 
 
 if __name__ == "__main__":
     import sys
     #testfunc_default_yaml_config()
-    testfunc_YamlConfiguredJobFrag(sys.argv[1])
+    #testfunc_YamlConfiguredJobFrag(sys.argv[1])
+    #testfunc_YamlConfiguredJobFrag_with_termination(sys.argv[1])
 
     # for directly run
     logging.basicConfig(level=logging.DEBUG)
@@ -370,4 +439,4 @@ if __name__ == "__main__":
     #testfunc_directrun_showerr()
     #testfunc_directrun_withtimeout()
     #testfunc_directrun_bkgrun_and_kill()
-    #testfunc_pack_JobFrag()
+    testfunc_pack_JobFrag()

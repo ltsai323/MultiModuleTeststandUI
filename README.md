@@ -9,7 +9,7 @@ conda config --append channels conda-forge
 envNAME=myPython3p9
 conda create --name $envNAME python=3.9
 conda activate $envNAME
-conda install flask flask-socketio requests sphinx paramiko pyvisa pyyaml flask-wtf myst-parser flask-cors
+conda install flask flask-socketio requests sphinx paramiko pyvisa pyvisa-py pyyaml flask-wtf myst-parser flask-cors
 ```
 
 Or you can load the file `used_packages_conda.txt` for building dependencies.
@@ -148,3 +148,6 @@ example code loads jobfrag and create it as a module being executed serially.
 * [ ] Is job_priority able to be controlled from rs232.py code?
 * [ ] AddJob() should accept job priority. Such that every job is able to check priority before execute.
 
+
+### Known issue
+* [ ] add a guide to solve permission denied accessing RS232 device
