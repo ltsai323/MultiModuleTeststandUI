@@ -1,10 +1,34 @@
 #!/usr/bin/env sh
-if [ "$BASH_SCRIPT_FOLDER" == "" ]; then echo "[EnvironmentFailure] Required variable BASH_SCRIPT_FOLDER not set. Load use_python_lib.sh"; exit; fi
+
+jobTAG=$1
+kriaIP=$2
+moduleID=$3
+
+if [ "$moduleID" == "" ]; then echo "[$jobTAG - JobDisabled] Empty module ID received"; exit; fi
+if [ "$BASH_SCRIPT_FOLDER" == "" ]; then echo "[$jobTAG - EnvironmentFailure] Required variable BASH_SCRIPT_FOLDER not set. Load use_python_lib.sh"; exit; fi
 source $BASH_SCRIPT_FOLDER/step0.functions.sh
 
-echo 'step 4 running'
-exec_at_ctrlpc 'cd /home/ntucms/electronic_test_kria/HD_bottom && python3 pedestal_run.py -i 192.168.50.180 -f initHD-bottom.yaml -d mytest -I && echo FINISHED'
-echo 'step 4 running ENDED'
+
+moduleTYPE=`python3 $BASH_SCRIPT_FOLDER/decode_serialnumber_to_module_type.py $moduleID`
+echo "[$jobTAG - RecognizedModuleType] the type is '$moduleTYPE'"
+
+if [ "$moduleTYPE" == "Bare Hexaboard HD Full" ]; then
+  yamlfile=initHD-bottom.yaml
+  initpath=/home/ntucms/electronic_test_kria/HD_bottom
+fi
+
+
+
+
+
+if [ "$yamlfile" == "" ]; then echo "[$jobTAG - InvalidModuleType] input module ID '$moduleID' generates module type '$moduleTYPE'. No related yaml file in data taking"; exit; fi
+if [ "$initpath" == "" ]; then echo "[$jobTAG - InvalidModuleType] input module ID '$moduleID' generates module type '$moduleTYPE'. No related folder in data taking"; exit; fi
+
+
+echo "[$jobTAG - Running ] taking data using yamlfile $yamlfile at $initpath"
+#exec_at_ctrlpc "cd /home/ntucms/electronic_test_kria/HD_bottom && python3 pedestal_run.py -i $kriaIP -f initHD-bottom.yaml -d $moduleID -I && echo FINISHED"
+exec_at_ctrlpc "cd $initpath && python3 pedestal_run.py -i $kriaIP -f $yamlfile -d $moduleID -I && echo FINISHED"
+echo "[$jobTAG - Finished] taking data ENDED"
 
 ### errors
 <<LISTED_OUTPUT_MESG
