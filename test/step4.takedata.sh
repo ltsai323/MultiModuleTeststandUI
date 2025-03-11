@@ -12,7 +12,12 @@ source $BASH_SCRIPT_FOLDER/step0.functions.sh
 moduleTYPE=`python3 $BASH_SCRIPT_FOLDER/decode_serialnumber_to_module_type.py $moduleID`
 echo "[$jobTAG - RecognizedModuleType] the type is '$moduleTYPE'"
 
-if [ "$moduleTYPE" == "Bare Hexaboard HD Full" ]; then
+############### Need to be implemented ###############
+#if [ "$moduleTYPE" == "Bare Hexaboard HD Full" ]; then
+#  yamlfile=initHD-bottom.yaml
+#  initpath=/home/ntucms/electronic_test_kria/HD_bottom
+#fi
+if [ "$moduleTYPE" == "Hexaboard HD Bottom" ]; then
   yamlfile=initHD-bottom.yaml
   initpath=/home/ntucms/electronic_test_kria/HD_bottom
 fi
