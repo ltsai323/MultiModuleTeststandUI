@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Grid</title>
+    <style>
+        .button-container {
+            text-align: center;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(3, auto); /* 8 columns */
+            grid-template-rows: repeat(4, auto); /* 3 rows */
+            max-width: 70%;
+            margin-left: 15%;
+            margin-right: 15%;
+
+        }
+        .button-container button{
+            font-size: 24px;
+            padding: 5px;
+            margin-top: 2px;
+            margin-bottom: 2px;
+            margin-left: 5%;
+            margin-right: 5%;
+            min-width: 200px;
+            text-align: center;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(3, auto); /* 8 columns */
+            grid-template-rows: repeat(8, auto); /* 3 rows */
+            gap: 10px;
+            padding: 20px;
+            justify-items: center;
+            text-align: center;
+        }
+        .grid-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: ridge;
+            margin: 10px;
+            padding: 25px;
+            padding-top: 0px;
+            width: 600px;
+        }
+        .grid-item img {
+            min-width: 400px;
+            max-width: 600px;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+        .caption {
+            font-size: 36px;
+            color: #9A9A9A;
+            margin-top: 5px;
+            margin-left: 10px;
+            margin-right: 10px;
+            word-wrap: break-word;
+            max-width: auto;
+            text-align: left;
+        }
+        .image-group {
+            display: none;
+        }
+        .active {
+            display: block;
+        }
+    </style>
+    <script>
+        function showImages(imgType) {
+          console.log(imgType);
+          document.querySelectorAll('.image-group').forEach(
+            function(group) {
+              group.classList.remove('active');
+          });
+          document.querySelectorAll('.'+imgType).forEach(
+            function(group) {
+              group.classList.add('active');
+          });
+          document.getElementById("the_title").textContent = imgType;
+        }
+    </script>
+</head>
+<body>
+    <h1 style="text-align: center;font-size:48px;" id="the_title">Dynamic Image Viewer</h1>
+    
+    <div class="button-container">
+        {% for img_type in image_types %}
+            <button onclick="showImages('{{ img_type }}')">{{ img_type }}</button>
+        {% endfor %}
+    </div>
+    <div class="grid-container">
+        {% for position, module_id in images %}
+            <div class="grid-item">
+              <p class="caption">{{position}}: {{ module_id }}</p>
+                <!-- Image with tooltip -->
+                {% for img_type in image_types %} <!-- Load all of image types at one grid, but only activate one figure -->
+                <img src="{{ url_for('DAQresults.get_image', gridPOSITION=position, imageTYPE=img_type) }}"
+                     class="image-group {{img_type}}"
+
+                     alt="thisisalt" 
+                     title="thisisititle"> <!-- Tooltip shows full path -->
+                {% endfor %} <!-- End of load all types of images
+
+                <!-- Caption below the image -->
+            </div>
+        {% endfor %}
+    </div>
+    <script> showImages("pedestal_vs_channel_chip0"); </script>
+</body>
+</html>

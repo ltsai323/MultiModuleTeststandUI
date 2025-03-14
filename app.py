@@ -4,6 +4,7 @@ import app_actbtn as app_actbtn
 from PythonTools.DebugManager import BUG
 from flask_wtf.csrf import CSRFProtect
 from flask_cors import CORS
+from flask import current_app
 
 app = Flask(__name__, static_folder='./static')
 app.config.from_object(gVAR.TestConfig) # initialize global variables
@@ -48,8 +49,6 @@ def show_logpage():
 
 
 
-
-
 if __name__ == '__main__':
 
     app.job_is_running = False
@@ -57,6 +56,8 @@ if __name__ == '__main__':
     # regist functions from app_actbtn.py
     app.register_blueprint(app_actbtn.app_b)
     #app_actbtn.module_init(app_actbtn.app_b)
+    import app_DAQresults
+    app.register_blueprint(app_DAQresults.app_b)
 
 
     socketio.init_app(app)
