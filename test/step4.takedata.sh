@@ -31,8 +31,25 @@ if [ "$initpath" == "" ]; then echo "[$jobTAG - InvalidModuleType] input module 
 
 
 echo "[$jobTAG - Running ] taking data using yamlfile $yamlfile at $initpath"
+cd $initpath
+
+data_collect_path=${initpath}/data/${moduleID}
+show_sub_dirs $data_collect_path > runfolders_old # collect output folders before run
+
+python3 pedestal_run.py -i $kriaIP -f $yamlfile -d $moduleID -I && echo FINISHED
+show_sub_dirs $data_collect_path > runfolders_new # collect output folders after run
+
+# grab new generated folder and put the folder to DAQresults/$jobTAG/$moduleID
+for new_folder  in `comm -13 $runfolders_old $runfolders_new`; do
+  sh step4.1.move_result_to_DAQresults.sh $jobTAG $moduleID $new_folder
+done
+/bin/rm $runfolders_old $runfolders_new
+
 #exec_at_ctrlpc "cd /home/ntucms/electronic_test_kria/HD_bottom && python3 pedestal_run.py -i $kriaIP -f initHD-bottom.yaml -d $moduleID -I && echo FINISHED"
-exec_at_ctrlpc "cd $initpath && python3 pedestal_run.py -i $kriaIP -f $yamlfile -d $moduleID -I && echo FINISHED"
+#exec_at_ctrlpc "cd $initpath && python3 pedestal_run.py -i $kriaIP -f $yamlfile -d $moduleID -I && echo FINISHED"
+### to do: Is there any method to collect output folder ?
+#mv $initpath/data/$moduleID/
+
 echo "[$jobTAG - Finished] taking data ENDED"
 
 ### errors
