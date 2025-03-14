@@ -66,8 +66,17 @@ class Vitrek964i:
             self.instrument.baud_rate = self.baud_rate
             self.instrument.timeout = self.timeout
             
-            # Clear any pending commands/responses
-            self.instrument.clear()
+            # Some devices don't support the clear() operation
+            # Commenting out to avoid VI_ERROR_NSUP_OPER
+            # self.instrument.clear()
+            
+            # Instead, let's try to reset communication in a safer way
+            try:
+                # Send a simple command to test communication
+                self.instrument.write("*RST")
+                time.sleep(0.5)  # Give device time to process
+            except Exception as e:
+                print(f"Warning: Initial reset command failed: {e}")
             
             # Check if connected properly by requesting ID
             idn = self.get_identity()
@@ -355,22 +364,57 @@ def initialize_device(device_address: str) -> bool:
     """
     try:
         rm = pyvisa.ResourceManager()
+        # Get list of available resources for debugging
+        resources = rm.list_resources()
+        print(f"Available VISA resources: {resources}")
+        
+        # Try opening the resource
+        print(f"Attempting to connect to: {device_address}")
         instr = rm.open_resource(device_address)
         
-        # Try to get device identity
+        # Configure serial parameters if it's a serial device
+        if device_address.startswith("ASRL"):
+            print("Configuring as serial device...")
+            instr.baud_rate = 9600
+            instr.data_bits = 8
+            instr.stop_bits = pyvisa.constants.StopBits.one
+            instr.parity = pyvisa.constants.Parity.none
+            instr.flow_control = pyvisa.constants.VI_ASRL_FLOW_NONE
+            instr.timeout = 2000  # 2 seconds
+        
+        # Try to get device identity with error handling
         try:
+            print("Sending IDN query...")
             instr.write("*IDN?")
             idn = instr.read().strip()
             print(f"Device identified as: {idn}")
-        except:
-            # If IDN query fails, at least check if we can communicate
-            instr.write("*RST")
+        except Exception as query_error:
+            print(f"IDN query failed: {query_error}")
+            # If IDN query fails, try a simple command without expecting response
+            try:
+                print("Trying simple reset command...")
+                instr.write("*RST")
+                time.sleep(0.5)
+                print("Reset command sent successfully")
+            except Exception as cmd_error:
+                print(f"Basic command also failed: {cmd_error}")
         
+        # Close the resource manager
+        instr.close()
         rm.close()
         return True
     except pyvisa.VisaIOError as e:
         print(f"VISA error: Unable to connect to device at {device_address}")
         print(f"Error details: {e}")
+        
+        # Provide troubleshooting steps based on error
+        if "VI_ERROR_NSUP_OPER" in str(e):
+            print("\nTroubleshooting suggestions:")
+            print("1. This error often means the operation is not supported by the device")
+            print("2. Check if the device address format is correct")
+            print("3. For serial devices, try using a simpler format like 'ASRL1::INSTR' or '/dev/ttyUSB0'")
+            print("4. Make sure you have proper permissions to access the device")
+        
         return False
     except Exception as e:
         print(f"Error initializing device: {e}")
@@ -382,20 +426,54 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Control Vitrek 964i High Voltage Switching System')
     parser.add_argument('--device', type=str, default="ASRL/dev/ttyUSB0::INSTR",
                         help='VISA resource name (default: ASRL/dev/ttyUSB0::INSTR)')
-    parser.add_argument('--action', type=str, choices=['test', 'reset', 'config1', 'config2', 'open_all'],
+    parser.add_argument('--action', type=str, choices=['test', 'reset', 'config1', 'config2', 'open_all', 'list'],
                         default='test', help='Action to perform')
+    parser.add_argument('--direct', action='store_true',
+                        help='Use direct device name (e.g., /dev/ttyUSB0 instead of ASRL/dev/ttyUSB0::INSTR)')
     
     args = parser.parse_args()
     
+    # Handle 'list' action to list available resources
+    if args.action == 'list':
+        try:
+            rm = pyvisa.ResourceManager()
+            resources = rm.list_resources()
+            print("\nAvailable VISA resources:")
+            for i, res in enumerate(resources):
+                print(f"{i+1}. {res}")
+            print("\nTo use a specific resource, run with --device option")
+            rm.close()
+            exit(0)
+        except Exception as e:
+            print(f"Error listing resources: {e}")
+            exit(1)
+    
+    # Adjust device format if direct option is used
+    device_addr = args.device
+    if args.direct and not device_addr.startswith("ASRL"):
+        if device_addr.startswith("/dev/"):
+            # Convert /dev/ttyUSB0 to ASRL/dev/ttyUSB0::INSTR
+            device_addr = f"ASRL{device_addr}::INSTR"
+        else:
+            # Handle COM ports on Windows
+            device_addr = f"ASRL{device_addr}::INSTR"
+        print(f"Using VISA resource: {device_addr}")
+    
     # Check if device is available
-    if not initialize_device(args.device):
-        print(f"Device not available at {args.device}")
+    if not initialize_device(device_addr):
+        print(f"\nDevice not available at {device_addr}")
+        print("\nTroubleshooting tips:")
+        print("1. Try using the --list action to see available devices")
+        print("2. Check your serial port name/number")
+        print("3. For serial devices, try using the --direct option with a path like '/dev/ttyUSB0'")
+        print("4. Ensure you have permission to access the port (may require sudo on Linux)")
+        print("5. Check that the device is powered on and properly connected")
         exit(1)
     
     # Perform requested action
     if args.action == 'test':
         # Run the test suite
-        asyncio.run(test_switching(args.device))
+        asyncio.run(test_switching(device_addr))
     else:
         # Map action to setup_type
         action_map = {
@@ -407,7 +485,7 @@ if __name__ == "__main__":
         
         # Execute the corresponding setup
         try:
-            rs232_dev = asyncio.run(setup_vitrek_964i('vitrek', args.device, action_map[args.action]))
+            rs232_dev = asyncio.run(setup_vitrek_964i('vitrek', device_addr, action_map[args.action]))
             print(f"Successfully executed action: {args.action}")
         except Exception as e:
             print(f"Failed to execute action {args.action}: {e}")
