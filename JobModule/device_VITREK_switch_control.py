@@ -574,7 +574,7 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"Error listing resources: {e}")
             exit(1)
-    
+
     # Adjust device format if direct option is used
     device_addr = args.device
     if args.direct and not device_addr.startswith("ASRL"):
@@ -596,6 +596,9 @@ if __name__ == "__main__":
         print("4. Ensure you have permission to access the port (may require sudo on Linux)")
         print("5. Check that the device is powered on and properly connected")
         exit(1)
+    
+    print(">>> finished!")
+    exit()
     
     # Perform requested action
     if args.action == 'test':
