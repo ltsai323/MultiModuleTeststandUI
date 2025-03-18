@@ -6,14 +6,13 @@ import numpy as np
 from datetime import datetime
 import asyncio.exceptions
 
-# 假設這些是您的日誌模組
-# 您可能需要根據實際情況調整這些導入
+# Import logging modules or create a simple alternative
 try:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from PythonTools.MyLogging_BashJob1 import log as rs232log
     from PythonTools.MyLogging_BashJob1 import log as bashlog
 except ImportError:
-    # 如果找不到日誌模組，創建簡單的替代
+    # Simple logger if modules not found
     class SimpleLogger:
         def debug(self, msg): print(f"[DEBUG] {msg}")
         def info(self, msg): print(f"[INFO] {msg}")
@@ -22,7 +21,7 @@ except ImportError:
     bashlog = SimpleLogger()
 
 class RS232Dev:
-    """RS232 設備類，用於管理與儀器的連接"""
+    """RS232 device class for managing instrument connections"""
     def __init__(self, tag):
         self.rm = pyvisa.ResourceManager()
         self.tag = tag
@@ -30,74 +29,74 @@ class RS232Dev:
         self.instrument = None
 
     def __del__(self):
-        """清理資源"""
+        """Clean up resources"""
         if hasattr(self, 'instrument') and self.instrument is not None:
             self.instrument.close()
         if hasattr(self, 'rm') and self.rm is not None:
             self.rm.close()
 
     def set_task(self, t):
-        """設置異步任務"""
+        """Set an async task"""
         self.task = t
 
     async def await_task(self):
-        """等待任務完成"""
+        """Wait for task completion"""
         if not hasattr(self, 'task') or self.task is None:
-            return  # 沒有需要等待的任務
+            return  # No task to wait for
 
         if not self.task.done():
-            bashlog.debug(f'[{self.tag} - Await] 等待測量任務完成')
+            bashlog.debug(f'[{self.tag} - Await] Waiting for measurement task to complete')
             await self.task
 
 
 class KeithleyCommands:
-    """Keithley 命令類，包含常用的 SCPI 命令常數"""
-    # 重置和狀態命令
+    """Keithley commands class with SCPI command constants"""
+    # Reset and status commands
     RESET = "*RST"
     CLEAR = "*CLS"
     IDN = "*IDN?"
     OPC = "*OPC?"
 
-    # 錯誤查詢
+    # Error query
     ERROR = ":SYSTem:ERRor?"
 
-    # 源控制命令
+    # Source control commands
     SOURCE_VOLTAGE = ":SOURce:FUNCtion:MODE VOLTage"
     SOURCE_CURRENT = ":SOURce:FUNCtion:MODE CURRent"
 
-    # 量測命令
+    # Measurement commands
     MEASURE_VOLTAGE = ":SENSe:FUNCtion 'VOLTage:DC'"
     MEASURE_CURRENT = ":SENSe:FUNCtion 'CURRent:DC'"
     MEASURE_RESISTANCE = ":SENSe:FUNCtion 'RESistance'"
     MEASURE_CONCURRENT_ON = ":SENSe:FUNCtion:CONCurrent ON"
     MEASURE_CONCURRENT_OFF = ":SENSe:FUNCtion:CONCurrent OFF"
 
-    # 掃描命令
+    # Sweep commands
     SWEEP_LINEAR = ":SOURce:SWEep:SPACing LINear"
     SWEEP_LOG = ":SOURce:SWEep:SPACing LOGarithmic"
 
-    # 輸出控制
+    # Output control
     OUTPUT_ON = ":OUTPut:STATe ON"
     OUTPUT_OFF = ":OUTPut:STATe OFF"
 
-    # 觸發命令
+    # Trigger commands
     TRIGGER_IMMEDIATE = ":INITiate"
     TRIGGER_ABORT = ":ABORt"
 
-    # 數據讀取命令
+    # Data reading commands
     READ = ":READ?"
     FETCH = ":FETCh?"
     MEASURE = ":MEASure?"
 
 
 class KeithleyInstrument:
-    """Keithley 儀器控制類"""
+    """Keithley instrument control class"""
     def __init__(self, device_tag, resource_name):
-        """初始化 Keithley 儀器
+        """Initialize Keithley instrument
 
         Args:
-            device_tag: 設備標籤，用於日誌
-            resource_name: VISA 資源名稱，例如 "GPIB0::24::INSTR"
+            device_tag: Device tag for logging
+            resource_name: VISA resource name, e.g., "GPIB0::24::INSTR"
         """
         self.device_tag = device_tag
         self.resource_name = resource_name
@@ -105,12 +104,12 @@ class KeithleyInstrument:
         self.instrument = None
 
     async def connect(self):
-        """連接到儀器並進行基本設置"""
+        """Connect to the instrument and perform basic setup"""
         try:
             self.rs232_dev = RS232Dev(self.device_tag)
             instr = self.rs232_dev.rm.open_resource(self.resource_name)
 
-            # 設置通訊參數
+            # Set communication parameters
             if self.resource_name.startswith("ASRL"):
                 instr.baud_rate = 9600
                 instr.data_bits = 8
@@ -120,36 +119,36 @@ class KeithleyInstrument:
                 instr.read_termination = '\r'
                 instr.write_termination = '\r'
 
-            instr.timeout = 10000  # 10 秒超時，對於掃描操作可能需要
+            instr.timeout = 10000  # 10 second timeout, may be needed for sweep operations
 
-            # 儲存儀器實例
+            # Store instrument instance
             self.rs232_dev.instrument = instr
             self.instrument = instr
 
-            # 清除錯誤佇列並設置儀器
+            # Clear error queue and set up instrument
             await self.send_command(KeithleyCommands.CLEAR)
 
-            # 驗證連接
+            # Verify connection
             idn = await self.query_command(KeithleyCommands.IDN)
             if idn:
-                bashlog.info(f"已連接到儀器: {idn}")
+                bashlog.info(f"Connected to instrument: {idn}")
                 return True
             else:
-                bashlog.error("無法獲取儀器識別信息")
+                bashlog.error("Unable to get instrument identification")
                 return False
 
         except Exception as e:
-            bashlog.error(f"連接到 {self.resource_name} 時出錯: {e}")
+            bashlog.error(f"Error connecting to {self.resource_name}: {e}")
             return False
 
     async def disconnect(self):
-        """斷開與儀器的連接"""
+        """Disconnect from the instrument"""
         try:
             if self.instrument:
-                # 確保輸出關閉
+                # Ensure output is off
                 await self.output_off()
 
-                # 關閉連接
+                # Close connection
                 self.instrument.close()
                 self.instrument = None
 
@@ -158,60 +157,60 @@ class KeithleyInstrument:
                     self.rs232_dev.rm.close()
                 self.rs232_dev = None
 
-            bashlog.info(f"已斷開與 {self.resource_name} 的連接")
+            bashlog.info(f"Disconnected from {self.resource_name}")
             return True
         except Exception as e:
-            bashlog.error(f"斷開連接時出錯: {e}")
+            bashlog.error(f"Error disconnecting: {e}")
             return False
 
     async def send_command(self, command):
-        """向儀器發送命令
+        """Send command to the instrument
 
         Args:
-            command: SCPI 命令字符串或命令列表
+            command: SCPI command string or list of commands
 
         Returns:
-            bool: 成功返回 True，失敗返回 False
+            bool: True on success, False on failure
         """
         if not self.instrument:
-            bashlog.error("儀器未連接")
+            bashlog.error("Instrument not connected")
             return False
 
         try:
             commands = command if isinstance(command, list) else [command]
             for cmd in commands:
                 self.instrument.write(cmd)
-                await asyncio.sleep(0.05)  # 添加小延遲以確保命令處理
+                await asyncio.sleep(0.05)  # Small delay to ensure command processing
             return True
         except Exception as e:
-            bashlog.error(f"發送命令時出錯: {e}")
+            bashlog.error(f"Error sending command: {e}")
             return False
 
     async def query_command(self, command):
-        """向儀器發送查詢命令並獲取回應
+        """Send query command to the instrument and get response
 
         Args:
-            command: SCPI 查詢命令
+            command: SCPI query command
 
         Returns:
-            str: 命令的回應，失敗時返回 None
+            str: Command response, None on failure
         """
         if not self.instrument:
-            bashlog.error("儀器未連接")
+            bashlog.error("Instrument not connected")
             return None
 
         try:
             result = self.instrument.query(command)
             return result.strip() if result else None
         except Exception as e:
-            bashlog.error(f"查詢命令時出錯: {e}")
+            bashlog.error(f"Error querying command: {e}")
             return None
 
     async def check_errors(self):
-        """檢查儀器錯誤佇列並記錄所有錯誤
+        """Check instrument error queue and log all errors
 
         Returns:
-            list: 錯誤訊息列表，沒有錯誤時為空列表
+            list: List of error messages, empty list if no errors
         """
         errors = []
         if not self.instrument:
@@ -223,29 +222,29 @@ class KeithleyInstrument:
                 if not error or "0,\"No error\"" in error:
                     break
                 errors.append(error)
-                bashlog.error(f"儀器錯誤: {error}")
+                bashlog.error(f"Instrument error: {error}")
 
             return errors
         except Exception as e:
-            bashlog.error(f"檢查錯誤時出錯: {e}")
-            return [f"檢查錯誤時出錯: {e}"]
+            bashlog.error(f"Error checking errors: {e}")
+            return [f"Error checking errors: {e}"]
 
     async def reset(self):
-        """重置儀器到默認狀態並清除錯誤佇列"""
+        """Reset instrument to default state and clear error queue"""
         result = await self.send_command([KeithleyCommands.RESET, KeithleyCommands.CLEAR])
         await self.check_errors()
         return result
 
     async def setup_as_voltage_source(self, voltage_range=20, voltage_level=0, current_compliance=0.1):
-        """將儀器設置為電壓源模式
+        """Configure instrument as voltage source
 
         Args:
-            voltage_range: 電壓範圍，單位為伏特
-            voltage_level: 初始電壓值，單位為伏特
-            current_compliance: 電流限制，單位為安培
+            voltage_range: Voltage range in volts
+            voltage_level: Initial voltage value in volts
+            current_compliance: Current limit in amps
 
         Returns:
-            bool: 成功返回 True，失敗返回 False
+            bool: True on success, False on failure
         """
         cmds = [
             KeithleyCommands.RESET,
@@ -255,9 +254,9 @@ class KeithleyInstrument:
             KeithleyCommands.MEASURE_CURRENT,
             f":SENSe:CURRent:PROTection {current_compliance}",
             ":SENSe:CURRent:RANGe:AUTO ON",
-            # 設置積分時間 (NPLC - 電源線週期數)
+            # Set integration time (NPLC - Number of Power Line Cycles)
             ":SENSe:CURRent:NPLCycles 1.0",
-            # 設置數據格式
+            # Set data format
             ":FORMat:ELEMents VOLTage,CURRent,RESistance,TIME,STATus"
         ]
 
@@ -265,20 +264,20 @@ class KeithleyInstrument:
         await self.check_errors()
 
         if result:
-            bashlog.info(f"已設置為電壓源模式，範圍 {voltage_range}V，初始值 {voltage_level}V，電流限制 {current_compliance}A")
+            bashlog.info(f"Configured as voltage source, range {voltage_range}V, initial value {voltage_level}V, current limit {current_compliance}A")
 
         return result
 
     async def setup_as_current_source(self, current_range=0.1, current_level=0, voltage_compliance=20):
-        """將儀器設置為電流源模式
+        """Configure instrument as current source
 
         Args:
-            current_range: 電流範圍，單位為安培
-            current_level: 初始電流值，單位為安培
-            voltage_compliance: 電壓限制，單位為伏特
+            current_range: Current range in amps
+            current_level: Initial current value in amps
+            voltage_compliance: Voltage limit in volts
 
         Returns:
-            bool: 成功返回 True，失敗返回 False
+            bool: True on success, False on failure
         """
         cmds = [
             KeithleyCommands.RESET,
@@ -288,9 +287,9 @@ class KeithleyInstrument:
             KeithleyCommands.MEASURE_VOLTAGE,
             f":SENSe:VOLTage:PROTection {voltage_compliance}",
             ":SENSe:VOLTage:RANGe:AUTO ON",
-            # 設置積分時間
+            # Set integration time
             ":SENSe:VOLTage:NPLCycles 1.0",
-            # 設置數據格式
+            # Set data format
             ":FORMat:ELEMents VOLTage,CURRent,RESistance,TIME,STATus"
         ]
 
@@ -298,18 +297,18 @@ class KeithleyInstrument:
         await self.check_errors()
 
         if result:
-            bashlog.info(f"已設置為電流源模式，範圍 {current_range}A，初始值 {current_level}A，電壓限制 {voltage_compliance}V")
+            bashlog.info(f"Configured as current source, range {current_range}A, initial value {current_level}A, voltage limit {voltage_compliance}V")
 
         return result
 
     async def setup_measurement_speed(self, nplc=1.0):
-        """設置測量速度/積分時間
+        """Set measurement speed/integration time
 
         Args:
-            nplc: 電源線週期數 (0.01 到 10)，較小的值測量速度較快但噪聲較大
+            nplc: Number of power line cycles (0.01 to 10), smaller values are faster but noisier
 
         Returns:
-            bool: 成功返回 True，失敗返回 False
+            bool: True on success, False on failure
         """
         cmds = [
             f":SENSe:CURRent:NPLCycles {nplc}",
@@ -321,20 +320,20 @@ class KeithleyInstrument:
         await self.check_errors()
 
         if result:
-            bashlog.info(f"測量速度已設置為 {nplc} NPLC")
+            bashlog.info(f"Measurement speed set to {nplc} NPLC")
 
         return result
 
     async def setup_measurement_filter(self, enable=True, count=10, type="REPeat"):
-        """設置測量濾波器
+        """Set measurement filter
 
         Args:
-            enable: 是否啟用濾波器
-            count: 濾波器計數 (1 到 100)
-            type: 濾波器類型，"REPeat" 或 "MOVing"
+            enable: Whether to enable the filter
+            count: Filter count (1 to 100)
+            type: Filter type, "REPeat" or "MOVing"
 
         Returns:
-            bool: 成功返回 True，失敗返回 False
+            bool: True on success, False on failure
         """
         state = "ON" if enable else "OFF"
         cmds = [
@@ -347,25 +346,25 @@ class KeithleyInstrument:
         await self.check_errors()
 
         if result:
-            status = "啟用" if enable else "停用"
-            bashlog.info(f"測量濾波器已{status}，計數 {count}，類型 {type}")
+            status = "enabled" if enable else "disabled"
+            bashlog.info(f"Measurement filter {status}, count {count}, type {type}")
 
         return result
 
     async def setup_auto_zero(self, state="ON"):
-        """設置自動歸零功能
+        """Set auto-zero function
 
         Args:
-            state: 自動歸零狀態，"ON"、"OFF" 或 "ONCE"
-                  ON - 啟用自動歸零
-                  OFF - 停用自動歸零
-                  ONCE - 執行一次自動歸零然後停用
+            state: Auto-zero state, "ON", "OFF", or "ONCE"
+                  ON - Enable auto-zero
+                  OFF - Disable auto-zero
+                  ONCE - Perform one auto-zero operation then disable
 
         Returns:
-            bool: 成功返回 True，失敗返回 False
+            bool: True on success, False on failure
         """
         if state not in ["ON", "OFF", "ONCE"]:
-            bashlog.error(f"無效的自動歸零狀態: {state}")
+            bashlog.error(f"Invalid auto-zero state: {state}")
             return False
 
         cmd = f":SYSTem:AZERo:STATe {state}"
@@ -374,27 +373,27 @@ class KeithleyInstrument:
 
         if result:
             if state == "ONCE":
-                bashlog.info("已執行一次自動歸零")
+                bashlog.info("Performed one auto-zero operation")
             else:
-                status = "啟用" if state == "ON" else "停用"
-                bashlog.info(f"自動歸零已{status}")
+                status = "enabled" if state == "ON" else "disabled"
+                bashlog.info(f"Auto-zero {status}")
 
         return result
 
     async def setup_sense_range_sync(self, enable=True):
-        """設置測量範圍與合規範圍同步功能
+        """Set measurement range and compliance range synchronization
 
-        當啟用時，測量範圍會自動跟隨合規範圍設定。
-        例如：如果電流合規設為10mA，電流測量範圍也會設為10mA範圍。
+        When enabled, measurement range automatically follows compliance range settings.
+        For example: If current compliance is set to 10mA, current measurement range will also be set to 10mA range.
 
         Args:
-            enable: 是否啟用同步功能
+            enable: Whether to enable synchronization
 
         Returns:
-            bool: 成功返回 True，失敗返回 False
+            bool: True on success, False on failure
         """
         state = "ON" if enable else "OFF"
-        # 同時設置電流和電壓的同步
+        # Set sync for both current and voltage
         cmds = [
             f":SENSe:CURRent:PROTection:RSYNchronize {state}",
             f":SENSe:VOLTage:PROTection:RSYNchronize {state}"
@@ -404,29 +403,29 @@ class KeithleyInstrument:
         await self.check_errors()
 
         if result:
-            status = "啟用" if enable else "停用"
-            bashlog.info(f"測量範圍與合規範圍同步已{status}")
+            status = "enabled" if enable else "disabled"
+            bashlog.info(f"Measurement range and compliance range synchronization {status}")
 
         return result
 
     async def setup_contact_check(self, enable=True, resistance=50):
-        """設置接觸檢查功能 (如果儀器支援)
+        """Set contact check function (if instrument supports it)
 
-        接觸檢查功能可以確保與被測裝置的連接良好。
+        Contact check function ensures good connections to the device under test.
 
         Args:
-            enable: 是否啟用接觸檢查
-            resistance: 接觸檢查的電阻閾值 (2, 15 或 50 歐姆)
+            enable: Whether to enable contact check
+            resistance: Contact check resistance threshold (2, 15, or 50 ohms)
 
         Returns:
-            bool: 成功返回 True，失敗返回 False
+            bool: True on success, False on failure
         """
         try:
-            # 首先啟用遠端感應，接觸檢查需要遠端感應
+            # First enable remote sensing, required for contact check
             remote_cmd = ":SYSTem:RSENse ON"
             await self.send_command(remote_cmd)
 
-            # 設置接觸檢查功能
+            # Set contact check function
             state = "ON" if enable else "OFF"
             cmds = [
                 f":SYSTem:CCHeck {state}",
@@ -436,35 +435,35 @@ class KeithleyInstrument:
             result = await self.send_command(cmds)
             errors = await self.check_errors()
 
-            # 一些較舊的型號可能不支援此功能，會返回錯誤
+            # Some older models may not support this feature and will return an error
             if "Undefined header" in str(errors):
-                bashlog.warning("此儀器不支援接觸檢查功能")
+                bashlog.warning("This instrument does not support contact check")
                 return False
 
             if result:
-                status = "啟用" if enable else "停用"
-                bashlog.info(f"接觸檢查已{status}，閾值電阻 {resistance} 歐姆")
+                status = "enabled" if enable else "disabled"
+                bashlog.info(f"Contact check {status}, threshold resistance {resistance} ohms")
 
             return result
         except Exception as e:
-            bashlog.error(f"設置接觸檢查時出錯: {e}")
+            bashlog.error(f"Error setting up contact check: {e}")
             return False
 
     async def set_output_off_mode(self, mode="NORMal"):
-        """設置輸出關閉模式
+        """Set output off mode
 
         Args:
-            mode: 輸出關閉模式
-                 NORMal - 正常模式
-                 ZERO - 零輸出模式
-                 HIMPedance - 高阻抗模式
-                 GUARd - 保護模式
+            mode: Output off mode
+                 NORMal - Normal mode
+                 ZERO - Zero output mode
+                 HIMPedance - High impedance mode
+                 GUARd - Guard mode
 
         Returns:
-            bool: 成功返回 True，失敗返回 False
+            bool: True on success, False on failure
         """
         if mode not in ["NORMal", "ZERO", "HIMPedance", "GUARd"]:
-            bashlog.error(f"無效的輸出關閉模式: {mode}")
+            bashlog.error(f"Invalid output off mode: {mode}")
             return False
 
         cmd = f":OUTPut:SMODe {mode}"
@@ -472,32 +471,32 @@ class KeithleyInstrument:
         await self.check_errors()
 
         if result:
-            bashlog.info(f"輸出關閉模式已設置為 {mode}")
+            bashlog.info(f"Output off mode set to {mode}")
 
         return result
 
     async def set_data_format(self, elements=None, format_type="ASCii"):
-        """設置數據格式
+        """Set data format
 
         Args:
-            elements: 要包含的數據元素列表，例如 ["VOLTage", "CURRent", "RESistance", "TIME", "STATus"]
-                     如果為 None，將包含所有元素
-            format_type: 數據格式類型，"ASCii"、"REAL" 或 "SREal"
+            elements: List of data elements to include, e.g., ["VOLTage", "CURRent", "RESistance", "TIME", "STATus"]
+                     If None, all elements will be included
+            format_type: Data format type, "ASCii", "REAL", or "SREal"
 
         Returns:
-            bool: 成功返回 True，失敗返回 False
+            bool: True on success, False on failure
         """
         cmds = []
 
-        # 設置數據格式類型
+        # Set data format type
         cmds.append(f":FORMat:DATA {format_type}")
 
-        # 設置數據元素
+        # Set data elements
         if elements is not None:
             elements_str = ",".join(elements)
             cmds.append(f":FORMat:ELEMents {elements_str}")
         else:
-            # 默認包含所有元素
+            # Default to include all elements
             cmds.append(":FORMat:ELEMents VOLTage,CURRent,RESistance,TIME,STATus")
 
         result = await self.send_command(cmds)
@@ -505,101 +504,101 @@ class KeithleyInstrument:
 
         if result:
             if elements is not None:
-                bashlog.info(f"數據格式已設置為 {format_type}，包含元素: {elements}")
+                bashlog.info(f"Data format set to {format_type}, including elements: {elements}")
             else:
-                bashlog.info(f"數據格式已設置為 {format_type}，包含所有元素")
+                bashlog.info(f"Data format set to {format_type}, including all elements")
 
         return result
 
     async def check_compliance_state(self):
-        """檢查源是否處於合規狀態
+        """Check if source is in compliance state
 
         Returns:
-            tuple: (電壓合規狀態, 電流合規狀態)，True 表示處於合規狀態
+            tuple: (voltage compliance state, current compliance state), True indicates in compliance
         """
         try:
-            # 檢查電壓源的電流合規狀態
+            # Check current compliance state for voltage source
             current_compliance = await self.query_command(":SENSe:CURRent:PROTection:TRIPped?")
-            # 檢查電流源的電壓合規狀態
+            # Check voltage compliance state for current source
             voltage_compliance = await self.query_command(":SENSe:VOLTage:PROTection:TRIPped?")
 
             current_tripped = current_compliance == "1"
             voltage_tripped = voltage_compliance == "1"
 
             if current_tripped:
-                bashlog.warning("電流合規狀態已觸發")
+                bashlog.warning("Current compliance state triggered")
             if voltage_tripped:
-                bashlog.warning("電壓合規狀態已觸發")
+                bashlog.warning("Voltage compliance state triggered")
 
             return voltage_tripped, current_tripped
         except Exception as e:
-            bashlog.error(f"檢查合規狀態時出錯: {e}")
+            bashlog.error(f"Error checking compliance state: {e}")
             return False, False
 
     async def set_voltage(self, voltage_level):
-        """設置輸出電壓
+        """Set output voltage
 
         Args:
-            voltage_level: 電壓值，單位為伏特
+            voltage_level: Voltage value in volts
 
         Returns:
-            bool: 成功返回 True，失敗返回 False
+            bool: True on success, False on failure
         """
         result = await self.send_command(f":SOURce:VOLTage:LEVel {voltage_level}")
 
         if result:
-            bashlog.info(f"電壓已設置為 {voltage_level} V")
+            bashlog.info(f"Voltage set to {voltage_level} V")
 
         return result
 
     async def set_current(self, current_level):
-        """設置輸出電流
+        """Set output current
 
         Args:
-            current_level: 電流值，單位為安培
+            current_level: Current value in amps
 
         Returns:
-            bool: 成功返回 True，失敗返回 False
+            bool: True on success, False on failure
         """
         result = await self.send_command(f":SOURce:CURRent:LEVel {current_level}")
 
         if result:
-            bashlog.info(f"電流已設置為 {current_level} A")
+            bashlog.info(f"Current set to {current_level} A")
 
         return result
 
     async def output_on(self):
-        """打開輸出"""
+        """Turn output on"""
         result = await self.send_command(KeithleyCommands.OUTPUT_ON)
 
         if result:
-            bashlog.info("輸出已開啟")
+            bashlog.info("Output turned on")
 
         return result
 
     async def output_off(self):
-        """關閉輸出"""
+        """Turn output off"""
         result = await self.send_command(KeithleyCommands.OUTPUT_OFF)
 
         if result:
-            bashlog.info("輸出已關閉")
+            bashlog.info("Output turned off")
 
         return result
 
     async def read_measurements(self):
-        """讀取當前測量值
+        """Read current measurement values
 
         Returns:
-            dict: 測量結果字典，包含電壓、電流等
+            dict: Measurement results dict including voltage, current, etc.
         """
         try:
             response = await self.query_command(KeithleyCommands.READ)
             if not response:
-                bashlog.error("讀取測量失敗，無回應")
+                bashlog.error("Failed to read measurement, no response")
                 return None
 
             values = response.split(',')
-            if len(values) >= 5:  # 電壓、電流、電阻、時間、狀態
+            if len(values) >= 5:  # voltage, current, resistance, time, status
                 result = {
                     'voltage': float(values[0]),
                     'current': float(values[1]),
@@ -609,17 +608,17 @@ class KeithleyInstrument:
                 }
                 return result
             else:
-                bashlog.error(f"讀取測量失敗，數據格式不正確: {response}")
+                bashlog.error(f"Failed to read measurement, incorrect data format: {response}")
                 return None
         except Exception as e:
-            bashlog.error(f"讀取測量時出錯: {e}")
+            bashlog.error(f"Error reading measurement: {e}")
             return None
 
     async def read_iv(self):
-        """讀取當前的電壓和電流
+        """Read current voltage and current
 
         Returns:
-            tuple: (電壓, 電流)，失敗時返回 (None, None)
+            tuple: (voltage, current), returns (None, None) on failure
         """
         measurements = await self.read_measurements()
 
@@ -629,32 +628,32 @@ class KeithleyInstrument:
         return None, None
 
     async def setup_voltage_sweep_linear(self, start_v, stop_v, step_v=None, points=None):
-        """設置線性電壓掃描
+        """Set up linear voltage sweep
 
-        必須指定 step_v 或 points 之一
+        Must specify either step_v or points
 
         Args:
-            start_v: 起始電壓
-            stop_v: 終止電壓
-            step_v: 電壓步長
-            points: 掃描點數
+            start_v: Start voltage
+            stop_v: Stop voltage
+            step_v: Voltage step
+            points: Number of sweep points
 
         Returns:
-            bool: 成功返回 True，失敗返回 False
+            bool: True on success, False on failure
         """
         if step_v is None and points is None:
-            bashlog.error("必須指定電壓步長或掃描點數")
+            bashlog.error("Must specify either voltage step or number of sweep points")
             return False
 
         if step_v is not None and points is not None:
-            bashlog.error("不能同時指定電壓步長和掃描點數")
+            bashlog.error("Cannot specify both voltage step and number of sweep points")
             return False
 
         try:
             cmds = [
                 KeithleyCommands.SOURCE_VOLTAGE,
                 ":SOURce:VOLTage:MODE SWEep",
-                KeithleyCommands.SWEEP_LINEAR,  # 線性掃描
+                KeithleyCommands.SWEEP_LINEAR,  # Linear sweep
                 f":SOURce:VOLTage:STARt {start_v}",
                 f":SOURce:VOLTage:STOP {stop_v}",
             ]
@@ -664,87 +663,87 @@ class KeithleyInstrument:
             else:  # points is not None
                 cmds.append(f":SOURce:SWEep:POINts {points}")
 
-            # 設置掃描源範圍模式
-            cmds.append(":SOURce:SWEep:RANGing BEST")  # 使用最佳固定範圍
+            # Set sweep source range mode
+            cmds.append(":SOURce:SWEep:RANGing BEST")  # Use best fixed range
 
             result = await self.send_command(cmds)
             await self.check_errors()
 
             if result:
                 if step_v is not None:
-                    bashlog.info(f"已設置線性電壓掃描: {start_v}V 到 {stop_v}V，步長 {step_v}V")
+                    bashlog.info(f"Linear voltage sweep setup: {start_v}V to {stop_v}V, step {step_v}V")
                 else:
-                    bashlog.info(f"已設置線性電壓掃描: {start_v}V 到 {stop_v}V，{points} 個點")
+                    bashlog.info(f"Linear voltage sweep setup: {start_v}V to {stop_v}V, {points} points")
 
             return result
         except Exception as e:
-            bashlog.error(f"設置電壓掃描時出錯: {e}")
+            bashlog.error(f"Error setting up voltage sweep: {e}")
             return False
 
     async def setup_voltage_sweep_log(self, start_v, stop_v, points):
-        """設置對數電壓掃描
+        """Set up logarithmic voltage sweep
 
         Args:
-            start_v: 起始電壓 (必須非零且與 stop_v 同號)
-            stop_v: 終止電壓
-            points: 掃描點數
+            start_v: Start voltage (must be non-zero and same sign as stop_v)
+            stop_v: Stop voltage
+            points: Number of sweep points
 
         Returns:
-            bool: 成功返回 True，失敗返回 False
+            bool: True on success, False on failure
         """
         if start_v * stop_v <= 0:
-            bashlog.error("對數掃描的起始和終止電壓必須非零且同號")
+            bashlog.error("Start and stop voltages for logarithmic sweep must be non-zero and have the same sign")
             return False
 
         try:
             cmds = [
                 KeithleyCommands.SOURCE_VOLTAGE,
                 ":SOURce:VOLTage:MODE SWEep",
-                KeithleyCommands.SWEEP_LOG,  # 對數掃描
+                KeithleyCommands.SWEEP_LOG,  # Logarithmic sweep
                 f":SOURce:VOLTage:STARt {start_v}",
                 f":SOURce:VOLTage:STOP {stop_v}",
                 f":SOURce:SWEep:POINts {points}",
-                ":SOURce:SWEep:RANGing BEST"  # 使用最佳固定範圍
+                ":SOURce:SWEep:RANGing BEST"  # Use best fixed range
             ]
 
             result = await self.send_command(cmds)
             await self.check_errors()
 
             if result:
-                bashlog.info(f"已設置對數電壓掃描: {start_v}V 到 {stop_v}V，{points} 個點")
+                bashlog.info(f"Logarithmic voltage sweep setup: {start_v}V to {stop_v}V, {points} points")
 
             return result
         except Exception as e:
-            bashlog.error(f"設置對數電壓掃描時出錯: {e}")
+            bashlog.error(f"Error setting up logarithmic voltage sweep: {e}")
             return False
 
     async def setup_current_sweep_linear(self, start_i, stop_i, step_i=None, points=None):
-        """設置線性電流掃描
+        """Set up linear current sweep
 
-        必須指定 step_i 或 points 之一
+        Must specify either step_i or points
 
         Args:
-            start_i: 起始電流
-            stop_i: 終止電流
-            step_i: 電流步長
-            points: 掃描點數
+            start_i: Start current
+            stop_i: Stop current
+            step_i: Current step
+            points: Number of sweep points
 
         Returns:
-            bool: 成功返回 True，失敗返回 False
+            bool: True on success, False on failure
         """
         if step_i is None and points is None:
-            bashlog.error("必須指定電流步長或掃描點數")
+            bashlog.error("Must specify either current step or number of sweep points")
             return False
 
         if step_i is not None and points is not None:
-            bashlog.error("不能同時指定電流步長和掃描點數")
+            bashlog.error("Cannot specify both current step and number of sweep points")
             return False
 
         try:
             cmds = [
                 KeithleyCommands.SOURCE_CURRENT,
                 ":SOURce:CURRent:MODE SWEep",
-                KeithleyCommands.SWEEP_LINEAR,  # 線性掃描
+                KeithleyCommands.SWEEP_LINEAR,  # Linear sweep
                 f":SOURce:CURRent:STARt {start_i}",
                 f":SOURce:CURRent:STOP {stop_i}",
             ]
@@ -754,31 +753,31 @@ class KeithleyInstrument:
             else:  # points is not None
                 cmds.append(f":SOURce:SWEep:POINts {points}")
 
-            # 設置掃描源範圍模式
-            cmds.append(":SOURce:SWEep:RANGing BEST")  # 使用最佳固定範圍
+            # Set sweep source range mode
+            cmds.append(":SOURce:SWEep:RANGing BEST")  # Use best fixed range
 
             result = await self.send_command(cmds)
             await self.check_errors()
 
             if result:
                 if step_i is not None:
-                    bashlog.info(f"已設置線性電流掃描: {start_i}A 到 {stop_i}A，步長 {step_i}A")
+                    bashlog.info(f"Linear current sweep setup: {start_i}A to {stop_i}A, step {step_i}A")
                 else:
-                    bashlog.info(f"已設置線性電流掃描: {start_i}A 到 {stop_i}A，{points} 個點")
+                    bashlog.info(f"Linear current sweep setup: {start_i}A to {stop_i}A, {points} points")
 
             return result
         except Exception as e:
-            bashlog.error(f"設置電流掃描時出錯: {e}")
+            bashlog.error(f"Error setting up current sweep: {e}")
             return False
 
     async def setup_buffer(self, buffer_size=100):
-        """設置數據緩衝區
+        """Set up data buffer
 
         Args:
-            buffer_size: 緩衝區大小 (1 到 2500)
+            buffer_size: Buffer size (1 to 2500)
 
         Returns:
-            bool: 成功返回 True，失敗返回 False
+            bool: True on success, False on failure
         """
         try:
             cmds = [
@@ -792,28 +791,28 @@ class KeithleyInstrument:
             await self.check_errors()
 
             if result:
-                bashlog.info(f"數據緩衝區已設置為 {buffer_size} 個點")
+                bashlog.info(f"Data buffer setup for {buffer_size} points")
 
             return result
         except Exception as e:
-            bashlog.error(f"設置數據緩衝區時出錯: {e}")
+            bashlog.error(f"Error setting up data buffer: {e}")
             return False
 
     async def read_buffer(self):
-        """讀取緩衝區中的數據
+        """Read data from buffer
 
         Returns:
-            list: 緩衝區中的測量結果列表
+            list: List of measurement results in buffer
         """
         try:
             response = await self.query_command(":TRACe:DATA?")
             if not response:
-                bashlog.error("讀取緩衝區失敗，無回應")
+                bashlog.error("Failed to read buffer, no response")
                 return []
 
-            # 處理緩衝區數據
+            # Process buffer data
             values = response.split(',')
-            points = len(values) // 5  # 每個測量點有 5 個值
+            points = len(values) // 5  # Each measurement point has 5 values
             results = []
 
             for i in range(points):
@@ -828,66 +827,66 @@ class KeithleyInstrument:
 
             return results
         except Exception as e:
-            bashlog.error(f"讀取緩衝區數據時出錯: {e}")
+            bashlog.error(f"Error reading buffer data: {e}")
             return []
 
     async def perform_iv_sweep(self, start_v, stop_v, points=None, step_v=None, use_buffer=True):
-        """執行 IV 掃描
+        """Perform IV sweep
 
         Args:
-            start_v: 起始電壓
-            stop_v: 終止電壓
-            points: 掃描點數
-            step_v: 電壓步長
-            use_buffer: 是否使用緩衝區存儲數據
+            start_v: Start voltage
+            stop_v: Stop voltage
+            points: Number of sweep points
+            step_v: Voltage step
+            use_buffer: Whether to use buffer to store data
 
         Returns:
-            list: 測量結果列表，失敗時返回空列表
+            list: List of measurement results, empty list on failure
         """
         try:
-            # 設置為電壓源並配置掃描
+            # Set up as voltage source and configure sweep
             await self.setup_as_voltage_source()
 
-            # 設置掃描
+            # Set up sweep
             if step_v is not None:
                 sweep_result = await self.setup_voltage_sweep_linear(start_v, stop_v, step_v=step_v)
-                # 計算所需點數
+                # Calculate required points
                 total_points = int(abs(stop_v - start_v) / step_v) + 1
             elif points is not None:
                 sweep_result = await self.setup_voltage_sweep_linear(start_v, stop_v, points=points)
                 total_points = points
             else:
-                # 默認使用 10 個點
+                # Default to 10 points
                 points = 10
                 sweep_result = await self.setup_voltage_sweep_linear(start_v, stop_v, points=points)
                 total_points = points
 
             if not sweep_result:
-                bashlog.error("設置掃描失敗")
+                bashlog.error("Failed to set up sweep")
                 return []
 
-            # 設置觸發計數
+            # Set trigger count
             await self.send_command(f":TRIGger:COUNt {total_points}")
 
             if use_buffer:
-                # 設置數據緩衝區
+                # Set up data buffer
                 await self.setup_buffer(total_points)
 
-            # 打開輸出並執行掃描
+            # Turn on output and run sweep
             await self.output_on()
             await self.send_command(KeithleyCommands.TRIGGER_IMMEDIATE)
 
-            # 等待掃描完成
+            # Wait for sweep to complete
             await self.query_command(KeithleyCommands.OPC)
 
             results = []
             if use_buffer:
-                # 從緩衝區讀取數據
+                # Read data from buffer
                 buffer_data = await self.read_buffer()
                 for point in buffer_data:
                     results.append((point['voltage'], point['current']))
             else:
-                # 使用 FETCh? 命令讀取數據
+                # Use FETCh? command to read data
                 fetch_data = await self.query_command(KeithleyCommands.FETCH)
                 if fetch_data:
                     values = fetch_data.split(',')
@@ -897,10 +896,10 @@ class KeithleyInstrument:
                         current = float(values[i*5+1])
                         results.append((voltage, current))
 
-            # 關閉輸出
+            # Turn off output
             await self.output_off()
 
-            # 保存結果到檔案
+            # Save results to file
             if results:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 filename = f"iv_sweep_{timestamp}.csv"
@@ -908,51 +907,51 @@ class KeithleyInstrument:
                     f.write("Voltage(V),Current(A)\n")
                     for v, i in results:
                         f.write(f"{v},{i}\n")
-                bashlog.info(f"IV 掃描完成，結果已保存到 {filename}")
+                bashlog.info(f"IV sweep completed, results saved to {filename}")
 
             return results
         except Exception as e:
-            bashlog.error(f"執行 IV 掃描時出錯: {e}")
-            # 確保輸出關閉
+            bashlog.error(f"Error performing IV sweep: {e}")
+            # Ensure output is off
             await self.output_off()
             return []
 
     async def start_iv_monitor(self, interval=2.0, save_data=True, max_samples=1000):
-        """啟動背景 IV 監控任務
+        """Start background IV monitoring task
 
         Args:
-            interval: 測量間隔，單位為秒
-            save_data: 是否保存數據到檔案
-            max_samples: 最大採樣數量，超過後將循環覆蓋舊數據
+            interval: Measurement interval in seconds
+            save_data: Whether to save data to file
+            max_samples: Maximum number of samples to keep, older samples will be discarded
 
         Returns:
-            bool: 成功返回 True，失敗返回 False
+            bool: True on success, False on failure
         """
         if not self.rs232_dev:
-            bashlog.error("儀器未連接")
+            bashlog.error("Instrument not connected")
             return False
 
         try:
-            # 創建數據存儲
+            # Create data storage
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"iv_monitor_{timestamp}.csv"
 
-            # 創建監控任務
+            # Create monitoring task
             async def monitor_task():
                 try:
-                    bashlog.info("IV 監控已啟動")
+                    bashlog.info("IV monitoring started")
 
-                    # 創建數據存儲
+                    # Create data storage
                     data_buffer = []
 
-                    # 如果保存數據，創建並寫入CSV標頭
+                    # If saving data, create and write CSV header
                     if save_data:
                         with open(filename, 'w') as f:
                             f.write("Timestamp,Voltage(V),Current(A),Status\n")
 
                     counter = 0
                     while True:
-                        # 讀取測量值
+                        # Read measurements
                         measurements = await self.read_measurements()
                         if measurements:
                             voltage = measurements['voltage']
@@ -960,18 +959,18 @@ class KeithleyInstrument:
                             status = measurements['status']
                             timestamp = datetime.now().isoformat()
 
-                            # 檢查合規狀態
+                            # Check compliance state
                             v_tripped, i_tripped = await self.check_compliance_state()
                             compliance_info = ""
                             if v_tripped:
-                                compliance_info = " (電壓合規已觸發)"
+                                compliance_info = " (Voltage compliance triggered)"
                             if i_tripped:
-                                compliance_info = " (電流合規已觸發)"
+                                compliance_info = " (Current compliance triggered)"
 
-                            # 顯示信息
-                            bashlog.info(f"IV 監控: V={voltage}V, I={current}A{compliance_info}")
+                            # Display information
+                            bashlog.info(f"IV monitor: V={voltage}V, I={current}A{compliance_info}")
 
-                            # 存儲數據
+                            # Store data
                             data_point = {
                                 'timestamp': timestamp,
                                 'voltage': voltage,
@@ -979,53 +978,53 @@ class KeithleyInstrument:
                                 'status': status
                             }
 
-                            # 存入緩衝區
+                            # Add to buffer
                             data_buffer.append(data_point)
                             if len(data_buffer) > max_samples:
-                                data_buffer.pop(0)  # 移除最舊的數據點
+                                data_buffer.pop(0)  # Remove oldest data point
 
-                            # 如果需要，保存到檔案
+                            # Save to file if needed
                             if save_data:
                                 with open(filename, 'a') as f:
                                     f.write(f"{timestamp},{voltage},{current},{status}\n")
 
                             counter += 1
-                            if counter % 10 == 0:  # 每10個數據點顯示一次存儲信息
+                            if counter % 10 == 0:  # Show storage info every 10 data points
                                 if save_data:
-                                    bashlog.info(f"已儲存 {counter} 個數據點到 {filename}")
+                                    bashlog.info(f"Stored {counter} data points to {filename}")
 
                         await asyncio.sleep(interval)
 
                 except asyncio.CancelledError:
-                    bashlog.info("IV 監控已停止")
-                    # 存儲最終數據
+                    bashlog.info("IV monitoring stopped")
+                    # Store final data
                     self.monitor_data = data_buffer
                     if save_data:
-                        bashlog.info(f"所有監控數據已保存到 {filename}")
+                        bashlog.info(f"All monitoring data saved to {filename}")
                     return data_buffer
 
                 except Exception as e:
-                    bashlog.error(f"IV 監控時出錯: {e}")
-                    # 存儲最終數據
+                    bashlog.error(f"Error during IV monitoring: {e}")
+                    # Store final data
                     self.monitor_data = data_buffer
                     return data_buffer
 
-            # 啟動任務並存儲到設備對象
+            # Start task and store in device object
             task = asyncio.create_task(monitor_task())
             self.rs232_dev.set_task(task)
-            # 存儲檔名以便後續參考
+            # Store filename for later reference
             self.monitor_filename = filename if save_data else None
             return True
 
         except Exception as e:
-            bashlog.error(f"啟動 IV 監控時出錯: {e}")
+            bashlog.error(f"Error starting IV monitoring: {e}")
             return False
 
     async def stop_iv_monitor(self):
-        """停止 IV 監控任務
+        """Stop IV monitoring task
 
         Returns:
-            tuple: (成功狀態, 採集的數據)，失敗時返回 (False, None)
+            tuple: (success status, collected data), returns (False, None) on failure
         """
         if not self.rs232_dev:
             return False, None
@@ -1033,50 +1032,50 @@ class KeithleyInstrument:
         try:
             data = None
             if hasattr(self.rs232_dev, 'task') and self.rs232_dev.task:
-                # 取消任務
+                # Cancel task
                 self.rs232_dev.task.cancel()
                 try:
-                    # 等待任務取消並獲取結果
+                    # Wait for task to cancel and get results
                     await asyncio.sleep(0.5)
-                    # 檢查是否有監控數據
+                    # Check if monitoring data exists
                     if hasattr(self, 'monitor_data'):
                         data = self.monitor_data
                 except asyncio.CancelledError:
                     pass
 
-                bashlog.info("IV 監控已停止")
+                bashlog.info("IV monitoring stopped")
 
-                # 顯示數據儲存位置
+                # Show data storage location
                 if hasattr(self, 'monitor_filename') and self.monitor_filename:
-                    bashlog.info(f"完整監控數據已保存到 {self.monitor_filename}")
+                    bashlog.info(f"Complete monitoring data saved to {self.monitor_filename}")
 
             return True, data
         except Exception as e:
-            bashlog.error(f"停止 IV 監控時出錯: {e}")
+            bashlog.error(f"Error stopping IV monitoring: {e}")
             return False, None
 
     async def read_status_registers(self):
-        """讀取儀器狀態暫存器
+        """Read instrument status registers
 
         Returns:
-            dict: 儀器狀態信息
+            dict: Instrument status information
         """
         try:
-            # 讀取各種狀態暫存器
+            # Read various status registers
             measurement_status = await self.query_command(":STATus:MEASurement:CONDition?")
             operation_status = await self.query_command(":STATus:OPERation:CONDition?")
             questionable_status = await self.query_command(":STATus:QUEStionable:CONDition?")
 
-            # 讀取標準事件暫存器
+            # Read standard event register
             event_status = await self.query_command("*ESR?")
 
-            # 解析為整數
+            # Parse to integers
             meas_status = int(measurement_status) if measurement_status else 0
             op_status = int(operation_status) if operation_status else 0
             quest_status = int(questionable_status) if questionable_status else 0
             event_status = int(event_status) if event_status else 0
 
-            # 解析測量狀態暫存器的含義
+            # Parse measurement status register meanings
             meas_status_info = {}
             if meas_status & 0x1:    meas_status_info["LIMIT1_FAIL"] = True
             if meas_status & 0x2:    meas_status_info["LIMIT2_LOW_FAIL"] = True
@@ -1089,7 +1088,7 @@ class KeithleyInstrument:
             if meas_status & 0x100:  meas_status_info["BUFFER_HALF_FULL"] = True
             if meas_status & 0x200:  meas_status_info["READING_AVAILABLE"] = True
 
-            # 解析操作狀態暫存器的含義
+            # Parse operation status register meanings
             op_status_info = {}
             if op_status & 0x1:    op_status_info["CALIBRATING"] = True
             if op_status & 0x2:    op_status_info["SETTLING"] = True
@@ -1099,7 +1098,7 @@ class KeithleyInstrument:
             if op_status & 0x200:  op_status_info["TRIGGER_SWEEPING"] = True
             if op_status & 0x800:  op_status_info["IDLE"] = True
 
-            # 解析異常狀態暫存器的含義
+            # Parse questionable status register meanings
             quest_status_info = {}
             if quest_status & 0x1:    quest_status_info["VOLTAGE_SUMMARY"] = True
             if quest_status & 0x2:    quest_status_info["CURRENT_SUMMARY"] = True
@@ -1108,7 +1107,7 @@ class KeithleyInstrument:
             if quest_status & 0x10:   quest_status_info["HUMIDITY_SUMMARY"] = True
             if quest_status & 0x800:  quest_status_info["QUESTIONABLE_CALIBRATION"] = True
 
-            # 解析標準事件暫存器的含義
+            # Parse standard event register meanings
             event_status_info = {}
             if event_status & 0x1:   event_status_info["OPERATION_COMPLETE"] = True
             if event_status & 0x2:   event_status_info["REQUEST_CONTROL"] = True
@@ -1119,7 +1118,7 @@ class KeithleyInstrument:
             if event_status & 0x40:  event_status_info["USER_REQUEST"] = True
             if event_status & 0x80:  event_status_info["POWER_ON"] = True
 
-            # 返回包含所有狀態信息的字典
+            # Return dict with all status information
             status = {
                 "measurement": {
                     "value": meas_status,
@@ -1141,45 +1140,45 @@ class KeithleyInstrument:
 
             return status
         except Exception as e:
-            bashlog.error(f"讀取狀態暫存器時出錯: {e}")
+            bashlog.error(f"Error reading status registers: {e}")
             return {}
 
     async def perform_custom_measurement_sequence(self, voltage_levels, measurement_time=1.0):
-        """執行自定義測量序列
+        """Perform custom measurement sequence
 
         Args:
-            voltage_levels: 電壓值列表
-            measurement_time: 每個電壓點停留的時間
+            voltage_levels: List of voltage values
+            measurement_time: Time to dwell at each voltage point
 
         Returns:
-            list: 測量結果列表
+            list: List of measurement results
         """
         results = []
 
         try:
-            # 設置為電壓源
+            # Set up as voltage source
             await self.setup_as_voltage_source()
 
-            # 啟用輸出
+            # Enable output
             await self.output_on()
 
             for voltage in voltage_levels:
-                # 設置電壓
+                # Set voltage
                 await self.set_voltage(voltage)
 
-                # 等待穩定
+                # Wait for stabilization
                 await asyncio.sleep(measurement_time)
 
-                # 進行測量
+                # Take measurement
                 voltage, current = await self.read_iv()
                 if voltage is not None and current is not None:
                     results.append((voltage, current))
-                    bashlog.info(f"測量點: V={voltage}V, I={current}A")
+                    bashlog.info(f"Measurement point: V={voltage}V, I={current}A")
 
-            # 關閉輸出
+            # Turn off output
             await self.output_off()
 
-            # 保存結果到檔案
+            # Save results to file
             if results:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 filename = f"custom_measurement_{timestamp}.csv"
@@ -1187,34 +1186,34 @@ class KeithleyInstrument:
                     f.write("Voltage(V),Current(A)\n")
                     for v, i in results:
                         f.write(f"{v},{i}\n")
-                bashlog.info(f"自定義測量序列完成，結果已保存到 {filename}")
+                bashlog.info(f"Custom measurement sequence completed, results saved to {filename}")
 
             return results
         except Exception as e:
-            bashlog.error(f"執行自定義測量序列時出錯: {e}")
-            # 確保輸出關閉
+            bashlog.error(f"Error performing custom measurement sequence: {e}")
+            # Ensure output is off
             await self.output_off()
             return []
 
 
 async def validate_instrument(resource_name):
-    """驗證儀器是否可用
+    """Validate if instrument is available
 
     Args:
-        resource_name: VISA 資源名稱
+        resource_name: VISA resource name
 
     Returns:
-        str: 錯誤訊息，成功時返回空字符串
+        str: Error message, empty string on success
     """
     try:
         rm = pyvisa.ResourceManager()
         resources = rm.list_resources()
 
-        bashlog.info(f"可用的 VISA 資源: {resources}")
+        bashlog.info(f"Available VISA resources: {resources}")
 
         instr = rm.open_resource(resource_name)
 
-        # 設置串口參數（如果是串口設備）
+        # Set serial parameters (if serial device)
         if resource_name.startswith("ASRL"):
             instr.baud_rate = 9600
             instr.data_bits = 8
@@ -1223,125 +1222,125 @@ async def validate_instrument(resource_name):
             instr.flow_control = pyvisa.constants.VI_ASRL_FLOW_NONE
             instr.timeout = 5000
 
-        # 驗證是否為 Keithley 儀器
+        # Verify it's a Keithley instrument
         idn = instr.query("*IDN?")
         if "KEITHLEY" not in idn.upper():
-            return f"設備不是 Keithley 儀器: {idn}"
+            return f"Device is not a Keithley instrument: {idn}"
 
-        bashlog.info(f"已發現 Keithley 儀器: {idn}")
+        bashlog.info(f"Found Keithley instrument: {idn}")
         instr.close()
         rm.close()
         return ""
     except Exception as e:
-        return f"驗證儀器時出錯: {e}"
+        return f"Error validating instrument: {e}"
 
 
-# 示例使用
+# Example usage
 async def main():
-    # 使用適當的設備地址
-    resource_name = "GPIB0::24::INSTR"  # 示例 GPIB 地址，根據實際情況修改
-    # 對於 RS232，可能類似：
+    # Use appropriate device address
+    resource_name = "GPIB0::24::INSTR"  # Example GPIB address, adjust as needed
+    # For RS232, might be something like:
     # resource_name = "ASRL/dev/ttyUSB0::INSTR"
 
-    # 驗證儀器
+    # Validate instrument
     error = await validate_instrument(resource_name)
     if error:
-        print(f"儀器驗證失敗: {error}")
+        print(f"Instrument validation failed: {error}")
         return
 
-    print("儀器驗證成功，開始測試...")
+    print("Instrument validation successful, beginning test...")
 
-    # 創建儀器控制對象
+    # Create instrument control object
     keithley = KeithleyInstrument("keithley2410", resource_name)
 
     try:
-        # 連接到儀器
+        # Connect to instrument
         if not await keithley.connect():
-            print("連接儀器失敗")
+            print("Failed to connect to instrument")
             return
 
-        # 設置為電壓源
+        # Set up as voltage source
         await keithley.setup_as_voltage_source(voltage_range=20, voltage_level=0, current_compliance=0.1)
 
-        # 設置自動歸零和測量範圍同步
-        await keithley.setup_auto_zero("ON")  # 啟用自動歸零
-        await keithley.setup_sense_range_sync(True)  # 啟用範圍同步
+        # Set up auto-zero and measurement range synchronization
+        await keithley.setup_auto_zero("ON")  # Enable auto-zero
+        await keithley.setup_sense_range_sync(True)  # Enable range synchronization
 
-        # 設置輸出關閉模式
-        await keithley.set_output_off_mode("HIMPedance")  # 關閉時處於高阻抗狀態
+        # Set output off mode
+        await keithley.set_output_off_mode("HIMPedance")  # High impedance state when off
 
-        # 設置數據格式
+        # Set data format
         await keithley.set_data_format(
-            elements=["VOLTage", "CURRent", "TIME", "STATus"],  # 指定需要的數據元素
-            format_type="ASCii"  # 使用 ASCII 格式
+            elements=["VOLTage", "CURRent", "TIME", "STATus"],  # Specify required data elements
+            format_type="ASCii"  # Use ASCII format
         )
 
-        # 嘗試設置接觸檢查功能（如果儀器支援）
+        # Try to set up contact check (if instrument supports it)
         await keithley.setup_contact_check(enable=True, resistance=50)
 
-        # 設置測量速度
+        # Set measurement speed
         await keithley.setup_measurement_speed(nplc=1.0)
 
-        # 打開輸出並設置電壓
+        # Turn on output and set voltage
         await keithley.set_voltage(1.0)
         await keithley.output_on()
 
-        # 讀取 IV 值
+        # Read IV values
         voltage, current = await keithley.read_iv()
-        print(f"測量結果: {voltage}V, {current}A")
+        print(f"Measurement result: {voltage}V, {current}A")
 
-        # 檢查狀態
+        # Check status
         status = await keithley.read_status_registers()
-        print("儀器狀態:")
+        print("Instrument status:")
         for category, info in status.items():
-            if info['info']:  # 只顯示有值的狀態
-                print(f"  {category.capitalize()} 狀態: {info['info']}")
+            if info['info']:  # Only show statuses with values
+                print(f"  {category.capitalize()} status: {info['info']}")
 
-        # 檢查是否處於合規狀態
+        # Check if in compliance state
         v_tripped, i_tripped = await keithley.check_compliance_state()
         if v_tripped or i_tripped:
-            print("警告: 儀器處於合規狀態")
+            print("Warning: Instrument is in compliance state")
 
-        # 關閉輸出
+        # Turn off output
         await keithley.output_off()
 
-        # 執行 IV 掃描
-        print("執行 IV 掃描...")
+        # Perform IV sweep
+        print("Performing IV sweep...")
         results = await keithley.perform_iv_sweep(0, 5, points=11, use_buffer=True)
 
         if results:
-            print(f"掃描得到 {len(results)} 個數據點")
+            print(f"Sweep yielded {len(results)} data points")
 
-        # 執行自定義測量序列
-        print("執行自定義測量序列...")
+        # Perform custom measurement sequence
+        print("Performing custom measurement sequence...")
         custom_voltages = [0, 1, 2, 3, 4, 5, 4, 3, 2, 1, 0]
         custom_results = await keithley.perform_custom_measurement_sequence(custom_voltages, measurement_time=0.5)
 
         if custom_results:
-            print(f"自定義測量得到 {len(custom_results)} 個數據點")
+            print(f"Custom measurement yielded {len(custom_results)} data points")
 
-        # 啟動 IV 監控並保存數據
-        print("啟動 IV 監控...")
+        # Start IV monitoring and save data
+        print("Starting IV monitoring...")
         await keithley.set_voltage(2.5)
         await keithley.output_on()
         await keithley.start_iv_monitor(interval=1.0, save_data=True, max_samples=100)
 
-        # 運行一段時間
-        print("IV 監控中...")
+        # Run for a while
+        print("IV monitoring in progress...")
         await asyncio.sleep(5)
 
-        # 停止監控並獲取數據
+        # Stop monitoring and get data
         success, monitor_data = await keithley.stop_iv_monitor()
         if success and monitor_data:
-            print(f"成功獲取 {len(monitor_data)} 筆監控數據")
+            print(f"Successfully acquired {len(monitor_data)} monitoring data points")
 
         await keithley.output_off()
 
-        print("測試完成!")
+        print("Test complete!")
     except Exception as e:
-        print(f"運行測試時出錯: {e}")
+        print(f"Error running test: {e}")
     finally:
-        # 關閉連接
+        # Close connection
         await keithley.disconnect()
 
 
