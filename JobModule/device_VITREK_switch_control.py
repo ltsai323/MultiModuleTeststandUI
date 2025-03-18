@@ -25,13 +25,8 @@ class Vitrek964i:
         self.rm = pyvisa.ResourceManager()
         self.instrument = None
 
-    async def connect(self):
-        """
-        Connect to the Vitrek 964i device
-
-        Returns:
-            True if connection successful, False otherwise
-        """
+    async def connect(self) -> bool:
+        """Connect to the Vitrek 964i device"""
         try:
             self.instrument = self.rm.open_resource(self.resource_name)
 
@@ -96,16 +91,8 @@ class Vitrek964i:
         await self._send_command(f"BANK,{bank_number},{hex_state}")
         await asyncio.sleep(0.5)
 
-    async def get_bank_state(self, bank_number):
-        """
-        Get the state of all relays in a specific bank
-
-        Args:
-            bank_number: Bank number (0-7)
-
-        Returns:
-            String with hexadecimal state
-        """
+    async def get_bank_state(self, bank_number) -> str:
+        """Get the state of all relays in a specific bank"""
         response = await self._send_command(f"BANK?,{bank_number}", expect_response=True)
         return response
 
