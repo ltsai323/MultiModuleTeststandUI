@@ -25,6 +25,16 @@ class Vitrek964i:
         self.rm = pyvisa.ResourceManager()
         self.instrument = None
 
+    #----------------------------------------------------------------------------------------------------
+    # Connection Management
+    #----------------------------------------------------------------------------------------------------
+    """
+    - connect
+    - disconnect
+    - is_connected
+    - set_timeout
+    """
+
     async def connect(self) -> bool:
         """Connect to the Vitrek 964i device"""
         try:
@@ -63,6 +73,38 @@ class Vitrek964i:
             self.rm.close()
         print("Disconnected from Vitrek 964i")
 
+    def is_connected(self) -> bool:
+        """Check if the connection to the device is still valid"""
+        if not self.instrument:
+            return False
+
+        try:
+            # Try a simple command that should always succeed
+            self.instrument.write("?")
+            time.sleep(0.1)
+            response = self.instrument.read()
+            return response.strip() == "1"
+        except Exception:
+            return False
+
+    async def set_timeout(self, timeout_ms):
+        """Set a new timeout value (in milliseconds) for commands"""
+        self.timeout = timeout_ms
+        if self.instrument:
+            self.instrument.timeout = timeout_ms
+
+    #----------------------------------------------------------------------------------------------------
+    # Basic Control Management
+    #----------------------------------------------------------------------------------------------------
+    """
+    - reset / open_all_relays
+    - set_bank_state / get_bank_state
+    - set_relay_state / get_relay_state
+    - set_bank_all_on / set_bank_all_off
+    - get_all_states / get_identity
+    - execute_custom_command / _send_command
+    """
+
     async def reset(self):
         """Reset the device to default state (all relays open)"""
         await self._send_command("*RST")
@@ -78,7 +120,7 @@ class Vitrek964i:
         Set the state of all relays in a specific bank
 
         Args:
-            bank_number: Bank number (0-7)
+            bank_number: Bank number (0-3)
             hex_state: Hexadecimal state value (0-255) as string or int
                        '0' means all relays open, 'FF' means all relays closed
         """
@@ -135,13 +177,8 @@ class Vitrek964i:
         response = await self._send_command("SYST?", expect_response=True)
         return response
 
-    async def get_identity(self):
-        """
-        Get device identification
-
-        Returns:
-            Device identity string
-        """
+    async def get_identity(self) -> str:
+        """Get device identification"""
         response = await self._send_command("*IDN?", expect_response=True)
         return response
 
@@ -204,6 +241,30 @@ class Vitrek964i:
         """
         await self.set_bank_state(bank_number, "#h00")
 
+    #----------------------------------------------------------------------------------------------------
+    # More Control Management
+    #----------------------------------------------------------------------------------------------------
+    """
+    - send_batch_commands
+    - get_error_status
+    - get_relay_count
+    """
+
+    async def send_batch_commands(self, commands, expect_response=False):
+        """
+        Send multiple commands as a single batch
+
+        Args:
+            commands: List of command strings to send
+            expect_response: Whether to expect a response
+
+        Returns:
+            Response string if expect_response is True, None otherwise
+        """
+        # Join commands with semicolon separator
+        batch_command = ";".join(commands)
+        return await self._send_command(batch_command, expect_response)
+
     async def get_error_status(self):
         """
         Retrieve any error messages from the device
@@ -234,50 +295,105 @@ class Vitrek964i:
             print(f"Invalid count response: {response}")
             return -1
 
-    async def send_batch_commands(self, commands, expect_response=False):
+    #----------------------------------------------------------------------------------------------------
+    # Configuration Management
+    #----------------------------------------------------------------------------------------------------
+    """
+    - save_configuration
+    - load_configuration
+    """
+
+    async def save_configuration(self, filename=None):
         """
-        Send multiple commands as a single batch
+        Save the current relay configuration to a file
 
         Args:
-            commands: List of command strings to send
-            expect_response: Whether to expect a response
+            filename: Optional custom filename, otherwise generates timestamp-based name
 
         Returns:
-            Response string if expect_response is True, None otherwise
+            Path to the saved configuration file
         """
-        # Join commands with semicolon separator
-        batch_command = ";".join(commands)
-        return await self._send_command(batch_command, expect_response)
+        # Query current system state
+        all_states = await self.get_all_states()
 
-    def is_connected(self):
+        # Parse the state data (format is like "#h00,#h00,#h00,#h00,#h00,#h00,#h00,#h00")
+        bank_states = all_states.split(',')
+
+        # Create configuration dictionary
+        config = {
+            'timestamp': datetime.now().isoformat(),
+            'device_type': 'Vitrek964i',
+            'banks': {}
+        }
+
+        # Extract bank states
+        for i, state in enumerate(bank_states):
+            if state.startswith('#h'):
+                config['banks'][f'bank_{i}'] = state
+
+        # Generate filename if not provided
+        if not filename:
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f'vitrek_config_{timestamp}.json'
+
+        # Ensure the filename has .json extension
+        if not filename.endswith('.json'):
+            filename += '.json'
+
+        # Create configs directory if it doesn't exist
+        os.makedirs('configs', exist_ok=True)
+        filepath = os.path.join('configs', filename)
+
+        # Save configuration to file
+        with open(filepath, 'w') as f:
+            json.dump(config, f, indent=2)
+
+        print(f"Configuration saved to {filepath}")
+        return filepath
+
+    async def load_configuration(self, filepath):
         """
-        Check if the connection to the device is still valid
+        Load and apply a saved relay configuration
+
+        Args:
+            filepath: Path to the configuration file
 
         Returns:
-            True if connected, False otherwise
+            True if successful, False otherwise
         """
-        if not self.instrument:
-            return False
-
         try:
-            # Try a simple command that should always succeed
-            self.instrument.write("?")
-            time.sleep(0.1)
-            response = self.instrument.read()
-            return response.strip() == "1"
-        except Exception:
+            # Load configuration from file
+            with open(filepath, 'r') as f:
+                config = json.load(f)
+
+            print(f"Loading configuration from {filepath}")
+
+            # Verify it's a Vitrek964i configuration
+            if config.get('device_type') != 'Vitrek964i':
+                print("Warning: This configuration may not be compatible with Vitrek964i")
+
+            # Apply configurations for each bank
+            for bank_key, state in config.get('banks', {}).items():
+                # Extract bank number from the key (e.g., "bank_0" -> 0)
+                try:
+                    bank_num = int(bank_key.split('_')[1])
+
+                    # Apply the state
+                    print(f"Setting {bank_key} to {state}")
+                    await self.set_bank_state(bank_num, state)
+
+                    # Small delay between commands
+                    await asyncio.sleep(0.3)
+
+                except (ValueError, IndexError) as e:
+                    print(f"Error parsing bank number from {bank_key}: {e}")
+
+            print("Configuration loaded successfully")
+            return True
+
+        except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
+            print(f"Error loading configuration: {e}")
             return False
-
-    async def set_timeout(self, timeout_ms):
-        """
-        Set a new timeout value for commands
-
-        Args:
-            timeout_ms: New timeout in milliseconds
-        """
-        self.timeout = timeout_ms
-        if self.instrument:
-            self.instrument.timeout = timeout_ms
 
 async def main():
     """Comprehensive example usage of the Vitrek964i class with all methods"""
