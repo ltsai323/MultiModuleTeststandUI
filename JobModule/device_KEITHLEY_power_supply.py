@@ -116,8 +116,6 @@ class KeithleyInstrument:
                 instr.stop_bits = pyvisa.constants.StopBits.one
                 instr.parity = pyvisa.constants.Parity.none
                 instr.flow_control = pyvisa.constants.VI_ASRL_FLOW_NONE
-                instr.read_termination = '\r'
-                instr.write_termination = '\r'
 
             instr.timeout = 10000  # 10 second timeout, may be needed for sweep operations
 

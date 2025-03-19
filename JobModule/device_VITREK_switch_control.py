@@ -97,7 +97,7 @@ class Vitrek964i:
     # Basic Control Management
     #----------------------------------------------------------------------------------------------------
     """
-    - reset / open_all_relays
+    - reset
     - set_bank_state / get_bank_state
     - set_relay_state / get_relay_state
     - set_bank_all_on / set_bank_all_off
@@ -108,11 +108,6 @@ class Vitrek964i:
     async def reset(self):
         """Reset the device to default state (all relays open)"""
         await self._send_command("*RST")
-        await asyncio.sleep(0.5)
-
-    async def open_all_relays(self):
-        """Open all relays in the device"""
-        await self._send_command("OPEN ALL")
         await asyncio.sleep(0.5)
 
     async def set_bank_state(self, bank_number, hex_state):
@@ -416,10 +411,10 @@ async def main():
             connected = vitrek.is_connected()
             print(f"Connected status: {connected}")
 
-            print("\n===== ERROR STATUS CHECK =====")
-            # Check for any errors
-            error_status = await vitrek.get_error_status()
-            print(f"Initial error status: {error_status}")
+            ### print("\n===== ERROR STATUS CHECK =====")
+            ### # Check for any errors
+            ### error_status = await vitrek.get_error_status()
+            ### print(f"Initial error status: {error_status}")
 
             print("\n===== BANK OPERATIONS =====")
             # Example: Set first four relays in bank 0 to closed (pattern 00001111)
@@ -446,6 +441,13 @@ async def main():
             state = await vitrek.get_bank_state(1)
             print(f"Bank 1 state: {state}")
 
+            print("\n===== SYSTEM STATUS =====")
+            # Get all states
+            all_states = await vitrek.get_all_states()
+            print(f"All relay states: {all_states}")
+            print("[INFO] sleep for 10 seconds...")
+            time.sleep(10)
+
             print("\n===== INDIVIDUAL RELAY OPERATIONS =====")
             # Example: Turn on a single relay
             await vitrek.set_relay_state(5, "ON")
@@ -459,11 +461,6 @@ async def main():
             count = await vitrek.get_relay_count(5)
             print(f"Relay 5 operation count: {count}")
 
-            print("\n===== SYSTEM STATUS =====")
-            # Get all states
-            all_states = await vitrek.get_all_states()
-            print(f"All relay states: {all_states}")
-
             print("\n===== CUSTOM COMMANDS =====")
             # Example: Custom command
             print("Executing custom command: BANK,2,#h33")
@@ -472,6 +469,11 @@ async def main():
             # Get updated bank state
             state = await vitrek.get_bank_state(2)
             print(f"Bank 2 state after custom command: {state}")
+
+            all_states = await vitrek.get_all_states()
+            print(f"All relay states: {all_states}")
+            print("[INFO] sleep for 10 seconds...")
+            time.sleep(10)
 
             print("\n===== BATCH COMMANDS =====")
             # Send multiple commands in a batch
@@ -491,6 +493,11 @@ async def main():
             print(f"Bank 1 state after batch: {state1}")
             print(f"Relay 32 state after batch: {state32}")
 
+            all_states = await vitrek.get_all_states()
+            print(f"All relay states: {all_states}")
+            print("[INFO] sleep for 10 seconds...")
+            time.sleep(10)
+
             print("\n===== TIMEOUT ADJUSTMENT =====")
             # Test timeout adjustment
             print("Setting timeout to 10 seconds")
@@ -502,12 +509,12 @@ async def main():
 
             print("\n===== CLEANUP =====")
             # Open all relays before disconnecting
-            await vitrek.open_all_relays()
+            await vitrek.reset()
             print("All relays opened")
 
-            # Check for any errors at the end
-            error_status = await vitrek.get_error_status()
-            print(f"Final error status: {error_status}")
+            ### # Check for any errors at the end
+            ### error_status = await vitrek.get_error_status()
+            ### print(f"Final error status: {error_status}")
 
     except Exception as e:
         print(f"Error during operation: {e}")

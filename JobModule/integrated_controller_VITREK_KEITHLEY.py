@@ -141,7 +141,7 @@ class IntegratedTestController:
         """
         try:
             # First ensure all relays are open for safety
-            await self.switch.open_all_relays()
+            await self.switch.reset()
 
             # Convert relay number (1-8) to a bit pattern for the bank
             # e.g., relay 1 -> 0x01, relay 2 -> 0x02, relay 3 -> 0x04, etc.
@@ -360,7 +360,7 @@ class IntegratedTestController:
         finally:
             # Clean up
             await self.keithley.output_off()
-            await self.switch.open_all_relays()
+            await self.switch.reset()
 
         print(f"\nBatch IV scan completed. Tested {len(results)}/{len(bank_relay_pairs)} channels successfully.")
         return results
