@@ -6,6 +6,8 @@ import numpy as np
 from datetime import datetime
 import asyncio.exceptions
 
+import time
+
 # Import logging modules or create a simple alternative
 try:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -863,8 +865,13 @@ class KeithleyInstrument:
                 bashlog.error("Failed to set up sweep")
                 return []
 
-            # Set trigger count
-            await self.send_command(f":TRIGger:COUNt {total_points}")
+            ##### print("[DEBUG] about to send_command() in perform_iv_sweep()")
+            ##### # Disable storage
+            ##### await self.send_command(":TRACe:FEED:CONTrol NEVer")
+            ##### # Set trigger count
+            ##### await self.send_command(f":TRIGger:COUNt {total_points}")
+            ##### # Re-enable storage
+            ##### await self.send_command(":TRACe:FEED:CONTrol NEXT")
 
             if use_buffer:
                 # Set up data buffer
@@ -1236,9 +1243,7 @@ async def validate_instrument(resource_name):
 # Example usage
 async def main():
     # Use appropriate device address
-    resource_name = "GPIB0::24::INSTR"  # Example GPIB address, adjust as needed
-    # For RS232, might be something like:
-    # resource_name = "ASRL/dev/ttyUSB0::INSTR"
+    resource_name = "ASRL/dev/ttyUSB0::INSTR"
 
     # Validate instrument
     error = await validate_instrument(resource_name)
@@ -1274,14 +1279,20 @@ async def main():
         )
 
         # Try to set up contact check (if instrument supports it)
+        print("[DEBUG] setup_contact_check()")
         await keithley.setup_contact_check(enable=True, resistance=50)
 
         # Set measurement speed
+        print("[DEBUG] setup_measurement_speed()")
         await keithley.setup_measurement_speed(nplc=1.0)
 
         # Turn on output and set voltage
+        print("[DEBUG] set_voltage()")
         await keithley.set_voltage(1.0)
         await keithley.output_on()
+
+        print("[INFO] output_on(). Sleep for 10 seconds.")
+        time.sleep(10)
 
         # Read IV values
         voltage, current = await keithley.read_iv()
@@ -1294,6 +1305,9 @@ async def main():
             if info['info']:  # Only show statuses with values
                 print(f"  {category.capitalize()} status: {info['info']}")
 
+        print("[INFO] check status. Sleep for 10 seconds.")
+        time.sleep(10)
+
         # Check if in compliance state
         v_tripped, i_tripped = await keithley.check_compliance_state()
         if v_tripped or i_tripped:
@@ -1301,6 +1315,9 @@ async def main():
 
         # Turn off output
         await keithley.output_off()
+
+        print("[INFO] check comliance state. output_off(). Sleep for 10 seconds.")
+        time.sleep(10)
 
         # Perform IV sweep
         print("Performing IV sweep...")
@@ -1312,10 +1329,13 @@ async def main():
         # Perform custom measurement sequence
         print("Performing custom measurement sequence...")
         custom_voltages = [0, 1, 2, 3, 4, 5, 4, 3, 2, 1, 0]
-        custom_results = await keithley.perform_custom_measurement_sequence(custom_voltages, measurement_time=0.5)
+        custom_results = await keithley.perform_custom_measurement_sequence(custom_voltages, measurement_time=2.0)
 
         if custom_results:
             print(f"Custom measurement yielded {len(custom_results)} data points")
+
+        print("[INFO] perform_custom_measurement_sequence() done. Sleep for 10 seconds.")
+        time.sleep(10)
 
         # Start IV monitoring and save data
         print("Starting IV monitoring...")

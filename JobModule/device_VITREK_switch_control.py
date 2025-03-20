@@ -67,6 +67,7 @@ class Vitrek964i:
     def disconnect(self):
         """Disconnect from the device and clean up resources"""
         if self.instrument:
+            self.reset()
             self.instrument.close()
             self.instrument = None
         if hasattr(self, 'rm') and self.rm:
@@ -393,7 +394,7 @@ class Vitrek964i:
 async def main():
     """Comprehensive example usage of the Vitrek964i class with all methods"""
     # Create controller instance
-    vitrek = Vitrek964i("ASRL/dev/ttyUSB0::INSTR")
+    vitrek = Vitrek964i("ASRL/dev/ttyUSB1::INSTR")
 
     try:
         # Connect to the device
@@ -433,6 +434,9 @@ async def main():
             state = await vitrek.get_bank_state(1)
             print(f"Bank 1 state: {state}")
 
+            print("[INFO] sleep for 10 seconds...")
+            time.sleep(10)
+
             # Set all relays in bank 1 to OFF
             await vitrek.set_bank_all_off(1)
             print("Set all relays in bank 1 to OFF")
@@ -463,8 +467,8 @@ async def main():
 
             print("\n===== CUSTOM COMMANDS =====")
             # Example: Custom command
-            print("Executing custom command: BANK,2,#h33")
-            await vitrek.execute_custom_command("BANK,2,#h33")
+            print("Executing custom command: BANK,2,#h12")
+            await vitrek.execute_custom_command("BANK,2,#h12")
 
             # Get updated bank state
             state = await vitrek.get_bank_state(2)
@@ -472,8 +476,8 @@ async def main():
 
             all_states = await vitrek.get_all_states()
             print(f"All relay states: {all_states}")
-            print("[INFO] sleep for 10 seconds...")
-            time.sleep(10)
+            print("[INFO] sleep for 15 seconds...")
+            time.sleep(15)
 
             print("\n===== BATCH COMMANDS =====")
             # Send multiple commands in a batch

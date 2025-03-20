@@ -22,8 +22,8 @@ class IntegratedTestController:
             keithley_resource: VISA resource name for Keithley SourceMeter (e.g., "GPIB0::24::INSTR")
         """
         # Import here to avoid circular imports
-        from vitrek964i import Vitrek964i
-        from keithley import KeithleyInstrument
+        from device_VITREK_switch_control import Vitrek964i
+        from device_KEITHLEY_power_supply import KeithleyInstrument
 
         self.switch = Vitrek964i(switch_resource)
         self.keithley = KeithleyInstrument("keithley", keithley_resource)
@@ -456,8 +456,8 @@ class IntegratedTestController:
 async def main():
     # Create controller with appropriate resource names
     controller = IntegratedTestController(
-        switch_resource="ASRL/dev/ttyUSB0::INSTR",
-        keithley_resource="GPIB0::24::INSTR"  # Adjust as needed
+        keithley_resource="ASRL/dev/ttyUSB0::INSTR",
+        switch_resource="ASRL/dev/ttyUSB1::INSTR",
     )
 
     try:
