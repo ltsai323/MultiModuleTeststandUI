@@ -77,19 +77,19 @@ class ErrorMessageFilter(logging.Filter):
 # Configure separate loggers for stdout and stderr
 def configure_logger2(loggerNAME, log_file, errMESGfilter:ErrorMessageFilter):
     logger = logging.getLogger(loggerNAME)
-    logger.setLevel(logging.DEBUG) # log file always read DEBUG
 
     # File handler for logging
     if log_file:
         file_handler = logging.FileHandler(log_file)
         file_handler.setFormatter(logging.Formatter(f"%(asctime)s %(levelname)s: %(message)s"))
+        file_handler.setLevel(logging.DEBUG) # log file always read DEBUG
 
         # Add custom filter
         file_handler.addFilter(errMESGfilter)
         logger.addHandler(file_handler)
 
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.DEBUG if DEBUG_MODE else logging.INFO)
+    console_handler.setLevel(logging.DEBUG if DEBUG_MODE else logging.WARNING)
     console_handler.setFormatter(logging.Formatter(f"%(asctime)s %(levelname)s: %(message)s"))
     # Add custom filter
     console_handler.addFilter(errMESGfilter)
@@ -189,6 +189,7 @@ def yaml_errortype_factory( yamlDICT:dict ):
 
     raise KeyError(f'[Invalid filterMETHOD] input filterMETHOD "{ filterMETHOD }" is rejected from errortype_factory()')
 def YamlConfiguredLoggers(yamlDICT:dict):
+    ### TBD
     logout_config = yamlDICT['stdout']
     stdout_filter_rules = [ errortype_factory(c['filter_method'], c['indicator'],c['threshold'],c['pattern']) for c in logout_config['filters'] ]
     stdout_filter = ErrorMessageFilter(stdout_filter_rules)
