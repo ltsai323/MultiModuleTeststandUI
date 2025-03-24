@@ -2,11 +2,35 @@ from flask import Flask, render_template, jsonify, request
 import app_global_variables as gVAR
 import app_actbtn as app_actbtn
 from PythonTools.DebugManager import BUG
+from PythonTools.LoggingMgr import configure_logger_by_yamlDICT
 from flask_wtf.csrf import CSRFProtect
 from flask_cors import CORS
 from flask import current_app
 
+
 app = Flask(__name__, static_folder='./static')
+log_conf = f'''
+name: {app.logger.name}
+file: log_stdout.txt
+filters:
+- indicator: running
+  threshold: 0
+  pattern: 'RUNNING'
+  filter_method: exact
+- indicator: Type0ERROR
+  threshold: 0
+  pattern: '[running] 0'
+  filter_method: exact
+- indicator: Type3ERROR
+  threshold: 0
+  pattern: '[running] 3'
+  filter_method: contain
+- indicator: idle
+  threshold: 0
+  pattern: 'FINISHED'
+  filter_method: exact
+'''
+configure_logger_by_yamlDICT(log_conf)
 app.config.from_object(gVAR.TestConfig) # initialize global variables
 
 CORS(app, resources={r"/*": {"origins": ["http://127.0.0.1:5001", "http://127.0.0.1:5000"]}})
