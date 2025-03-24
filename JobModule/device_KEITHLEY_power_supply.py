@@ -179,6 +179,7 @@ class KeithleyInstrument:
         try:
             commands = command if isinstance(command, list) else [command]
             for cmd in commands:
+                bashlog.info(f"[DEBUG-verbose] {cmd}")
                 self.instrument.write(cmd)
                 await asyncio.sleep(0.05)  # Small delay to ensure command processing
             return True
@@ -219,6 +220,7 @@ class KeithleyInstrument:
         try:
             while True:
                 error = await self.query_command(KeithleyCommands.ERROR)
+                # bashlog.info(f"[DEBUG] start running check_errors... {error}")
                 if not error or "0,\"No error\"" in error:
                     break
                 errors.append(error)
@@ -408,46 +410,46 @@ class KeithleyInstrument:
 
         return result
 
-    async def setup_contact_check(self, enable=True, resistance=50):
-        """Set contact check function (if instrument supports it)
+    ### async def setup_contact_check(self, enable=True, resistance=50):
+    ###     """Set contact check function (if instrument supports it)
 
-        Contact check function ensures good connections to the device under test.
+    ###     Contact check function ensures good connections to the device under test.
 
-        Args:
-            enable: Whether to enable contact check
-            resistance: Contact check resistance threshold (2, 15, or 50 ohms)
+    ###     Args:
+    ###         enable: Whether to enable contact check
+    ###         resistance: Contact check resistance threshold (2, 15, or 50 ohms)
 
-        Returns:
-            bool: True on success, False on failure
-        """
-        try:
-            # First enable remote sensing, required for contact check
-            remote_cmd = ":SYSTem:RSENse ON"
-            await self.send_command(remote_cmd)
+    ###     Returns:
+    ###         bool: True on success, False on failure
+    ###     """
+    ###     try:
+    ###         # First enable remote sensing, required for contact check
+    ###         remote_cmd = ":SYSTem:RSENse ON"
+    ###         await self.send_command(remote_cmd)
 
-            # Set contact check function
-            state = "ON" if enable else "OFF"
-            cmds = [
-                f":SYSTem:CCHeck {state}",
-                f":SYSTem:CCHeck:RESistance {resistance}"
-            ]
+    ###         # Set contact check function
+    ###         state = "ON" if enable else "OFF"
+    ###         cmds = [
+    ###             f":SYSTem:CCHeck {state}",
+    ###             f":SYSTem:CCHeck:RESistance {resistance}"
+    ###         ]
 
-            result = await self.send_command(cmds)
-            errors = await self.check_errors()
+    ###         result = await self.send_command(cmds)
+    ###         errors = await self.check_errors()
 
-            # Some older models may not support this feature and will return an error
-            if "Undefined header" in str(errors):
-                bashlog.warning("This instrument does not support contact check")
-                return False
+    ###         # Some older models may not support this feature and will return an error
+    ###         if "Undefined header" in str(errors):
+    ###             bashlog.warning("This instrument does not support contact check")
+    ###             return False
 
-            if result:
-                status = "enabled" if enable else "disabled"
-                bashlog.info(f"Contact check {status}, threshold resistance {resistance} ohms")
+    ###         if result:
+    ###             status = "enabled" if enable else "disabled"
+    ###             bashlog.info(f"Contact check {status}, threshold resistance {resistance} ohms")
 
-            return result
-        except Exception as e:
-            bashlog.error(f"Error setting up contact check: {e}")
-            return False
+    ###         return result
+    ###     except Exception as e:
+    ###         bashlog.error(f"Error setting up contact check: {e}")
+    ###         return False
 
     async def set_output_off_mode(self, mode="NORMal"):
         """Set output off mode
@@ -779,21 +781,31 @@ class KeithleyInstrument:
         Returns:
             bool: True on success, False on failure
         """
-        try:
-            cmds = [
-                f":TRACe:POINts {buffer_size}",
-                ":TRACe:FEED SENSe",
-                ":TRACe:FEED:CONTrol NEXT",
-                ":TRACe:CLEar"
-            ]
 
+        try:
+            # Stop data feed if active
+            await self.send_command(":TRACe:FEED:CONTrol NEVER")
+
+            # Clear the buffer
+            await self.send_command(":TRACe:CLEar")
+
+            # Set buffer size
+            await self.send_command(f":TRACe:POINts {buffer_size}")
+
+            # Re-enable data feed
+            cmds = [
+                ":TRACe:FEED SENSe",
+                ":TRACe:FEED:CONTrol NEXT"
+            ]
             result = await self.send_command(cmds)
+
             await self.check_errors()
 
             if result:
                 bashlog.info(f"Data buffer setup for {buffer_size} points")
 
             return result
+
         except Exception as e:
             bashlog.error(f"Error setting up data buffer: {e}")
             return False
@@ -1279,20 +1291,14 @@ async def main():
         )
 
         # Try to set up contact check (if instrument supports it)
-        print("[DEBUG] setup_contact_check()")
-        await keithley.setup_contact_check(enable=True, resistance=50)
+        ### await keithley.setup_contact_check(enable=True, resistance=50)
 
         # Set measurement speed
-        print("[DEBUG] setup_measurement_speed()")
         await keithley.setup_measurement_speed(nplc=1.0)
 
         # Turn on output and set voltage
-        print("[DEBUG] set_voltage()")
         await keithley.set_voltage(1.0)
         await keithley.output_on()
-
-        print("[INFO] output_on(). Sleep for 10 seconds.")
-        time.sleep(10)
 
         # Read IV values
         voltage, current = await keithley.read_iv()
@@ -1305,8 +1311,8 @@ async def main():
             if info['info']:  # Only show statuses with values
                 print(f"  {category.capitalize()} status: {info['info']}")
 
-        print("[INFO] check status. Sleep for 10 seconds.")
-        time.sleep(10)
+        print("[INFO] check status. Sleep for 3 seconds.")
+        time.sleep(3)
 
         # Check if in compliance state
         v_tripped, i_tripped = await keithley.check_compliance_state()
@@ -1316,8 +1322,8 @@ async def main():
         # Turn off output
         await keithley.output_off()
 
-        print("[INFO] check comliance state. output_off(). Sleep for 10 seconds.")
-        time.sleep(10)
+        bashlog.info("Finished.")
+        return
 
         # Perform IV sweep
         print("Performing IV sweep...")
@@ -1334,8 +1340,8 @@ async def main():
         if custom_results:
             print(f"Custom measurement yielded {len(custom_results)} data points")
 
-        print("[INFO] perform_custom_measurement_sequence() done. Sleep for 10 seconds.")
-        time.sleep(10)
+        print("[INFO] perform_custom_measurement_sequence() done. Sleep for 3 seconds.")
+        time.sleep(3)
 
         # Start IV monitoring and save data
         print("Starting IV monitoring...")
