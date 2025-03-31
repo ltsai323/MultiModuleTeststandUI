@@ -179,7 +179,7 @@ class KeithleyInstrument:
         try:
             commands = command if isinstance(command, list) else [command]
             for cmd in commands:
-                bashlog.info(f"[DEBUG-verbose] {cmd}")
+                # bashlog.info(f"[DEBUG-verbose] {cmd}")
                 self.instrument.write(cmd)
                 await asyncio.sleep(0.05)  # Small delay to ensure command processing
             return True
@@ -220,7 +220,6 @@ class KeithleyInstrument:
         try:
             while True:
                 error = await self.query_command(KeithleyCommands.ERROR)
-                # bashlog.info(f"[DEBUG] start running check_errors... {error}")
                 if not error or "0,\"No error\"" in error:
                     break
                 errors.append(error)
@@ -410,47 +409,6 @@ class KeithleyInstrument:
 
         return result
 
-    ### async def setup_contact_check(self, enable=True, resistance=50):
-    ###     """Set contact check function (if instrument supports it)
-
-    ###     Contact check function ensures good connections to the device under test.
-
-    ###     Args:
-    ###         enable: Whether to enable contact check
-    ###         resistance: Contact check resistance threshold (2, 15, or 50 ohms)
-
-    ###     Returns:
-    ###         bool: True on success, False on failure
-    ###     """
-    ###     try:
-    ###         # First enable remote sensing, required for contact check
-    ###         remote_cmd = ":SYSTem:RSENse ON"
-    ###         await self.send_command(remote_cmd)
-
-    ###         # Set contact check function
-    ###         state = "ON" if enable else "OFF"
-    ###         cmds = [
-    ###             f":SYSTem:CCHeck {state}",
-    ###             f":SYSTem:CCHeck:RESistance {resistance}"
-    ###         ]
-
-    ###         result = await self.send_command(cmds)
-    ###         errors = await self.check_errors()
-
-    ###         # Some older models may not support this feature and will return an error
-    ###         if "Undefined header" in str(errors):
-    ###             bashlog.warning("This instrument does not support contact check")
-    ###             return False
-
-    ###         if result:
-    ###             status = "enabled" if enable else "disabled"
-    ###             bashlog.info(f"Contact check {status}, threshold resistance {resistance} ohms")
-
-    ###         return result
-    ###     except Exception as e:
-    ###         bashlog.error(f"Error setting up contact check: {e}")
-    ###         return False
-
     async def set_output_off_mode(self, mode="NORMal"):
         """Set output off mode
 
@@ -600,15 +558,15 @@ class KeithleyInstrument:
                 return None
 
             values = response.split(',')
-            if len(values) >= 5:  # voltage, current, resistance, time, status
+            if len(values) >= 4:  # voltage, current, resistance, time, status
                 result = {
                     'voltage': float(values[0]),
                     'current': float(values[1]),
-                    'resistance': float(values[2]),
-                    'timestamp': float(values[3]),
-                    'status': int(float(values[4]))
+                    'timestamp': float(values[2]),
+                    'status': int(float(values[3]))
                 }
                 return result
+                # +1.000000E+00,-3.040113E-11,+8.155492E+03,+2.150800E+04
             else:
                 bashlog.error(f"Failed to read measurement, incorrect data format: {response}")
                 return None
@@ -877,13 +835,8 @@ class KeithleyInstrument:
                 bashlog.error("Failed to set up sweep")
                 return []
 
-            ##### print("[DEBUG] about to send_command() in perform_iv_sweep()")
-            ##### # Disable storage
-            ##### await self.send_command(":TRACe:FEED:CONTrol NEVer")
-            ##### # Set trigger count
-            ##### await self.send_command(f":TRIGger:COUNt {total_points}")
-            ##### # Re-enable storage
-            ##### await self.send_command(":TRACe:FEED:CONTrol NEXT")
+            # Set trigger count
+            await self.send_command(f":TRIGger:COUNt {total_points}")
 
             if use_buffer:
                 # Set up data buffer
@@ -1260,10 +1213,10 @@ async def main():
     # Validate instrument
     error = await validate_instrument(resource_name)
     if error:
-        print(f"Instrument validation failed: {error}")
+        bashlog.error(f"Instrument validation failed: {error}")
         return
 
-    print("Instrument validation successful, beginning test...")
+    bashlog.info("Instrument validation successful, beginning test...")
 
     # Create instrument control object
     keithley = KeithleyInstrument("keithley2410", resource_name)
@@ -1271,7 +1224,7 @@ async def main():
     try:
         # Connect to instrument
         if not await keithley.connect():
-            print("Failed to connect to instrument")
+            bashlog.error("Failed to connect to instrument")
             return
 
         # Set up as voltage source
@@ -1290,79 +1243,73 @@ async def main():
             format_type="ASCii"  # Use ASCII format
         )
 
-        # Try to set up contact check (if instrument supports it)
-        ### await keithley.setup_contact_check(enable=True, resistance=50)
-
         # Set measurement speed
         await keithley.setup_measurement_speed(nplc=1.0)
 
         # Turn on output and set voltage
-        await keithley.set_voltage(1.0)
+        await keithley.set_voltage(2.0)
         await keithley.output_on()
 
         # Read IV values
         voltage, current = await keithley.read_iv()
-        print(f"Measurement result: {voltage}V, {current}A")
+        bashlog.info(f"Measurement result: {voltage}V, {current}A")
 
         # Check status
         status = await keithley.read_status_registers()
-        print("Instrument status:")
+        bashlog.info("Instrument status:")
         for category, info in status.items():
             if info['info']:  # Only show statuses with values
-                print(f"  {category.capitalize()} status: {info['info']}")
+                bashlog.info(f"  {category.capitalize()} status: {info['info']}")
 
-        print("[INFO] check status. Sleep for 3 seconds.")
+        bashlog.info("[INFO] check status. Sleep for 3 seconds.")
         time.sleep(3)
 
         # Check if in compliance state
         v_tripped, i_tripped = await keithley.check_compliance_state()
         if v_tripped or i_tripped:
-            print("Warning: Instrument is in compliance state")
+            bashlog.info("Warning: Instrument is in compliance state")
 
         # Turn off output
         await keithley.output_off()
 
-        bashlog.info("Finished.")
-        return
-
         # Perform IV sweep
-        print("Performing IV sweep...")
+        bashlog.info("Performing IV sweep...")
         results = await keithley.perform_iv_sweep(0, 5, points=11, use_buffer=True)
 
         if results:
-            print(f"Sweep yielded {len(results)} data points")
+            bashlog.info(f"Sweep yielded {len(results)} data points")
 
         # Perform custom measurement sequence
-        print("Performing custom measurement sequence...")
+        bashlog.info("Performing custom measurement sequence...")
         custom_voltages = [0, 1, 2, 3, 4, 5, 4, 3, 2, 1, 0]
         custom_results = await keithley.perform_custom_measurement_sequence(custom_voltages, measurement_time=2.0)
 
         if custom_results:
-            print(f"Custom measurement yielded {len(custom_results)} data points")
+            bashlog.info(f"Custom measurement yielded {len(custom_results)} data points")
 
-        print("[INFO] perform_custom_measurement_sequence() done. Sleep for 3 seconds.")
+        bashlog.info("[INFO] perform_custom_measurement_sequence() done. Sleep for 3 seconds.")
         time.sleep(3)
 
         # Start IV monitoring and save data
-        print("Starting IV monitoring...")
+        bashlog.info("Starting IV monitoring...")
         await keithley.set_voltage(2.5)
         await keithley.output_on()
         await keithley.start_iv_monitor(interval=1.0, save_data=True, max_samples=100)
 
         # Run for a while
-        print("IV monitoring in progress...")
+        bashlog.info("IV monitoring in progress...")
         await asyncio.sleep(5)
 
         # Stop monitoring and get data
         success, monitor_data = await keithley.stop_iv_monitor()
         if success and monitor_data:
-            print(f"Successfully acquired {len(monitor_data)} monitoring data points")
+            bashlog.info(f"Successfully acquired {len(monitor_data)} monitoring data points")
 
         await keithley.output_off()
 
-        print("Test complete!")
+        bashlog.info("Test complete!")
     except Exception as e:
-        print(f"Error running test: {e}")
+        bashlog.error(f"Error running test: {e}")
     finally:
         # Close connection
         await keithley.disconnect()
