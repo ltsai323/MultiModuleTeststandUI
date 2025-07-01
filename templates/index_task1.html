@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Flask Background Job</title>
+</head>
+<body>
+  <h1>Background Job Controller</h1>
+
+  <button id="runBtn" onclick="startJob()">Run</button>
+  <button id="stopBtn" onclick="stopJob()" disabled>Stop</button>
+
+  <p>Status: <span id="statusText">idle</span></p>
+
+  <script>
+    async function updateStatus() {
+      const response = await fetch('/status');
+      const data = await response.json();
+      document.getElementById('statusText').innerText = data.status;
+
+      const runBtn = document.getElementById('runBtn');
+      const stopBtn = document.getElementById('stopBtn');
+
+      if (data.status === 'running') {
+        runBtn.disabled = true;
+        stopBtn.disabled = false;
+      } else {
+        runBtn.disabled = false;
+        stopBtn.disabled = true;
+      }
+    }
+
+    async function startJob() {
+      await fetch('/run', { method: 'POST' });
+      updateStatus();
+    }
+
+    async function stopJob() {
+      await fetch('/stop', { method: 'POST' });
+      updateStatus();
+    }
+
+    setInterval(updateStatus, 1000);  // Poll every second
+    window.onload = updateStatus;
+  </script>
+</body>
+</html>

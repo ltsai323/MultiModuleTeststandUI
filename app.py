@@ -1,94 +1,30 @@
-from flask import Flask, render_template, jsonify, request
-import app_global_variables as gVAR
-import app_actbtn as app_actbtn
-from PythonTools.DebugManager import BUG
-from PythonTools.LoggingMgr import configure_logger_by_yamlDICT
-from flask_wtf.csrf import CSRFProtect
-from flask_cors import CORS
-from flask import current_app
+from flask import Flask, render_template
 
+# app.py
+from flask import Flask
+import logging
+import flask_apps.app_task1    as app_task1
+import flask_apps.app_task2    as app_task2
 
-app = Flask(__name__, static_folder='./static')
-log_conf = f'''
-name: {app.logger.name}
-file: log_stdout.txt
-filters:
-- indicator: running
-  threshold: 0
-  pattern: 'RUNNING'
-  filter_method: exact
-- indicator: Type0ERROR
-  threshold: 0
-  pattern: '[running] 0'
-  filter_method: exact
-- indicator: Type3ERROR
-  threshold: 0
-  pattern: '[running] 3'
-  filter_method: contain
-- indicator: idle
-  threshold: 0
-  pattern: 'FINISHED'
-  filter_method: exact
-'''
-configure_logger_by_yamlDICT(log_conf)
-app.config.from_object(gVAR.TestConfig) # initialize global variables
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='[basicCONFIG] %(levelname)s - %(message)s',
+    datefmt='%H:%M:%S'
+)
 
-CORS(app, resources={r"/*": {"origins": ["http://127.0.0.1:5001", "http://127.0.0.1:5000"]}})
-# add csrf protect asdf
-app.secret_key = 'your_secret_key'  # Required for CSRF protection. The availability checking required
-csrf = CSRFProtect(app)
+app = Flask(__name__)
+app.register_blueprint(app_task1.app, url_prefix='/task1')
+app.register_blueprint(app_task2.app, url_prefix='/task2')
 
-
-
-
-
-@app.route('/', methods=['GET', 'POST'])
-@app.route('/index')
+@app.route("/")
 def index():
-    '''
-home pages
+    return render_template("index_mainpage.html")
 
-It shows the current status of the whole jobs
-This page shows action buttons configured from `app_actbtn.py`.
-    '''
+@app.route("/index.html")
+def index_alias():
+    return render_template("index_mainpage.html")
 
-    return render_template('index.html')
-    #return render_template('index.ref.html')
+if __name__ == "__main__":
+    app.run(debug=True)
 
-
-@app.route('/show_logpage')
-def show_logpage():
-    button_id = request.args.get('btnID')  # Retrieve the 'file' parameter from the URL
-    if button_id:
-        try:
-            # Try to open the specific file based on the provided file name
-            with open(f'logs/log_{button_id}', 'r') as file:
-                content = file.read()
-        except Exception as e:
-            content = f"Error reading file log_{button_id}: {str(e)}"
-    else:
-        content = "No file specified."
-
-    return render_template('show_logpage.html', btnID=button_id, content=content)
-
-
-
-if __name__ == '__main__':
-
-    app.job_is_running = False
-    from app_socketio import socketio
-    # regist functions from app_actbtn.py
-    app.register_blueprint(app_actbtn.app_b)
-    #app_actbtn.module_init(app_actbtn.app_b)
-    import app_DAQresults
-    app.register_blueprint(app_DAQresults.app_b)
-
-
-    socketio.init_app(app)
-
-    host='0.0.0.0'
-    #host='192.168.51.213'
-    port=5001
-    print(f'[Web activated] {host}@{port}')
-    socketio.run(app,host=host, port=port)
 

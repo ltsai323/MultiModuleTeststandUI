@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Main Page</title>
+  <script>
+    function confirmSelection() {
+      const selected = document.querySelector('input[name="option"]:checked');
+      if (!selected) {
+        alert("Please select an option.");
+        return;
+      }
+      let iframeUrl;
+      if (selected.value === "opt1") {
+        iframeUrl = "{{ url_for('app_task1.main') }}"; // blueprint name + function name in blueprint
+      } else if (selected.value === "opt2") {
+        iframeUrl = "{{ url_for('app_task2.main') }}";
+      }
+      document.getElementById("myIframe").src = iframeUrl;
+    }
+  </script>
+</head>
+<body>
+  <h1>This is the Index Page</h1>
+
+  <form id="optionsForm">
+    <label>
+      <input type="radio" name="option" value="opt1">
+      Option 1
+    </label>
+    <label>
+      <input type="radio" name="option" value="opt2">
+      Option 2
+    </label>
+    <button type="button" onclick="confirmSelection()">Confirm</button>
+  </form>
+
+  <iframe id="myIframe" width="600" height="400"></iframe>
+</body>
+</html>

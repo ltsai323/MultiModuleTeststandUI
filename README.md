@@ -23,131 +23,43 @@ conda create -n $envNAME --file used_packages_conda.txt
 conda activate $envNAME
 ```
 
-## Run code
+## Run GUI
 ```
 #!/usr/bin/env sh
 python3 app.py
 ```
 then open the link [http://127.0.0.1:5001](http://127.0.0.1:5001)
 
-### run job fragments
-```
-#!/usr/bin/env sh
-python3 jobfrag_sshconn.py
-```
-To create a jobfrag, you need to make a function for your job like function [execute_command_with_timeout()](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/jobfrag_sshconn.py#L21).
-Then you need to test it individually like function [test_direct_run()](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/jobfrag_sshconn.py#L67C5-L67C20).
 
-Pack the function into an inherited class [JobFrag](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/jobfrag_sshconn.py#L95-L96).
-The GUI requires your function implementing the above functions
-```
-import jobfrag_base
-class JobFrag(jobfrag_base.JobFragBase):
-    def __init__(self, hostNAME:str, userNAME:str, privateKEYfile:str, timeOUT:float,
-                 stdOUT, stdERR,
-                 cmdTEMPLATEs:dict, argCONFIGs:dict, argSETUPs:dict):
-        # this function should allow the configurations input parameters
-        pass
+## Directly run without GUI
+The GUI execute commands in makefile. So use `make help` checking all related commands.
 
-    def __del__(self):
-        pass
+* `make initialize`
+* `make run`
+* `make stop`
+* `make destroy`
 
-    def Initialize(self):
-        pass
 
-    def Configure(self, updatedCONF:dict) -> bool:
-        # this function allows a input dictionary that GUI is able to update parameter
-        return True
+## DAQ steps
+### step1 initialize
+* Turn on kria power
+* load all related kria firmwares
+### step2 configure
 
-        
-    def Run(self):
-        pass
+### step3 run
+Each single kria runs command. Note that pullerPort should be modified for assigning kria physically.
 
-    def Stop(self):
-        pass
-```
-such as the function cound be read as a module
-
-# Documents
-https://hep1.phys.ntu.edu.tw/~ltsai/html/index.html
-
-## File descriptions
-### app.py
-
-This is the main function that activates the whole flask server.
-No any input arguments required. All configurations are put into app_actbtn.py and app_bkgrun.py
-### app_actbtn.py
-
-Store the button functions of the webpage.
-
-### app_bkgrun.py
-
-Tell flask server handling the background running jobs.
-To prevent the whole webpage holding.
-Developers should execute jobs in background instead of foreground.
-Such as you need to handle the background threads using threading module.
-
-### app_global_variables.py
-
-The global variables used for Flask
-
-### app_socketio.py
-
-The socket connection make a communication between client and server frequently and efficiently.
-A Flask Jsonify() is used to send a big message and socket is designed to send small message frequently.
-
-### DebugManager.py
-
-The message manager for debugging
-
-### LoggingMgr.py
-
-The message manager for logging. The screen output like "print()" should be replaced into  log.info(), log.warning(), log.error().
-Check logging module in python for help
-
-### WebStatus.py
-
-store web status such as webpage can be reloaded
-
-### jobfrag_base.py
-
-An abstract class prepared for flask server. Every jobfrag should contain these functions.
-
-### jobfrag_sshconn.pyinstance.
-
-The basic function for ssh connection. This code should be directly tested and pack them into jobfrag.
-
-### jobmodule_example.py
-
-example code loads jobfrag and create it as a module being executed serially.
-
-### jobmodule_example_2sshconnection.py
-
-example code loads jobfrag and create it as a module being executed serially.
-
-### jobmodule_single_module_pedestalrun_no_power_handling.py
-
-example code loads jobfrag and create it as a module being executed serially.
-
-### threading_tools.py
+* reload kria status and activate daq-client at background
+    - `ssh root@$kriaIP 'fw-loader load /opt/cms-hgcal-firmware/hgc-test-systems/hexaboard-hd-tester-v2p0-trophy-v2/'`
+    - `ssh root@$kriaIP 'systemctl restart i2c-server.service && systemctl restart daq-server.service'`
+    - `ssh root@$kriaIP 'systemctl status i2c-server.service && systemctl status daq-server.service'`
+    - `sleep 0.5`
+    - `./daq-client -p 6002 &`
+* waiting for 8 seconds
+* `python3 pedestal_run.py -i $kriaIP -f $yamlfile -d $moduleID -I --pullerPort=6002`
 
 
 
-# To do list
-## hi
-* [ ] 
 
 
-## Future features
-* [ ] Handle multiple connections 
 
-### Job Priority
-* [ ] execute_job_from_queue() : reads priorities of activing jobs.
-* [ ] AbleToAcceptNewJob() should be moved into job priority instead of True and False.
-* [ ] AbltoToAcceptNewJob(): how do I put job priority into this function.
-* [ ] Is job_priority able to be controlled from rs232.py code?
-* [ ] AddJob() should accept job priority. Such that every job is able to check priority before execute.
-
-
-### Known issue
-* [ ] add a guide to solve permission denied accessing RS232 device
