@@ -2,32 +2,125 @@ import subprocess
 import threading
 import logging
 from flask import Flask, render_template, request, jsonify, Blueprint
+from flask_wtf import FlaskForm
+from flask_wtf.csrf import CSRFProtect
+from wtforms.validators import DataRequired, Regexp
+from wtforms import StringField, SubmitField
+import flask_apps.shared_state as shared_state
+import re
+### HTTP status codes https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status
+
+JOBMODE = 'task2' # pedestal run
+
+CONF_DICT = {
+        'moduleID1L': '',
+        'moduleID1C': '',
+        'moduleID1R': '',
+
+        'moduleID2L': '',
+        'moduleID2C': '',
+        'moduleID2R': '',
+
+        'moduleID3L': '',
+        'moduleID3C': '',
+        'moduleID3R': '',
+        }
+
+def ExecCMD(jobID:str, confDICT:dict):
+    if jobID == 'Init':
+        return 'make -f makefile_task2 initialize JobName=Init'
+    if jobID == 'Run':
+        dictOPTs = ' '.join([ f'{key}={val}' for key,val in CONF_DICT.items() if val != '' ])
+        return 'make -f makefile_task2 run -j1 JobName=Run ' + dictOPTs
+    if jobID == 'Stop':
+        return 'make -f makefile_task2 stop JobName=Stop'
+    if jobID == 'Destroy':
+        return 'make -f makefile_task2 destroy JobName=Destroy'
+
+
 
 logger = logging.getLogger('flask.app')
 
-#app = Flask(__name__)
 app = Blueprint('app_task2', __name__)
 
-server_status = {'status': 'idle'}
-job_stop_flag = {'stop': False}
-job_thread = {'thread': None}
+
+job_stop_flags = {
+        'Init': threading.Event(),
+        'Run': threading.Event(),
+        'Stop': threading.Event(),
+        'Destroy': threading.Event(),
+        }
+
 def bb(val):
     logger.debug(f'checking point {val}')
+def check_jobmode() -> bool:
+    if not shared_state.jobmode:
+        logger.debug(f'[ReplaceJobMode] jobmode modified from None to {JOBMODE}')
+        shared_state.jobmode = JOBMODE
+        return True
+
+    if shared_state.jobmode == JOBMODE:
+        logger.debug(f'[CorrectJobMode] jobmode {JOBMODE} matched, keep running on')
+        return True
+
+    logger.warning(f'[InvalidJobMode] jobmode "{ shared_state.jobmode }" mismatched with local "{ JOBMODE }". Ignore command')
+    return False
+
+
+
+job_thread = {
+        'Init': None,
+        'Run': None,
+        'Stop': None,
+        'Destroy': None,
+        }
+def set_thread(runTYPE, tHREAD:threading.Thread):
+    if runTYPE not in job_thread:
+        logger.warning(f'[InvalidRunType] set_thread() got run type "{runTYPE}" but only "{ job_thread.keys() }" allowed')
+        logger.warning(f'[InvalidRunType] set_thread() add "{runTYPE}" in the threading pool')
+
+    if job_thread[runTYPE] and job_thread[runTYPE].is_alive():
+        #logger.warning(f'[JobIsRunning] set_thread() got running thread. overwrite this running thread')
+        logger.warning(f'[JobIsRunning] set_thread() got running thread. waiting for previous thread finished')
+        job_thread[runTYPE].join()
+
+    job_thread[runTYPE] = tHREAD
+
 
 def set_server_status(newSTAT):
-    global server_status
-    server_status['status'] = newSTAT
-    bb(1)
+    shared_state.server_status = newSTAT
+
 def server_status_is(checkSTAT):
-    bb(2)
-    return server_status['status'] == checkSTAT
-def server_is_runable():
-    stat = server_status['status']
-    runable_stat = [ 'idle', 'stopped' ]
-    return True if stat in runable_stat else False
+    return shared_state.server_status == checkSTAT
+from PythonTools.server_status import server_is_runable
 
 def run_command(cmd: str, jobID):
-    logger.info(f"Starting command: {cmd}")
+    """
+    Executes a shell command in a subprocess, monitors its output line by line,
+    and logs status messages including stop signals and errors.
+
+    This function is designed to integrate with a server job control system.
+    If a global ``job_stop_flags`` is set, the subprocess is terminated gracefully.
+    It also updates the server status using ``set_server_status()`` and logs each
+    step of execution.
+
+    :param cmd: The shell command to run.
+    :type cmd: str
+    :param jobID: Identifier for the job, used in log messages.
+    :type jobID: any
+    :return: None
+    :raises Exception: Logs any unexpected exception occurring during command execution.
+
+    :Side Effects:
+        - Starts a subprocess with ``cmd``.
+        - Logs output line by line.
+        - Terminates the subprocess if ``job_stop_flags`` is set.
+        - Calls ``set_server_status()`` to manage server state transitions.
+
+    :Logging:
+        - Logs command start, each output line, stop signals, errors, and completion.
+    """
+    logger.info(f"[RunBashCMD][{jobID}] run_command executes command: {cmd}")
     process = subprocess.Popen(
         cmd,
         shell=True,
@@ -40,49 +133,242 @@ def run_command(cmd: str, jobID):
     try:
         for line in process.stdout:
             logger.info(f'[{jobID}{line.strip()}')
-            if job_stop_flag['stop']:
+
+            if job_stop_flags[jobID].is_set():
                 logger.info(f"[{jobID}][Stop - Terminate]run_command() Stop signal received. Terminating command.")
-                logger.info(f"[{jobID}][Stop - StatusChangeStopped]run_command() Error while running command: {e}")
                 process.terminate()
                 logger.info(f"[{jobID}][Stop - Terminate]run_command() process terminate sent.")
                 break
-        if not job_stop_flag['stop']:
+        if not job_stop_flags[jobID].is_set():
             logger.info(f'[{jobID}][Run - StatusChangeIdle]run_command() Command "{cmd}" finished')
-        bb(34)
     except Exception as e:
         logger.error(f'[{jobID}][Error - StatusChangeError]run_command() Error while running command: "{cmd}"')
+
+        process.terminate()
         if server_status_is('stopping'):
             logger.info(f'[{jobID}][Error - StatusChangeError]run_command() error generated sinces "Stop" button clicked')
-            set_server_status('stopped')
         else:
             logger.error(f'[{jobID}][Error - ErrorMessage     ] run_command() "{e}"')
-        bb(33)
     finally:
         process.wait()
         set_server_status('idle')
         logger.info(f'[{jobID}][finally] run_command() sets system to idle')
-        bb(32)
-    bb(31)
 
 
-def background_worker():
-    global server_status, job_stop_flag
-    job_stop_flag['stop'] = False
-    set_server_status('running')
 
-    try:
-        command = "make run JobName=test1"
-        #command = "sh scripts/run_single_module.sh hi 3"
-        #command = " timeout 5s ping 8.8.8.8"
-        #command = "make test theARRAY='test1 test2 test3'"
-        run_command(command, 'Run')
-        bb(43)
-    finally:
-        set_server_status('idle')
-        logger.info("Job status set to idle.")
-        bb(42)
-    logger.info('background worker ended')
-    bb(41)
+
+@app.route('/init', methods=['POST'])
+def Init():
+    ''' run bash command `make initialize` at background '''
+    JOB_ID = 'Init'
+
+    logger.debug(f'[ServerAction][Init] Got an Init command')
+
+    if not check_jobmode(): return '', 204
+
+    if server_is_runable(shared_state.server_status,JOB_ID):
+        set_server_status('initializing')
+        job_stop_flags[JOB_ID].clear()
+        logger.debug('[ServerAction][{JOB_ID}] the server status is idle, activate {JOB_ID} command')
+
+        def background_worker():
+            try:
+                command = ExecCMD(JOB_ID, CONF_DICT)
+                run_command(command, JOB_ID)
+            finally:
+                set_server_status('initialized')
+                logger.info("Job status set to idle.")
+            logger.info('background worker ended')
+
+
+        t = threading.Thread(target=background_worker)
+        t.start()
+        set_thread(JOB_ID, t) # put to background running
+    else:
+        logger.debug(f'[ServerAction][{JOB_ID}] Current status is {shared_state.server_status}. reject "{JOB_ID}" command')
+
+    return '', 204
+
+alphanumeric_validator = Regexp("^[a-zA-Z0-9]*$", message="Only letters and numbers allowed.")
+class ConfigForm(FlaskForm):
+    moduleID1L = StringField("moduleID1L", validators=[alphanumeric_validator])
+    moduleID1C = StringField("moduleID1C", validators=[alphanumeric_validator])
+    moduleID1R = StringField("moduleID1R", validators=[alphanumeric_validator])
+
+    moduleID2L = StringField("moduleID2L", validators=[alphanumeric_validator])
+    moduleID2C = StringField("moduleID2C", validators=[alphanumeric_validator])
+    moduleID2R = StringField("moduleID2R", validators=[alphanumeric_validator])
+
+    moduleID3L = StringField("moduleID3L", validators=[alphanumeric_validator])
+    moduleID3C = StringField("moduleID3C", validators=[alphanumeric_validator])
+    moduleID3R = StringField("moduleID3R", validators=[alphanumeric_validator])
+    submit = SubmitField("Configure")
+
+@app.route('/submit', methods=['POST','GET'])
+def Configure():
+    JOB_ID = 'Configure'
+
+    if not check_jobmode(): return '', 204
+    if not server_is_runable(shared_state.server_status,JOB_ID): return '', 204
+
+
+
+
+    json_data = request.get_json()
+    if not json_data:
+        return jsonify({'status': 'error', 'message': 'Missing JSON data'}), 400
+
+
+    form = ConfigForm(data=json_data)  # populate form with JSON data
+
+
+
+    if not form.validate_on_submit():
+
+        # Collect validation errors
+        errors = {}
+        for fieldName, errorMessages in form.errors.items():
+            errors[fieldName] = errorMessages
+        logger.warning(f'[Configure] Validation errors: {errors}')
+        return jsonify({'status': 'error', 'errors': errors}), 400
+
+
+    def ignore_special_characters(string):
+        return re.sub(r'[^A-Za-z0-9]+', '', string) if string else ''
+
+
+    # Update CONF_DICT only if field has data
+    form_vars = vars(form).keys()
+
+    logger.debug(f'[LoadFormFromClient] Form "{vars(form)}"')
+
+    for varname in CONF_DICT.keys():
+        value = getattr(form, varname).data if hasattr(form, varname) else ''
+        logger.debug(f'[GotValue] Form {varname} got original value "{getattr(form,varname).data}"')
+        clean_val = ignore_special_characters(value)
+        if len(clean_val) > 20:
+            logger.warning(f'[InputTooLong] Input {varname}:{clean_val} too long, resetting.')
+            clean_val = ''
+        CONF_DICT[varname] = clean_val
+        logger.debug(f'[UpdateConfigure] Input {varname}:{CONF_DICT[varname]} updated.')
+
+
+    conf_mesg = lambda d: f'''Configurations
+        1L: {d.get('moduleID1L', ''):12s}\t1C: {d.get('moduleID1C', ''):12s}\t1R: {d.get('moduleID1R', ''):12s}
+        Note: Configuration saved. Please verify the settings.
+    '''
+
+
+    logger.info(conf_mesg(CONF_DICT))
+    logger.info(f'[Configure] Current CONF_DICT: {CONF_DICT}')
+
+    set_server_status('configured')
+    # Return JSON with message, status 200 so client JS can alert
+    return jsonify({'status': 'success', 'message': conf_mesg(CONF_DICT)}), 200
+
+
+
+
+@app.route('/run', methods=['POST'])
+def Run():
+    ''' run bash command `make run` at background '''
+    JOB_ID = 'Run'
+    logger.debug(f'[ServerAction][{JOB_ID}] Got an {JOB_ID} command')
+    logger.debug(f'[CheckJobMode] current job mode is "{shared_state.jobmode}"')
+    if not check_jobmode(): return '', 204
+
+    job_stop_flags[JOB_ID].clear()
+    if server_is_runable(shared_state.server_status,JOB_ID):
+        set_server_status('running')
+        logger.debug('[ServerAction][{JOB_ID}] the server status is idle, activate {JOB_ID} command')
+
+        def background_worker():
+            try:
+                command = ExecCMD(JOB_ID, CONF_DICT)
+                run_command(command, JOB_ID)
+            finally:
+                set_server_status('idle')
+                logger.info("Job status set to idle.")
+            logger.info('background worker ended')
+
+
+        t = threading.Thread(target=background_worker)
+        t.start()
+        set_thread(JOB_ID, t)
+    else:
+        logger.debug(f'[ServerAction][{JOB_ID}] Current status is {shared_state.server_status}. reject "{JOB_ID}" command')
+
+    return '', 204
+
+
+@app.route('/stop', methods=['POST'])
+def Stop():
+    if not check_jobmode(): return '', 204
+    JOB_ID = 'Stop'
+
+    set_server_status('stopping')
+    job_stop_flags['Run'].set()
+    logger.debug(f'[ServerAction][Stop] set job_stop_flags as True')
+
+    if job_thread['Run'] and job_thread['Run'].is_alive():
+        job_thread['Run'].join()
+
+    ## after command Run finished, reset the flag
+    job_stop_flags['Run'].clear()
+
+    def background_worker():
+        try:
+            command = ExecCMD(JOB_ID, CONF_DICT)
+            run_command(command, JOB_ID)
+        finally:
+            set_server_status('idle')
+            logger.info("Job status set to idle.")
+        logger.info('background worker ended')
+
+    t = threading.Thread(target=background_worker)
+    t.start()
+    t.join() # direct run without accept other command
+
+    set_server_status('stopped')
+    return '', 204
+
+@app.route('/destroy', methods=['POST'])
+def Destroy():
+    if not check_jobmode(): return '', 204
+    JOB_ID = 'Destroy'
+
+    if server_is_runable(shared_state.server_status,JOB_ID):
+        set_server_status('destroying')
+        for name, flag in job_stop_flags.items(): flag.set()
+        logger.debug(f'[ServerAction][{JOB_ID}] set ALL job_stop_flags as True')
+
+        for name, t in job_thread.items():
+            if t and t.is_alive():
+                t.join() # waiting for all jobs finished
+
+        ## after command Run finished, reset the flag
+        for name, flag in job_stop_flags.items(): flag.set()
+        logger.debug(f'[ServerAction][{JOB_ID}] reset ALL job_stop_flags')
+
+        def background_worker():
+            try:
+                command = ExecCMD(JOB_ID, CONF_DICT)
+                run_command(command, JOB_ID)
+            finally:
+                logger.info("Destory ended")
+
+        t = threading.Thread(target=background_worker)
+        t.start()
+        t.join() # direct run without accept other command
+
+        set_server_status('destroyed')
+    else:
+        logger.debug(f'[ServerAction][{JOB_ID}] Current status is {shared_state.server_status}. reject "{JOB_ID}" command')
+    return '', 204
+
+@app.route('/status')
+def status():
+    return jsonify( {'status':shared_state.server_status} )
 
 
 @app.route('/main.html')
@@ -90,47 +376,18 @@ def main():
     return render_template('index_task2.html')
 
 
-@app.route('/run', methods=['POST'])
-def Run():
-    global server_status
-    logger.debug(f'[ServerAction][Run] Got an Run command')
-    job_stop_flag = False
-    if server_is_runable():
-        logger.debug('[ServerAction][Run] the server status is idle, activate Run command')
-        t = threading.Thread(target=background_worker)
-        t.start()
-        job_thread['thread'] = t
-    else:
-        logger.debug('[ServerAction][Run] Current status is {server_status["status"]}. reject "Run" command')
-    bb(51)
-
-    return '', 204
-
-
-@app.route('/stop', methods=['POST'])
-def Stop():
-    job_stop_flag['stop'] = True
-    logger.debug(f'[ServerAction][Stop] set job_stop_flag as True')
-    set_server_status('stopping')
-    bb(52)
-    return '', 204
-
-
-@app.route('/status')
-def status():
-    return jsonify(server_status)
-
-
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG,
                         format='[basicCONFIG] %(levelname)s - %(message)s',
                         datefmt='%H:%M:%S')
     app_main = Flask(__name__)
-    app_main.register_blueprint(app)
-    
+    app_main.register_blueprint(app, url_prefix='/task2')
+    app_main.config["SECRET_KEY"] = '7eCZ^6nUxb6hjN5EbLYak&fvt'
+    csrf = CSRFProtect(app_main)
+
+
     @app_main.route("/")
     def index():
-        return render_template("index_task2.html")
-    bb(8)
+        return render_template("index_task2_2.html")
+       #return render_template("index_task2.html")
     app_main.run(debug=True)
-    bb(9)

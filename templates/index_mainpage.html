@@ -5,35 +5,58 @@
   <script>
     function confirmSelection() {
       const selected = document.querySelector('input[name="option"]:checked');
-      if (!selected) {
-        alert("Please select an option.");
-        return;
-      }
+      if (!selected) { alert("Please select an option."); return; }
+
       let iframeUrl;
-      if (selected.value === "opt1") {
-        iframeUrl = "{{ url_for('app_task1.main') }}"; // blueprint name + function name in blueprint
-      } else if (selected.value === "opt2") {
-        iframeUrl = "{{ url_for('app_task2.main') }}";
+      // blueprint name + function name in blueprint
+           if (selected.value === "task1") { iframeUrl = "{{ url_for('app_task1.main') }}"; }
+      else if (selected.value === "task2") { iframeUrl = "{{ url_for('app_task2.main') }}"; }
+      const iframe = document.getElementById("myIframe");
+      iframe.src = iframeUrl;
+
+      iframe.onload = function() {
+        try {
+          iframe.style.height = iframe.contentDocument.body.scrollHeight + 'px';
+        } catch(e) { 
+          console.warn('Cannot get height, use default 400px');
+          iframe.style.height = '400px';
+        }
       }
-      document.getElementById("myIframe").src = iframeUrl;
+
+      // nofity server for optioin update.
+      fetch("/set_option",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ option: selected.value })
+        });
     }
   </script>
+  <script>
+  function resizeIframe() {
+    const iframe = document.getElementById('myIframe');
+    try {
+      const iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
+      iframe.style.height = iframeDocument.body.scrollHeight + 'px';
+    } catch (e) {
+      console.warn('Cannot access iframe content: cross-origin restrictions.');
+    }
+  }
+
+  // Resize on iframe load
+  document.getElementById('myIframe').addEventListener('load', resizeIframe);
+</script>
 </head>
 <body>
   <h1>This is the Index Page</h1>
 
   <form id="optionsForm">
-    <label>
-      <input type="radio" name="option" value="opt1">
-      Option 1
-    </label>
-    <label>
-      <input type="radio" name="option" value="opt2">
-      Option 2
-    </label>
+    <label> <input type="radio" name="option" value="task1" {% if selected_option == 'task1' %} checked {% endif %}> test </label>
+    <label> <input type="radio" name="option" value="task2" {% if selected_option == 'task2' %} checked {% endif %}> Pedestal Run </label>
     <button type="button" onclick="confirmSelection()">Confirm</button>
   </form>
 
-  <iframe id="myIframe" width="600" height="400"></iframe>
+  <iframe id="myIframe" width="1500px" height="400px"
+    src="{% if selected_option == 'task1' %}{{ url_for('app_task1.main') }}{% elif selected_option == 'task2' %}{{ url_for('app_task2.main') }}{% endif %}"></iframe>
 </body>
 </html>

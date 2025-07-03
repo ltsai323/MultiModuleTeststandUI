@@ -14,7 +14,7 @@
 
   <script>
     async function updateStatus() {
-      const response = await fetch('/status');
+      const response = await fetch('/task1/status');
       const data = await response.json();
       document.getElementById('statusText').innerText = data.status;
 
@@ -31,12 +31,12 @@
     }
 
     async function startJob() {
-      await fetch('/run', { method: 'POST' });
+      await fetch('/task1/run', { method: 'POST' });
       updateStatus();
     }
 
     async function stopJob() {
-      await fetch('/stop', { method: 'POST' });
+      await fetch('/task1/stop', { method: 'POST' });
       updateStatus();
     }
 

@@ -2,6 +2,7 @@ import subprocess
 import threading
 import logging
 from flask import Flask, render_template, request, jsonify, Blueprint
+import flask_apps.shared_state as shared_state
 
 logger = logging.getLogger('flask.app')
 
@@ -71,7 +72,7 @@ def background_worker():
     set_server_status('running')
 
     try:
-        command = "make run JobName=test1"
+        command = "echo initializating"
         #command = "sh scripts/run_single_module.sh hi 3"
         #command = " timeout 5s ping 8.8.8.8"
         #command = "make test theARRAY='test1 test2 test3'"
@@ -129,7 +130,7 @@ if __name__ == '__main__':
                         format='[basicCONFIG] %(levelname)s - %(message)s',
                         datefmt='%H:%M:%S')
     app_main = Flask(__name__)
-    app_main.register_blueprint(app)
+    app_main.register_blueprint(app, url_prefix='/task1')
 
     @app_main.route("/")
     def index():
