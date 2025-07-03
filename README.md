@@ -1,5 +1,6 @@
 ## Installations
-Use mini conda handling the python libraries.
+Use mini conda handling the python libraries. Note that this GUI should be deployed on Linux.
+We recommended you use SSH forward 
 To install the dependency, you need to use the following commands:
 ```
 #!/usr/bin/env sh
@@ -26,18 +27,30 @@ conda activate $envNAME
 ## Run GUI
 ```
 #!/usr/bin/env sh
+source ./use_python_lib.sh
 python3 app.py
 ```
 then open the link [http://127.0.0.1:5001](http://127.0.0.1:5001)
 
 
+## GUI developing
+### app.py
+Which provided a entry webpage at [mainpage](http://127.0.0.1:5001) for selecting job mode.
+This selection choosed 
+### flask_apps/app_task2.py
+Provide a sub webpage executing `make -f makefile_task2` with related option.
+This job mode is to take pedestal run parallelly on modules.
+
+Once the form was filled with hexaboard ID, there activated related position of kria.
+
+
 ## Directly run without GUI
 The GUI execute commands in makefile. So use `make help` checking all related commands.
 
-* `make initialize`
-* `make run`
-* `make stop`
-* `make destroy`
+* `make -f makefile_task2 initialize`
+* `make -f makefile_task2 run -j3`
+* `make -f makefile_task2 stop`
+* `make -f makefile_task2 destroy`
 
 
 ## DAQ steps

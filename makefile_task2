@@ -7,31 +7,41 @@ __check_defined = \
   $(if $(value $1),, \
   $(error Undefined $1$(if $2, ($2))))
 
+timeSTAMP := $$(date "+%Y%m%d_%H%M")
 
 initialize: ## initialize [JobName=testjob]
 	$(call check_defined, JobName)
 	@echo "[$(JobName) - StatusChangeInitialized] initialize ended"
 
-runtimeout=10
-run: run1L run1C run1R ## run module [JobName=testjob][runtimeout=3]
+runtimeout=15
+#run: subrun1L subrun1C subrun1R ## run modules. Once moduleID selected, activate related subrun [JobName=testjob][runtimeout=15] [moduleID1L=m1][moduleID1C=m2]
+run: subrun1L subrun1C ## run module. Once moduleID selected, activate related subrun [JobName=testjob][runtimeout=15] [moduleID1L=m1][moduleID1C=m2]
 	@echo "[$(JobName) - StatusChangeIdle] run ended"
+	@echo collecting output results
+	@echo outLOGs=logs/history_$(JobName)_$(timeSTAMP); mkdir -p $$outLOGs; mv logs/log_*.txt $$outLOGs
+	@echo outFOLDER=outputs/task2_$(timeSTAME); mkdir -p $$outFOLDER; mv logs/
+	@echo mv allfiles 
 
 
-run1L: ## run module [moduleID1L=320XHF3CNT1000][runtimeout=3]
+# rety twice if error found
+subrun1L: ## run module [moduleID1L=320XHF3CNT1000][runtimeout=15]
 	moduleID=$(moduleID1L) ; if [ "$$moduleID" != "" ];then \
-			sh scripts/run_single_module.sh $$moduleID $(runtimeout) 2>&1 | tee logs/log_make_run.txt ; \
+			sh scripts/run_single_module.sh $$moduleID $(runtimeout) 2>&1 | tee logs/log_$${moduleID}_run.txt ; \
+			if [ "`tail -n1 logs/log_$${moduleID}_takedata.txt`" != "FINISHED" ];then sh scripts/run_single_module.sh $$moduleID $(runtimeout); fi; \
 			if [ "`tail -n1 logs/log_$${moduleID}_takedata.txt`" != "FINISHED" ];then sh scripts/run_single_module.sh $$moduleID $(runtimeout); fi; \
 			else echo run1L is stopped; fi
-run1C: ## run module [moduleID1C=320XHF3CNT1000][runtimeout=3]
+subrun1C: ## run module [moduleID1C=320XHF3CNT1000][runtimeout=15]
 	moduleID=$(moduleID1C) ; if [ "$$moduleID" != "" ];then \
-			sh scripts/run_single_module.sh $$moduleID $(runtimeout) 2>&1 | tee logs/log_make_run.txt ; \
+			sh scripts/run_single_module.sh $$moduleID $(runtimeout) 2>&1 | tee logs/log_$${moduleID}_run.txt ; \
+			if [ "`tail -n1 logs/log_$${moduleID}_takedata.txt`" != "FINISHED" ];then sh scripts/run_single_module.sh $$moduleID $(runtimeout); fi; \
 			if [ "`tail -n1 logs/log_$${moduleID}_takedata.txt`" != "FINISHED" ];then sh scripts/run_single_module.sh $$moduleID $(runtimeout); fi; \
 			else echo run1C is stopped; fi
-run1R: ## run module [moduleID1R=320XHF3CNT1000][runtimeout=3]
-	moduleID=$(moduleID1R) ; if [ "$$moduleID" != "" ];then \
-			sh scripts/run_single_module.sh $$moduleID $(runtimeout) 2>&1 | tee logs/log_make_run.txt ; \
-			if [ "`tail -n1 logs/log_$${moduleID}_takedata.txt`" != "FINISHED" ];then sh scripts/run_single_module.sh $$moduleID $(runtimeout); fi; \
-			else echo run1R is stopped; fi
+# subrun1R: ## run module [moduleID1R=320XHF3CNT1000][runtimeout=15]
+# 	moduleID=$(moduleID1R) ; if [ "$$moduleID" != "" ];then \
+# 			sh scripts/run_single_module.sh $$moduleID $(runtimeout) 2>&1 | tee logs/log_$${moduleID}_run.txt ; \
+# 			if [ "`tail -n1 logs/log_$${moduleID}_takedata.txt`" != "FINISHED" ];then sh scripts/run_single_module.sh $$moduleID $(runtimeout); fi; \
+# 			if [ "`tail -n1 logs/log_$${moduleID}_takedata.txt`" != "FINISHED" ];then sh scripts/run_single_module.sh $$moduleID $(runtimeout); fi; \
+# 			else echo run1R is stopped; fi
 
 
 stop: ## stop the run command, mainly stop the secondary jobs handled in `make run`

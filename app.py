@@ -36,6 +36,9 @@ def set_option():
         return jsonify({"status": "success"})
     return jsonify({"status": "error", "log": f'[InvalidOption] set_option() received invalid input "{data}".'}), 400
 
+#@app.route('/status')
+#def status():
+#    return jsonify( {'status':shared_state.server_status, 'jobmode':shared_state.jobmode} )
 
 ### note only if jobmode is notSELECTED or job status is DESTROYED, allowed to select new jobmode
 
