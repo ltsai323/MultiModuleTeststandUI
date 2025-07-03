@@ -7,6 +7,7 @@ from flask_wtf.csrf import CSRFProtect
 from wtforms.validators import DataRequired, Regexp
 from wtforms import StringField, SubmitField
 import flask_apps.shared_state as shared_state
+from PythonTools.server_status import isCommandRunable
 import re
 ### HTTP status codes https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status
 
@@ -92,7 +93,6 @@ def set_server_status(newSTAT):
 
 def server_status_is(checkSTAT):
     return shared_state.server_status == checkSTAT
-from PythonTools.server_status import server_is_runable
 
 def run_command(cmd: str, jobID):
     """
@@ -160,21 +160,21 @@ def run_command(cmd: str, jobID):
 @app.route('/init', methods=['POST'])
 def Init():
     ''' run bash command `make initialize` at background '''
-    JOB_ID = 'Init'
+    CMD_ID = 'Init'
 
     logger.debug(f'[ServerAction][Init] Got an Init command')
 
     if not check_jobmode(): return '', 204
 
-    if server_is_runable(shared_state.server_status,JOB_ID):
+    if isCommandRunable(shared_state.server_status,CMD_ID):
         set_server_status('initializing')
-        job_stop_flags[JOB_ID].clear()
-        logger.debug('[ServerAction][{JOB_ID}] the server status is idle, activate {JOB_ID} command')
+        job_stop_flags[CMD_ID].clear()
+        logger.debug('[ServerAction][{CMD_ID}] the server status is idle, activate {CMD_ID} command')
 
         def background_worker():
             try:
-                command = ExecCMD(JOB_ID, CONF_DICT)
-                run_command(command, JOB_ID)
+                command = ExecCMD(CMD_ID, CONF_DICT)
+                run_command(command, CMD_ID)
             finally:
                 set_server_status('initialized')
                 logger.info("Job status set to idle.")
@@ -183,9 +183,9 @@ def Init():
 
         t = threading.Thread(target=background_worker)
         t.start()
-        set_thread(JOB_ID, t) # put to background running
+        set_thread(CMD_ID, t) # put to background running
     else:
-        logger.debug(f'[ServerAction][{JOB_ID}] Current status is {shared_state.server_status}. reject "{JOB_ID}" command')
+        logger.debug(f'[ServerAction][{CMD_ID}] Current status is {shared_state.server_status}. reject "{CMD_ID}" command')
 
     return '', 204
 
@@ -206,10 +206,10 @@ class ConfigForm(FlaskForm):
 
 @app.route('/submit', methods=['POST','GET'])
 def Configure():
-    JOB_ID = 'Configure'
+    CMD_ID = 'Configure'
 
     if not check_jobmode(): return '', 204
-    if not server_is_runable(shared_state.server_status,JOB_ID): return '', 204
+    if not isCommandRunable(shared_state.server_status,CMD_ID): return '', 204
 
 
 
@@ -272,20 +272,20 @@ def Configure():
 @app.route('/run', methods=['POST'])
 def Run():
     ''' run bash command `make run` at background '''
-    JOB_ID = 'Run'
-    logger.debug(f'[ServerAction][{JOB_ID}] Got an {JOB_ID} command')
-    logger.debug(f'[CheckJobMode] current job mode is "{shared_state.jobmode}"')
+    CMD_ID = 'Run'
+    logger.debug(f'[ServerAction][{CMD_ID}] Got an {CMD_ID} command')
     if not check_jobmode(): return '', 204
+    logger.debug(f'[ServerAction][{CMD_ID}] Got an {CMD_ID} command executing')
 
-    job_stop_flags[JOB_ID].clear()
-    if server_is_runable(shared_state.server_status,JOB_ID):
+    job_stop_flags[CMD_ID].clear()
+    if isCommandRunable(shared_state.server_status,CMD_ID):
         set_server_status('running')
-        logger.debug('[ServerAction][{JOB_ID}] the server status is idle, activate {JOB_ID} command')
+        logger.debug('[ServerAction][{CMD_ID}] the server status is idle, activate {CMD_ID} command')
 
         def background_worker():
             try:
-                command = ExecCMD(JOB_ID, CONF_DICT)
-                run_command(command, JOB_ID)
+                command = ExecCMD(CMD_ID, CONF_DICT)
+                run_command(command, CMD_ID)
             finally:
                 set_server_status('idle')
                 logger.info("Job status set to idle.")
@@ -294,9 +294,9 @@ def Run():
 
         t = threading.Thread(target=background_worker)
         t.start()
-        set_thread(JOB_ID, t)
+        set_thread(CMD_ID, t)
     else:
-        logger.debug(f'[ServerAction][{JOB_ID}] Current status is {shared_state.server_status}. reject "{JOB_ID}" command')
+        logger.debug(f'[ServerAction][{CMD_ID}] Current status is {shared_state.server_status}. reject "{CMD_ID}" command')
 
     return '', 204
 
@@ -304,7 +304,7 @@ def Run():
 @app.route('/stop', methods=['POST'])
 def Stop():
     if not check_jobmode(): return '', 204
-    JOB_ID = 'Stop'
+    CMD_ID = 'Stop'
 
     set_server_status('stopping')
     job_stop_flags['Run'].set()
@@ -318,8 +318,8 @@ def Stop():
 
     def background_worker():
         try:
-            command = ExecCMD(JOB_ID, CONF_DICT)
-            run_command(command, JOB_ID)
+            command = ExecCMD(CMD_ID, CONF_DICT)
+            run_command(command, CMD_ID)
         finally:
             set_server_status('idle')
             logger.info("Job status set to idle.")
@@ -335,12 +335,12 @@ def Stop():
 @app.route('/destroy', methods=['POST'])
 def Destroy():
     if not check_jobmode(): return '', 204
-    JOB_ID = 'Destroy'
+    CMD_ID = 'Destroy'
 
-    if server_is_runable(shared_state.server_status,JOB_ID):
+    if isCommandRunable(shared_state.server_status,CMD_ID):
         set_server_status('destroying')
         for name, flag in job_stop_flags.items(): flag.set()
-        logger.debug(f'[ServerAction][{JOB_ID}] set ALL job_stop_flags as True')
+        logger.debug(f'[ServerAction][{CMD_ID}] set ALL job_stop_flags as True')
 
         for name, t in job_thread.items():
             if t and t.is_alive():
@@ -348,12 +348,12 @@ def Destroy():
 
         ## after command Run finished, reset the flag
         for name, flag in job_stop_flags.items(): flag.set()
-        logger.debug(f'[ServerAction][{JOB_ID}] reset ALL job_stop_flags')
+        logger.debug(f'[ServerAction][{CMD_ID}] reset ALL job_stop_flags')
 
         def background_worker():
             try:
-                command = ExecCMD(JOB_ID, CONF_DICT)
-                run_command(command, JOB_ID)
+                command = ExecCMD(CMD_ID, CONF_DICT)
+                run_command(command, CMD_ID)
             finally:
                 logger.info("Destory ended")
 
@@ -363,12 +363,12 @@ def Destroy():
 
         set_server_status('destroyed')
     else:
-        logger.debug(f'[ServerAction][{JOB_ID}] Current status is {shared_state.server_status}. reject "{JOB_ID}" command')
+        logger.debug(f'[ServerAction][{CMD_ID}] Current status is {shared_state.server_status}. reject "{CMD_ID}" command')
     return '', 204
 
 @app.route('/status')
 def status():
-    return jsonify( {'status':shared_state.server_status} )
+    return jsonify( {'status':shared_state.server_status, 'jobmode': shared_state.jobmode} )
 
 
 @app.route('/main.html')
@@ -388,6 +388,5 @@ if __name__ == '__main__':
 
     @app_main.route("/")
     def index():
-        return render_template("index_task2_2.html")
-       #return render_template("index_task2.html")
+        return render_template("index_task2.html")
     app_main.run(debug=True)

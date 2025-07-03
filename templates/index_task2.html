@@ -62,7 +62,6 @@
     async function updateStatus() {
       const response = await fetch('/task2/status');
       const data = await response.json();
-      document.getElementById('statusText').innerText = data.status;
 
       const initBtn = document.getElementById('initBtn');
       const confBtn = document.getElementById('confBtn');
@@ -70,6 +69,20 @@
       const stopBtn = document.getElementById('stopBtn');
       const exitBtn = document.getElementById('exitBtn');
 
+      // accept command only if jobmode is empty or task2
+      if (data.jobmode !== "" ) {
+        if (data.jobmode !== "task2") {
+          initBtn.disabled = true ;
+          confBtn.disabled = true ;
+          execBtn.disabled = true ;
+          stopBtn.disabled = true ;
+          exitBtn.disabled = true ;
+          document.querySelectorAll('#pymodule_configurations input.inputModuleID').forEach(input => { input.disabled = true ; });
+          document.getElementById('statusText').innerText = "server is running other task";
+          return; // disable all buttons and returned
+      } }
+
+      document.getElementById('statusText').innerText = data.status;
 
       if (data.status === 'startup' ) {
         initBtn.disabled = false;
