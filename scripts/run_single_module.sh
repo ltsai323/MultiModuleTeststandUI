@@ -5,6 +5,8 @@ monitorTIMEOUT=${2:-10}
 tmpPIDlist="tmp_PIDlist_${jobNAME}_run.txt"
 FIRST_LOG="logs/log_${jobNAME}_daqclient.txt"
 SECOND_LOG="logs/log_${jobNAME}_takedata.txt"
+ALL_LOG="logs/log_${jobNAME}_alllogs.txt"
+
 
 
 
@@ -15,7 +17,7 @@ function daq_client_with_timeout() {
     echo aaaaaaa
     python3 -u scripts/fake_daq_client.py
     echo bbbbbbb
-    echo "FINISHED"
+    echo "FINISHED" ## to identify this command executed correctly
 }
 
 # Example main job function
@@ -30,7 +32,7 @@ function mainjob() {
         sleep 1
     done
     echo "Second command finished."
-    echo "FINISHED"
+    echo "FINISHED" ## to identify this command executed correctly
 }
 
 
@@ -126,5 +128,5 @@ exit 0
 
 
 
-mainfunc
+mainfunc 2>&1 | tee $ALL_LOG
 echo mainfunc finished
