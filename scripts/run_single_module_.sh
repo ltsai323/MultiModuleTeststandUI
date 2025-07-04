@@ -1,13 +1,11 @@
 #!/bin/bash
-pullerPORT=${1:-6001}
-kriaIP=${2:-192.168.50.153}
-hexaboardID=${3:-320XHF4CPM00160}
-monitorTIMEOUT=${4:-20}
+jobNAME=${1:-testjob}
+monitorTIMEOUT=${2:-10}
 
-tmpPIDlist="tmp_PIDlist_${hexaboardID}_run.txt"
-FIRST_LOG="logs/log_${hexaboardID}_daqclient.txt"
-SECOND_LOG="logs/log_${hexaboardID}_takedata.txt"
-ALL_LOG="logs/log_${hexaboardID}_alllogs.txt"
+tmpPIDlist="tmp_PIDlist_${jobNAME}_run.txt"
+FIRST_LOG="logs/log_${jobNAME}_daqclient.txt"
+SECOND_LOG="logs/log_${jobNAME}_takedata.txt"
+ALL_LOG="logs/log_${jobNAME}_alllogs.txt"
 
 
 
@@ -16,19 +14,24 @@ ALL_LOG="logs/log_${hexaboardID}_alllogs.txt"
 # The timeout uses "timeout" command in bash, which kills jobs in 10 seconds
 # So the job will be killed if the daq-client stopped working.
 function daq_client_with_timeout() {
-    kria_ip=$1
-    puller_port=$2
-    echo "----------- daq_client_with_timeout() got kriaIP $kria_ip and port $puller_port ==-==="
-    sh $BASH_SCRIPT_FOLDER/step2a.kria_env_setup.sh $kria_ip
-    sleep 0.5
-    sh $BASH_SCRIPT_FOLDER/step3a.daqclient.sh $puller_port
+    echo aaaaaaa
+    python3 -u scripts/fake_daq_client.py
+    echo bbbbbbb
     echo "FINISHED" ## to identify this command executed correctly
 }
 
 # Example main job function
 function mainjob() {
-    sleep 7
-    sh $BASH_SCRIPT_FOLDER/step4a.takedata.sh  $kriaIP $hexaboardID $pullerPORT
+    echo "Second command start looping..."
+    python3 -u scripts/job1.py
+    python3 -u scripts/job2.py
+    echo "Second command finished."
+    echo "Second command start looping..."
+    for idx in {1..10}; do
+        echo "Second command looping $idx"
+        sleep 1
+    done
+    echo "Second command finished."
     echo "FINISHED" ## to identify this command executed correctly
 }
 
@@ -71,7 +74,7 @@ function cleanup() {
             fi
         done
         /bin/rm -f "$tmpPIDlist"
-        echo "[${hexaboardID} - StatusChangeError] Job terminated"
+        echo "[${jobNAME} - StatusChangeError] Job terminated"
     fi
 #    echo 'b@[cleanup] return 0'
     exit 0
@@ -86,8 +89,7 @@ function mainfunc() {
 # Trap in the main script only
 trap cleanup SIGINT SIGTERM EXIT
 export -f daq_client_with_timeout
-echo timeout ${monitorTIMEOUT}s bash -c "daq_client_with_timeout $kriaIP $pullerPORT"
-timeout ${monitorTIMEOUT}s bash -c "daq_client_with_timeout $kriaIP $pullerPORT" 2>&1 | tee $FIRST_LOG &
+timeout ${monitorTIMEOUT}s bash -c daq_client_with_timeout 2>&1 | tee $FIRST_LOG &
 #timeout 15s bash -c daq_client_with_timeout &
 CMD_PID1=$!
 echo $CMD_PID1 >> $tmpPIDlist

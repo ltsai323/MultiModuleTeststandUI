@@ -1,0 +1,50 @@
+
+basic_parameters:
+    timeout: 3
+cmd_templates:
+  'init': ''
+  'run': 'echo sleeping 100 second ; sleep 100; sh scripts/a.sh 2>&1'
+  'stop': ''
+  'del': ''
+cmd_arguments:
+  prefix: default
+cmd_const_arguments:
+  ip2: pass
+logging:
+  stdout:
+    name: out
+    file: log_stdout.txt
+    filters:
+      - indicator: running
+        threshold: 0
+        pattern: 'RUNNING'
+        filter_method: exact
+      - indicator: Type0ERROR
+        threshold: 0
+        pattern: '[running] 0'
+        filter_method: exact
+      - indicator: Type3ERROR
+        threshold: 0
+        pattern: '[running] 3'
+        filter_method: contain
+      - indicator: idle
+        threshold: 0
+        pattern: 'FINISHED'
+        filter_method: exact
+  stderr:
+    name: err
+    file: log_stderr.txt
+    filters:
+      - indicator: running
+        threshold: 0
+        pattern: 'RUNNING'
+        filter_method: exact
+      - indicator: Type0ERROR
+        threshold: 0
+        pattern: '[running] 0'
+        filter_method: exact
+      - indicator: RaiseError
+        threshold: 0
+        pattern: 'Error'
+        filter_method: contain
+        
