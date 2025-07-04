@@ -45,11 +45,12 @@ def isCommandRunable(currentSERVERstatus:str, cmdID:str):
     if cmdID == "Init":
         return True if stat in [ 'startup', 'destroyed' ] else False
     if cmdID == "Configure":
-        return True if stat in [ 'initialized', 'stopped', 'idle' ] else False
+        return True if stat in [ 'initialized', 'stopped', 'configured', 'idle' ] else False
     if cmdID == "Run":
         return True if stat in [ 'configured' ] else False
     if cmdID == "Stop":
         return True if stat in [ 'running' ] else False
     if cmdID == "Destroy":
-        return True if stat in [ 'error', 'initializing', 'initialized', 'configured', 'running', 'idle', 'stopping', 'stopped' ] else False
+        #return True if stat in [ 'error', 'initializing', 'initialized', 'configured', 'running', 'idle', 'stopping', 'stopped' ] else False
+        return True if stat in [ 'error', 'initialized', 'configured', 'running', 'idle', 'stopping', 'stopped' ] else False
 
