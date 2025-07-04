@@ -2,7 +2,6 @@ import subprocess
 import threading
 import logging
 from flask import Flask, render_template, request, jsonify, Blueprint
-from flask import current_app
 from flask_wtf import FlaskForm
 from flask_wtf.csrf import CSRFProtect
 from wtforms.validators import DataRequired, Regexp
@@ -44,7 +43,6 @@ def ExecCMD(jobID:str, confDICT:dict):
 #logger = logging.getLogger('flask.app')
 logger = logging.getLogger('werkzeug')
 
-
 app = Blueprint('app_task1', __name__)
 
 
@@ -56,7 +54,7 @@ job_stop_flags = {
         }
 
 def bb(val):
-    logger.warn(f'checking point {val}')
+    logger.debug(f'checking point {val}')
 def check_jobmode() -> bool:
     if not shared_state.jobmode:
         logger.debug(f'[ReplaceJobMode] jobmode modified from None to {JOBMODE}')
@@ -165,15 +163,14 @@ def Init():
     ''' run bash command `make initialize` at background '''
     CMD_ID = 'Init'
 
-    #logger.debug(f'[ServerAction][Init] Got an Init command')
-    current_app.logger.debug(f'------------------- [ServerAction][Init] Got an Init command')
+    logger.debug(f'[ServerAction][Init] Got an Init command')
 
     if not check_jobmode(): return '', 204
 
     if isCommandRunable(shared_state.server_status,CMD_ID):
         set_server_status('initializing')
         job_stop_flags[CMD_ID].clear()
-        current_app.logger.debug('[ServerAction][{CMD_ID}] the server status is idle, activate {CMD_ID} command')
+        logger.debug('[ServerAction][{CMD_ID}] the server status is idle, activate {CMD_ID} command')
 
         def background_worker():
             try:
@@ -189,7 +186,7 @@ def Init():
         t.start()
         set_thread(CMD_ID, t) # put to background running
     else:
-        current_app.logger.debug(f'[ServerAction][{CMD_ID}] Current status is {shared_state.server_status}. reject "{CMD_ID}" command')
+        logger.debug(f'[ServerAction][{CMD_ID}] Current status is {shared_state.server_status}. reject "{CMD_ID}" command')
 
     return '', 204
 
@@ -233,7 +230,7 @@ def Configure():
         errors = {}
         for fieldName, errorMessages in form.errors.items():
             errors[fieldName] = errorMessages
-        current_app.logger.warning(f'[Configure] Validation errors: {errors}')
+        logger.warning(f'[Configure] Validation errors: {errors}')
         return jsonify({'status': 'error', 'errors': errors}), 400
 
 
@@ -244,27 +241,27 @@ def Configure():
     # Update CONF_DICT only if field has data
     form_vars = vars(form).keys()
 
-    current_app.logger.debug(f'[LoadFormFromClient] Form "{vars(form)}"')
+    logger.debug(f'[LoadFormFromClient] Form "{vars(form)}"')
 
     for varname in CONF_DICT.keys():
         value = getattr(form, varname).data if hasattr(form, varname) else ''
-        current_app.logger.debug(f'[GotValue] Form {varname} got original value "{getattr(form,varname).data}"')
+        logger.debug(f'[GotValue] Form {varname} got original value "{getattr(form,varname).data}"')
         clean_val = ignore_special_characters(value)
         if len(clean_val) > 20:
-            current_app.logger.warning(f'[InputTooLong] Input {varname}:{clean_val} too long, resetting.')
+            logger.warning(f'[InputTooLong] Input {varname}:{clean_val} too long, resetting.')
             clean_val = ''
         CONF_DICT[varname] = clean_val
-        current_app.logger.debug(f'[UpdateConfigure] Input {varname}:{CONF_DICT[varname]} updated.')
+        logger.debug(f'[UpdateConfigure] Input {varname}:{CONF_DICT[varname]} updated.')
 
 
-    conf_mesg = lambda d: f'''Configurations\n
-        1L: {d.get('moduleID1L', ''):12s}\n1C: {d.get('moduleID1C', ''):12s}\n1R: {d.get('moduleID1R', ''):12s}\n
+    conf_mesg = lambda d: f'''Configurations
+        1L: {d.get('moduleID1L', ''):12s}\t1C: {d.get('moduleID1C', ''):12s}\t1R: {d.get('moduleID1R', ''):12s}
         Note: Configuration saved. Please verify the settings.
     '''
 
 
-    current_app.logger.info(conf_mesg(CONF_DICT))
-    current_app.logger.info(f'[Configure] Current CONF_DICT: {CONF_DICT}')
+    logger.info(conf_mesg(CONF_DICT))
+    logger.info(f'[Configure] Current CONF_DICT: {CONF_DICT}')
 
     set_server_status('configured')
     # Return JSON with message, status 200 so client JS can alert
@@ -277,14 +274,14 @@ def Configure():
 def Run():
     ''' run bash command `make run` at background '''
     CMD_ID = 'Run'
-    current_app.logger.debug(f'[ServerAction][{CMD_ID}] Got an {CMD_ID} command')
+    logger.debug(f'[ServerAction][{CMD_ID}] Got an {CMD_ID} command')
     if not check_jobmode(): return '', 204
-    current_app.logger.debug(f'[ServerAction][{CMD_ID}] Got an {CMD_ID} command executing')
+    logger.debug(f'[ServerAction][{CMD_ID}] Got an {CMD_ID} command executing')
 
     job_stop_flags[CMD_ID].clear()
     if isCommandRunable(shared_state.server_status,CMD_ID):
         set_server_status('running')
-        current_app.logger.debug('[ServerAction][{CMD_ID}] the server status is idle, activate {CMD_ID} command')
+        logger.debug('[ServerAction][{CMD_ID}] the server status is idle, activate {CMD_ID} command')
 
         def background_worker():
             try:
@@ -300,7 +297,7 @@ def Run():
         t.start()
         set_thread(CMD_ID, t)
     else:
-        current_app.logger.debug(f'[ServerAction][{CMD_ID}] Current status is {shared_state.server_status}. reject "{CMD_ID}" command')
+        logger.debug(f'[ServerAction][{CMD_ID}] Current status is {shared_state.server_status}. reject "{CMD_ID}" command')
 
     return '', 204
 
@@ -312,7 +309,7 @@ def Stop():
 
     set_server_status('stopping')
     job_stop_flags['Run'].set()
-    current_app.logger.debug(f'[ServerAction][Stop] set job_stop_flags as True')
+    logger.debug(f'[ServerAction][Stop] set job_stop_flags as True')
 
     if job_thread['Run'] and job_thread['Run'].is_alive():
         job_thread['Run'].join()
@@ -344,7 +341,7 @@ def Destroy():
     if isCommandRunable(shared_state.server_status,CMD_ID):
         set_server_status('destroying')
         for name, flag in job_stop_flags.items(): flag.set()
-        current_app.logger.debug(f'[ServerAction][{CMD_ID}] set ALL job_stop_flags as True')
+        logger.debug(f'[ServerAction][{CMD_ID}] set ALL job_stop_flags as True')
 
         for name, t in job_thread.items():
             if t and t.is_alive():
@@ -352,7 +349,7 @@ def Destroy():
 
         ## after command Run finished, reset the flag
         for name, flag in job_stop_flags.items(): flag.clear()
-        current_app.logger.debug(f'[ServerAction][{CMD_ID}] reset ALL job_stop_flags')
+        logger.debug(f'[ServerAction][{CMD_ID}] reset ALL job_stop_flags')
 
         def background_worker():
             try:
@@ -367,7 +364,7 @@ def Destroy():
 
         set_server_status('destroyed')
     else:
-        current_app.logger.debug(f'[ServerAction][{CMD_ID}] Current status is {shared_state.server_status}. reject "{CMD_ID}" command')
+        logger.debug(f'[ServerAction][{CMD_ID}] Current status is {shared_state.server_status}. reject "{CMD_ID}" command')
     return '', 204
 
 @app.route('/status')
@@ -392,5 +389,5 @@ if __name__ == '__main__':
 
     @app_main.route("/")
     def index():
-        return render_template("index_task1.html")
+       return render_template("index_task1.html")
     app_main.run(debug=True)

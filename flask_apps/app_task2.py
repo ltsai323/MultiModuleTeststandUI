@@ -56,7 +56,7 @@ job_stop_flags = {
         }
 
 def bb(val):
-    logger.debug(f'checking point {val}')
+    logger.warn(f'checking point {val}')
 def check_jobmode() -> bool:
     if not shared_state.jobmode:
         logger.debug(f'[ReplaceJobMode] jobmode modified from None to {JOBMODE}')
@@ -257,8 +257,8 @@ def Configure():
         current_app.logger.debug(f'[UpdateConfigure] Input {varname}:{CONF_DICT[varname]} updated.')
 
 
-    conf_mesg = lambda d: f'''Configurations
-        1L: {d.get('moduleID1L', ''):12s}\t1C: {d.get('moduleID1C', ''):12s}\t1R: {d.get('moduleID1R', ''):12s}
+    conf_mesg = lambda d: f'''Configurations\n
+        1L: {d.get('moduleID1L', ''):12s}\n1C: {d.get('moduleID1C', ''):12s}\n1R: {d.get('moduleID1R', ''):12s}\n
         Note: Configuration saved. Please verify the settings.
     '''
 
@@ -351,7 +351,7 @@ def Destroy():
                 t.join() # waiting for all jobs finished
 
         ## after command Run finished, reset the flag
-        for name, flag in job_stop_flags.items(): flag.set()
+        for name, flag in job_stop_flags.items(): flag.clear()
         current_app.logger.debug(f'[ServerAction][{CMD_ID}] reset ALL job_stop_flags')
 
         def background_worker():
