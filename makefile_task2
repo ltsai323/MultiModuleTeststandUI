@@ -27,7 +27,7 @@ moduleID1L=320XHF4CPM00160
 subrun1L: ## run module [moduleID1L=320XHF3CNT1000][runtimeout=15]
 	moduleID=$(moduleID1L); pullerPORT=6002; kriaIP=192.168.50.153; \
 			if [ "$$moduleID" != "" ];then \
-			sh scripts/run_single_module.sh $$pullerPORT $$kriaIP $$moduleID $(runtimeout)  ; \
+			sh $${BASH_SCRIPT_FOLDER}/run_single_module.sh $$pullerPORT $$kriaIP $$moduleID $(runtimeout)  ; \
 			if [ "`tail -n1 logs/log_$${moduleID}_takedata.txt`" != "FINISHED" ];then sh scripts/run_single_module.sh $$pullerPORT $$kriaIP $$moduleID $(runtimeout)  ;  fi; \
 			if [ "`tail -n1 logs/log_$${moduleID}_takedata.txt`" != "FINISHED" ];then sh scripts/run_single_module.sh $$pullerPORT $$kriaIP $$moduleID $(runtimeout)  ;  fi; \
 			else echo $* is stopped; fi
@@ -36,7 +36,7 @@ moduleID1C=320XHT4CPM00019
 subrun1C: ## run module [moduleID1L=320XHF3CNT1000][runtimeout=15]
 	moduleID=$(moduleID1C); pullerPORT=6003; kriaIP=192.168.50.152; \
 			if [ "$$moduleID" != "" ];then \
-			sh scripts/run_single_module.sh $$pullerPORT $$kriaIP $$moduleID $(runtimeout)  ; \
+			sh $${BASH_SCRIPT_FOLDER}/run_single_module.sh $$pullerPORT $$kriaIP $$moduleID $(runtimeout)  ; \
 			if [ "`tail -n1 logs/log_$${moduleID}_takedata.txt`" != "FINISHED" ];then sh scripts/run_single_module.sh $$pullerPORT $$kriaIP $$moduleID $(runtimeout)  ;  fi; \
 			if [ "`tail -n1 logs/log_$${moduleID}_takedata.txt`" != "FINISHED" ];then sh scripts/run_single_module.sh $$pullerPORT $$kriaIP $$moduleID $(runtimeout)  ;  fi; \
 			else echo $* is stopped; fi
@@ -53,6 +53,7 @@ destroy: ## destroy
 test: # test function. Notice the array should be separated with space and quoted with ". [theARRAY="0 1 2 3 4 5"]
 	$(call check_defined, theARRAY)
 	python3 t.py $(theARRAY)
+
 
 clean: # clean all logs
 	/bin/rm -f logs/log*.txt

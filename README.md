@@ -36,7 +36,8 @@ then open the link [http://127.0.0.1:5001](http://127.0.0.1:5001)
 ## GUI developing
 ### app.py
 Which provided a entry webpage at [mainpage](http://127.0.0.1:5001) for selecting job mode.
-This selection choosed 
+
+
 ### flask_apps/app_task2.py
 Provide a sub webpage executing `make -f makefile_task2` with related option.
 This job mode is to take pedestal run parallelly on modules.
@@ -70,9 +71,4 @@ Each single kria runs command. Note that pullerPort should be modified for assig
     - `./daq-client -p 6002 &`
 * waiting for 8 seconds
 * `python3 pedestal_run.py -i $kriaIP -f $yamlfile -d $moduleID -I --pullerPort=6002`
-
-
-
-
-
 

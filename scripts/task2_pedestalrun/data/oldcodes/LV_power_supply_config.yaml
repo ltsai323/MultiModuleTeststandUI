@@ -1,6 +1,0 @@
-power_supply_1:
-  resource: "ASRL/dev/ttyUSB0::INSTR"
-  voltage: 1.5
-power_supply_2:
-  resource: "ASRL/dev/ttyUSB1::INSTR"
-  voltage: 1.5

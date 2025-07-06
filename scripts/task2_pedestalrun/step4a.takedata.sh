@@ -52,8 +52,8 @@ python3 pedestal_run.py -i $kriaIP -f $yamlfile -d $moduleID -I --pullerPort=$us
 show_sub_dirs $data_collect_path > runfolders_new # collect output folders after run
 
 # grab new generated folder and put the folder to DAQresults/$jobTAG/$moduleID
-for new_folder  in `comm -13 $runfolders_old $runfolders_new`; do
-  sh step4.1.move_result_to_DAQresults.sh $jobTAG $moduleID $new_folder
+for new_folder  in `comm -13 $runfolders_old $runfolders_new`; do # asdf
+  sh ${BASH_SCRIPT_FOLDER}/step4.1.move_result_to_DAQresults.sh $jobTAG $moduleID $new_folder # asdf
 done
 /bin/rm $runfolders_old $runfolders_new
 

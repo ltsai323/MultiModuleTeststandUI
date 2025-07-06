@@ -10,7 +10,7 @@ __check_defined = \
 default_timeout = 15
 run_single_module: ## run single module [JobName=testjob]
 	$(call check_defined, JobName)
-	sh run_single_module.sh $(JobName) $(default_timeout)
+	sh run_single_module_.sh $(JobName) $(default_timeout)
 
 
 IN_ARGS = [opts]
