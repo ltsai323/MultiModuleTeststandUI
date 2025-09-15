@@ -10,6 +10,7 @@ from wtforms import StringField, SubmitField
 import flask_apps.shared_state as shared_state
 from PythonTools.server_status import isCommandRunable
 import re
+import os
 ### HTTP status codes https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status
 
 JOBMODE = 'task1' # pedestal run
@@ -345,6 +346,7 @@ def Destroy():
         set_server_status('destroying')
         for name, flag in job_stop_flags.items(): flag.set()
         current_app.logger.debug(f'[ServerAction][{CMD_ID}] set ALL job_stop_flags as True')
+        os.system('pkill make 2>/dev/null') ## force kill all jobs from make commands
 
         for name, t in job_thread.items():
             if t and t.is_alive():
