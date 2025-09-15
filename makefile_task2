@@ -24,22 +24,26 @@ run: subrun1L subrun1C ## run module. Once moduleID selected, activate related s
 
 moduleID1L=320XHF4CPM00160
 # rety twice if error found
+conf_kriaIP1L:=192.168.50.153 # 
 subrun1L: ## run module [moduleID1L=320XHF3CNT1000][runtimeout=15]
-	moduleID=$(moduleID1L); pullerPORT=6002; kriaIP=192.168.50.153; \
-			if [ "$$moduleID" != "" ];then \
-			sh $${BASH_SCRIPT_FOLDER}/run_single_module.sh $$pullerPORT $$kriaIP $$moduleID $(runtimeout)  ; \
-			if [ "`tail -n1 logs/log_$${moduleID}_takedata.txt`" != "FINISHED" ];then sh scripts/run_single_module.sh $$pullerPORT $$kriaIP $$moduleID $(runtimeout)  ;  fi; \
-			if [ "`tail -n1 logs/log_$${moduleID}_takedata.txt`" != "FINISHED" ];then sh scripts/run_single_module.sh $$pullerPORT $$kriaIP $$moduleID $(runtimeout)  ;  fi; \
-			else echo $* is stopped; fi
+	logNAME=subrun1L; pullerPORT=6002; \
+		function execfunc() { sh $${BASH_SCRIPT_FOLDER}/run_single_module.sh $$pullerPORT $(conf_kriaIP1L) $(moduleID1L) $(runtimeout) $$logNAME; }; \
+		if [ "$(moduleID1L)" != "" ];then \
+			execfunc; \
+			if [ "`tail -n1 logs/log_$${logNAME}_takedata.txt`" != "FINISHED" ];then execfunc; fi; \
+			if [ "`tail -n1 logs/log_$${logNAME}_takedata.txt`" != "FINISHED" ];then execfunc; fi; \
+		else echo $* is stopped; fi
 
 moduleID1C=320XHT4CPM00019
-subrun1C: ## run module [moduleID1L=320XHF3CNT1000][runtimeout=15]
-	moduleID=$(moduleID1C); pullerPORT=6003; kriaIP=192.168.50.152; \
-			if [ "$$moduleID" != "" ];then \
-			sh $${BASH_SCRIPT_FOLDER}/run_single_module.sh $$pullerPORT $$kriaIP $$moduleID $(runtimeout)  ; \
-			if [ "`tail -n1 logs/log_$${moduleID}_takedata.txt`" != "FINISHED" ];then sh scripts/run_single_module.sh $$pullerPORT $$kriaIP $$moduleID $(runtimeout)  ;  fi; \
-			if [ "`tail -n1 logs/log_$${moduleID}_takedata.txt`" != "FINISHED" ];then sh scripts/run_single_module.sh $$pullerPORT $$kriaIP $$moduleID $(runtimeout)  ;  fi; \
-			else echo $* is stopped; fi
+conf_kriaIP1C:=192.168.50.152 # 
+subrun1C: ## run module [moduleID1C=320XHF3CNT1000][runtimeout=15]
+	logNAME=subrun1C; pullerPORT=6003; \
+		function execfunc() { sh $${BASH_SCRIPT_FOLDER}/run_single_module.sh $$pullerPORT $(conf_kriaIP1C) $(moduleID1C) $(runtimeout) $$logNAME; }; \
+		if [ "$(moduleID1C)" != "" ];then \
+			execfunc; \
+			if [ "`tail -n1 logs/log_$${logNAME}_takedata.txt`" != "FINISHED" ];then execfunc; fi; \
+			if [ "`tail -n1 logs/log_$${logNAME}_takedata.txt`" != "FINISHED" ];then execfunc; fi; \
+		else echo $* is stopped; fi
 
 
 
@@ -51,8 +55,13 @@ destroy: ## destroy
 	@echo "[$(JobName) - StatusChangeDestroyed] Destroy finished"
 
 test: # test function. Notice the array should be separated with space and quoted with ". [theARRAY="0 1 2 3 4 5"]
-	$(call check_defined, theARRAY)
-	python3 t.py $(theARRAY)
+	aa=33; bb=55; cc=77; \
+		 function aaa() { echo $${aa} and $${bb} and $${cc} with $$1; } ; \
+		 aaa 111 ; \
+		 aaa 333 ; \
+		 aaa 555 ;
+
+	
 
 
 clean: # clean all logs

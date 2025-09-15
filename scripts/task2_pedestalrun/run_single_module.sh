@@ -3,11 +3,12 @@ pullerPORT=${1:-6001}
 kriaIP=${2:-192.168.50.153}
 hexaboardID=${3:-320XHF4CPM00160}
 monitorTIMEOUT=${4:-20}
+logTAG=${5:-testlog}
 
-tmpPIDlist="tmp_PIDlist_${hexaboardID}_run.txt"
-FIRST_LOG="logs/log_${hexaboardID}_daqclient.txt"
-SECOND_LOG="logs/log_${hexaboardID}_takedata.txt"
-ALL_LOG="logs/log_${hexaboardID}_alllogs.txt"
+tmpPIDlist="tmp_PIDlist_${logTAG}_run.txt"
+FIRST_LOG="logs/log_${logTAG}_daqclient.txt"
+SECOND_LOG="logs/log_${logTAG}_takedata.txt"
+ALL_LOG="logs/log_${logTAG}_alllogs.txt"
 
 
 
