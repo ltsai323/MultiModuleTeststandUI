@@ -10,17 +10,18 @@ __check_defined = \
 
 setup1_clone_andrewGUI: ## clone Andrew's GUI and edit configuration
 	echo "cloning Andrew Robert's GUI and modify configuration.yaml"
-	git clone https://gitlab.cern.ch/acrobert/hgcal-module-testing-gui.git
+	#git clone https://gitlab.cern.ch/acrobert/hgcal-module-testing-gui.git
+	git clone https://gitlab.cern.ch/ltsai/hgcal-module-testing-gui.git -b mmts ## clone modified branch
 	cd hgcal-module-testing-gui && python3 writeconfig.py
-	nano configuration.yaml
+	nano hgcal-module-testing-gui/configuration.yaml
 
 andrewCONF := hgcal-module-testing-gui/configuration.yaml
 nodataPLOT := data/daqplots.nodata.png
 setup2_create_daq_storage: ## According to Andrew's configuration, create dir "daqplots" in DataLoc and put default png file in this folder
 	echo "mkdir directory conf['DataLoc']/daqplots/ according to $(andrewCONF)"
 	data_loc=`python3 scripts/access_yaml_var.py $(andrewCONF) DataLoc`; \
-					 mkdir -p $(data_loc)/daqplots ; \
-					 cp $(nodataPLOT) $(data_loc)/
+					 mkdir -p $${data_loc}/daqplots ; \
+					 cp $(nodataPLOT) $${data_loc}/
 setup3_create_daqclient_service: ## edit daq-client.service for using port 6001~6020. And put them into ~/.config/systemd/user/. Use `systemctl --user restart daq-client-port6001.service` to active service
 	echo "creating daq-client-port*.service in ~/.config/systemd/user/"
 	sh scripts/setup.create_daqclients.sh
