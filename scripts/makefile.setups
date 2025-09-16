@@ -9,6 +9,7 @@ __check_defined = \
 
 
 setup1_clone_andrewGUI: ## clone Andrew's GUI and edit configuration
+	echo "cloning Andrew Robert's GUI and modify configuration.yaml"
 	git clone https://gitlab.cern.ch/acrobert/hgcal-module-testing-gui.git
 	cd hgcal-module-testing-gui && python3 writeconfig.py
 	nano configuration.yaml
@@ -16,16 +17,22 @@ setup1_clone_andrewGUI: ## clone Andrew's GUI and edit configuration
 andrewCONF := hgcal-module-testing-gui/configuration.yaml
 nodataPLOT := data/daqplots.nodata.png
 setup2_create_daq_storage: ## According to Andrew's configuration, create dir "daqplots" in DataLoc and put default png file in this folder
+	echo "mkdir directory conf['DataLoc']/daqplots/ according to $(andrewCONF)"
 	data_loc=`python3 scripts/access_yaml_var.py $(andrewCONF) DataLoc`; \
 					 mkdir -p $(data_loc)/daqplots ; \
 					 cp $(nodataPLOT) $(data_loc)/
-setup3_create_daqclient_service: ## edit daq-client.service for using port 6001~6020. And put them into /usr/lib/systemd/system. Use `systemctl --user restart daq-client-port6001.service` to active service
+setup3_create_daqclient_service: ## edit daq-client.service for using port 6001~6020. And put them into ~/.config/systemd/user/. Use `systemctl --user restart daq-client-port6001.service` to active service
+	echo "creating daq-client-port*.service in ~/.config/systemd/user/"
 	sh scripts/setup.create_daqclients.sh
 
 step4_modify_teststand_IP_address: ## create and modify data/mmts_configuration.yaml
+	echo create and edit data/mmts_configuration.yaml 
 	cp data/mmts_configuration.yaml.template data/mmts_configuration.yaml
 	nano data/mmts_configuration.yaml
 
+step5_open_firewall_port5001: ## open firewall port 5001 such you can access server http://127.0.0.1:5001 
+	echo requesting permission for opening firewall port 5001
+	sudo sh data/open_firewall.sh
 
 all: setup1_clone_andrewGUI setup2_create_daq_storage setup3_create_daqclient_service step4_modify_teststand_IP_address
 
