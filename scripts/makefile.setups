@@ -1,0 +1,35 @@
+.PHONY: help
+
+check_defined = \
+    $(strip $(foreach 1,$1, \
+    $(call __check_defined,$1,$(strip $(value 2)))))
+__check_defined = \
+    $(if $(value $1),, \
+    $(error Undefined $1$(if $2, ($2))))
+
+
+setup1_clone_andrewGUI: ## clone Andrew's GUI and edit configuration
+	git clone https://gitlab.cern.ch/acrobert/hgcal-module-testing-gui.git
+	cd hgcal-module-testing-gui && python3 writeconfig.py
+	nano configuration.yaml
+
+andrewCONF := hgcal-module-testing-gui/configuration.yaml
+nodataPLOT := data/daqplots.nodata.png
+setup2_create_daq_storage: ## According to Andrew's configuration, create dir "daqplots" in DataLoc and put default png file in this folder
+	data_loc=`python3 scripts/access_yaml_var.py $(andrewCONF) DataLoc`; \
+					 mkdir -p $(data_loc)/daqplots ; \
+					 cp $(nodataPLOT) $(data_loc)/
+setup3_create_daqclient_service: ## edit daq-client.service for using port 6001~6020. And put them into /usr/lib/systemd/system. Use `systemctl --user restart daq-client-port6001.service` to active service
+	sh scripts/setup.create_daqclients.sh
+
+
+all: setup1_clone_andrewGUI setup2_create_daq_storage setup3_create_daqclient_service
+
+
+IN_ARGS = [opts]
+
+help:  ## Display this help
+	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make \033[32m<command>\033[0m $(IN_ARGS)\n\nCommands:\n\033[36m\033[0m\n"} /^[0-9a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+.DEFAULT_GOAL := help
+
