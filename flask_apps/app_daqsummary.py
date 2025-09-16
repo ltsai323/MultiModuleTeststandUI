@@ -26,7 +26,6 @@ DEFAULT_IMG = os.path.expanduser("~/stored_data/daqplots.nodata.png")
 BLOCKS = [
         "1L", "1C", "1R",
         "2L", "2C", "2R",
-        "3L", "3C", "3R",
         ]
 
 # Allow only strict file names like "1L-adc_mean.png"
