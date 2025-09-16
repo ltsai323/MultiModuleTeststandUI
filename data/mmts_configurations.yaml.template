@@ -1,0 +1,28 @@
+1L:
+  IP:
+  type: Kria
+  pullerPORT: 6001
+1C:
+  IP: 192.168.50.153
+  type: Kria
+  pullerPORT: 6002
+1R:
+  IP: 
+  type: 
+  pullerPORT: 6003
+2L:
+  IP: 
+  type: 
+  pullerPORT: 6004
+2C:
+  IP: 
+  type: 
+  pullerPORT: 6005
+2R:
+  IP: 
+  type: 
+  pullerPORT: 6006
+### pullerPORT should be integer between 6001~6020 and they are related to `systemctl --user status daq-client-port6001.service`
+### pullerPORT should be unique number, please don't share the value.
+### type: Kria and Trenz
+### 1L 1C 1R means row 1 column Left, Center, Right

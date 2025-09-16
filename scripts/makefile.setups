@@ -22,8 +22,12 @@ setup2_create_daq_storage: ## According to Andrew's configuration, create dir "d
 setup3_create_daqclient_service: ## edit daq-client.service for using port 6001~6020. And put them into /usr/lib/systemd/system. Use `systemctl --user restart daq-client-port6001.service` to active service
 	sh scripts/setup.create_daqclients.sh
 
+step4_modify_teststand_IP_address: ## create and modify data/mmts_configuration.yaml
+	cp data/mmts_configuration.yaml.template data/mmts_configuration.yaml
+	nano data/mmts_configuration.yaml
 
-all: setup1_clone_andrewGUI setup2_create_daq_storage setup3_create_daqclient_service
+
+all: setup1_clone_andrewGUI setup2_create_daq_storage setup3_create_daqclient_service step4_modify_teststand_IP_address
 
 
 IN_ARGS = [opts]

@@ -3,6 +3,6 @@
 .*.swo
 log_*
 *.log
-*/the_conf.yaml
+*.yaml
 DAQresults/*
 
