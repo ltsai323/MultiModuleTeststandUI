@@ -9,8 +9,8 @@ def SkipCMD(runCOND, confCONTENT):
     
     log.debug(f'[GotCOND] SkipCMD() got condiction "{runCOND}"')
     if runCOND == 'all': return False
-    if runCOND == 'TranzOnly': return confCONTENT != 'Tranz'
-    if runCOND == 'KriaOnly' : return confCONTENT != 'Kria'
+    if runCOND == 'TranzOnly': return confCONTENT['type'] != 'Tranz'
+    if runCOND == 'KriaOnly' : return confCONTENT['type'] != 'Kria'
     log.warning(f'[InvalidCOND] SkipCMD() got invalid condiction "{runCOND}". So no any command will be executed')
     
     return True
@@ -38,10 +38,10 @@ if __name__ == '__main__':
             ipADDR = confCONTENT['IP']
             tsKIND = confCONTENT['type']
             if not ipADDR:
-                log.debug(f'[Skip] position {mmtsPOS} skipped due to no IP address')
+                log.info(f'[Skip] position {mmtsPOS} skipped due to no IP address')
                 continue
             if SkipCMD(runCOND, confCONTENT):
-                log.debug(f'[Skip] position {mmtsPOS} skipped due to SkipCMD()')
+                log.info(f'[Skip] position {mmtsPOS} skipped due to SkipCMD()')
                 continue
             log.info(f'[BashCMD] ssh -i {ssh_key} root@{ipADDR} "{bashCMD}"')
             os.system(f'ssh -i {ssh_key} root@{ipADDR} "{bashCMD}"')
