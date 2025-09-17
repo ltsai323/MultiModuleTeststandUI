@@ -10,3 +10,5 @@ server_status = 'startup'
 #job_stop_flag - threading.Event()
 #job_thread = {'thread': None}
 
+next_runtag = '' ## run tag used in `make run runTAG=next_runtag`
+
