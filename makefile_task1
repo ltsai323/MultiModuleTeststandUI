@@ -15,6 +15,7 @@ argline2 = \n\t\t[moduleID2L][moduleID2C][moduleID2R]
 pedestal_%:
 	@moduleID="$($(addprefix moduleID,$*))"; if [ "$${moduleID}" == "" ]; then echo [SkipModule] $(addprefix moduleID,$*) received empty, skip; fi
 	@moduleID="$($(addprefix moduleID,$*))"; if [ "$${moduleID}" != "" ]; then \
+		source init_bash_vars.sh && \
 		sh scripts/run.pedestal.sh "$${moduleID}" "$(runTAG)" "$*" "$(moduleSTATUS)" "$(inspector)"; \
 		fi
 		
