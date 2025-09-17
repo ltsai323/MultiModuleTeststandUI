@@ -4,3 +4,4 @@
 *.log
 *.yaml
 DAQresults/*
+init_bash_vars.sh
