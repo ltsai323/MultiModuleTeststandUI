@@ -17,10 +17,19 @@ app = Blueprint('daqsummary', __name__, url_prefix="/daqsummary")
 #app = Flask(__name__)
 
 # --- Configuration ---
-# Base directory where your run1 PNGs live. You can override via env var DAQPLOTS_DIR.
-BASE_PLOTS_DIR = os.environ.get("DAQPLOTS_DIR", os.path.expanduser("~/stored_data/daqplots/"))
-# Default/fallback image when a required figure is missing or fails to load.
-DEFAULT_IMG = os.path.expanduser("~/stored_data/daqplots.nodata.png")
+# # Base directory where your run1 PNGs live. You can override via env var DAQPLOTS_DIR.
+# BASE_PLOTS_DIR = os.environ.get("DAQPLOTS_DIR", os.path.expanduser("~/stored_data/daqplots/"))
+# # Default/fallback image when a required figure is missing or fails to load.
+# DEFAULT_IMG = os.path.expanduser("~/stored_data/daqplots.nodata.png")
+andrewCONF = f'{os.environ.get("AndrewModuleTestingGUI_BASE")}/configuration.yaml'
+try:
+    with open(andrewCONF, 'r') as fIN:
+        import yaml
+        conf = yaml.safe_load(fIN)
+        BASE_PLOTS_DIR = f'{conf["DataLoc"]}/daqplots/'
+        DEFAULT_IMG = f'{conf["DataLoc"]}/daqplots.nodata.png'
+except FileNotFoundError as e:
+    raise FileNotFoundError(f'\n\n[NoEnvVar] Need to `source ./init_bash_vars.sh` before execute this file') from e
 
 # Blocks/keys to render (3 columns x 2 rows)
 BLOCKS = [
@@ -233,7 +242,7 @@ if __name__ == "__main__":
     @_app.route('/')
     @_app.route('/index')
     def index():
-        return redirect( url_for('daqsummary.gallery', run='run1') )
+        return redirect( url_for('daqsummary.gallery', run='testrun') )
 
     _app.register_blueprint(app)
     _app.run(host="0.0.0.0", port=5001, debug=True)

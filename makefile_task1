@@ -15,7 +15,7 @@ argline2 = \n\t\t[moduleID2L][moduleID2C][moduleID2R]
 pedestal_%:
 	@moduleID="$($(addprefix moduleID,$*))"; if [ "$${moduleID}" == "" ]; then echo [SkipModule] $(addprefix moduleID,$*) received empty, skip; fi
 	@moduleID="$($(addprefix moduleID,$*))"; if [ "$${moduleID}" != "" ]; then \
-		source init_bash_vars.sh && \
+		source ./init_bash_vars.sh && \
 		sh scripts/run.pedestal.sh "$${moduleID}" "$(runTAG)" "$*" "$(moduleSTATUS)" "$(inspector)"; \
 		fi
 		
@@ -29,7 +29,7 @@ pedestal_run: $(addprefix pedestal_,$(MODULE_POSITION)) ## run all pedestals [-j
 initialize: ## initialize
 	python3 scripts/send_command_to_teststand.py data/mmts_configurations.yaml KriaOnly "kconn_pwr on"
 
-run: $(addprefix pedestal_,$(MODULE_POSITION)) ## pedestal run parallelly [-jN]
+run: $(addprefix pedestal_,$(MODULE_POSITION)) ## pedestal run parallelly [-jN][runTAG=testrun][moduleSTATUS=Untaped][inspector=test-user]
 	echo all pedestal run finished
 stop: ## stop pedestal run
 	echo everything stopped ## nothing will be put in makefile, since python script will execute "pkill" and user will execute "ctrl+c"

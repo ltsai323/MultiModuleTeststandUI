@@ -6,6 +6,9 @@ from flask_wtf.csrf import CSRFProtect
 import logging
 import logging.config
 from datetime import datetime
+
+import os
+os.system('mkdir -p logs')
 logfile = datetime.now().strftime("logs/app_%Y%m%d-%H%M%S.log")
 
 
@@ -82,12 +85,15 @@ logging.config.dictConfig(LOGGING_CONFIG)
 
 import flask_apps.app_task1    as app_task1
 import flask_apps.app_task2    as app_task2
+import flask_apps.app_daqsummary as app_daqsummary
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = '7eCZ^6nUxb6hjN5EbLYak&fvt'
 csrf = CSRFProtect(app)
 app.register_blueprint(app_task1.app, url_prefix='/task1')
 app.register_blueprint(app_task2.app, url_prefix='/task2')
+
+app.register_blueprint(app_daqsummary.app)
 
 
 @app.route("/")
