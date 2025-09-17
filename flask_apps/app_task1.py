@@ -375,9 +375,17 @@ def Destroy():
         current_app.logger.debug(f'[ServerAction][{CMD_ID}] Current status is {shared_state.server_status}. reject "{CMD_ID}" command')
     return '', 204
 
+III = 0
 @app.route('/status')
 def status():
-    return jsonify( {'status':shared_state.server_status, 'jobmode': shared_state.jobmode} )
+    global III
+    import random
+    rr = random.randint(1, 10)
+    if rr > 7: III += 1
+    
+    newcontent = f'test{III}'
+    shared_state.next_runtag = newcontent
+    return jsonify( {'status':shared_state.server_status, 'jobmode': shared_state.jobmode, 'DAQres': shared_state.next_runtag} )
 
 
 @app.route('/main.html')
