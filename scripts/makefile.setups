@@ -27,10 +27,10 @@ setup3_create_daqclient_service: ## edit daq-client.service for using port 6001~
 	echo "creating daq-client-port*.service in ~/.config/systemd/user/"
 	sh scripts/setup.create_daqclients.sh
 
-step4_modify_teststand_IP_address: ## create and modify data/mmts_configuration.yaml
-	echo create and edit data/mmts_configuration.yaml 
-	cp data/mmts_configuration.yaml.template data/mmts_configuration.yaml
-	nano data/mmts_configuration.yaml
+step4_modify_teststand_IP_address: ## create and modify data/mmts_configurations.yaml
+	echo create and edit data/mmts_configurations.yaml 
+	cp data/mmts_configurations.yaml.template data/mmts_configurations.yaml
+	nano data/mmts_configurations.yaml
 
 step5_open_firewall_port5001: ## open firewall port 5001 such you can access server http://127.0.0.1:5001 
 	echo requesting permission for opening firewall port 5001
