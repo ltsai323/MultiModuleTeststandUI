@@ -39,7 +39,7 @@ echo output file is $outFILE
 
 
 
-Create_user_daqclient_services 6001
+#Create_user_daqclient_services 6001 ## not to use 6001 because daq-client.services uses it
 Create_user_daqclient_services 6002
 Create_user_daqclient_services 6003
 Create_user_daqclient_services 6004
@@ -63,5 +63,6 @@ Create_user_daqclient_services 6020
 
 echo "[Usage] command 'systemctl --user restart daq-client-port6001.service'"
 
-#systemctl daemon-reload # no need to reload user daemon
+systemctl --user daemon-reload ## reload user daemon
+#systemctl daemon-reload # no need to reload system daemon
 #systemctl list-units 
