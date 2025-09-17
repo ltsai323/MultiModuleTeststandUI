@@ -194,7 +194,8 @@ def Init():
 
     return '', 204
 
-alphanumeric_validator = Regexp("^[a-zA-Z0-9]*$", message="Only letters and numbers allowed.")
+alphanumeric_validator = Regexp("^[a-zA-Z0-9\-]*$", message="Only letters and numbers and dash allowed.")
+#alphanumeric_validator = Regexp("^[a-zA-Z0-9]*$", message="Only letters and numbers allowed.")
 class ConfigForm(FlaskForm):
     moduleID1L = StringField("moduleID1L", validators=[alphanumeric_validator])
     moduleID1C = StringField("moduleID1C", validators=[alphanumeric_validator])
@@ -239,7 +240,8 @@ def Configure():
 
 
     def ignore_special_characters(string):
-        return re.sub(r'[^A-Za-z0-9]+', '', string) if string else ''
+        return re.sub(r'[^A-Za-z0-9\-]+', '', string) if string else '' ## allow capital characters, numbers
+        #return re.sub(r'[^A-Za-z0-9]+', '', string) if string else '' ## allow capital characters, numbers and dash
 
 
     # Update CONF_DICT only if field has data
@@ -270,6 +272,8 @@ def Configure():
     set_server_status('configured')
     # Return JSON with message, status 200 so client JS can alert
     return jsonify({'status': 'success', 'message': conf_mesg(CONF_DICT)}), 200
+
+    ##### asdf need to add a check that required "-" in string
 
 
 
@@ -314,6 +318,7 @@ def Stop():
     set_server_status('stopping')
     job_stop_flags['Run'].set()
     current_app.logger.debug(f'[ServerAction][Stop] set job_stop_flags as True')
+    os.system('pkill make 2>/dev/null') ## force kill all jobs from make commands
 
     if job_thread['Run'] and job_thread['Run'].is_alive():
         job_thread['Run'].join()
