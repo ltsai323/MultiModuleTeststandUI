@@ -242,10 +242,10 @@ document.getElementById('pymodule_configurations').addEventListener('submit', fu
 });
 </script>
 <script>
-  // input restriction. All input field in class inputMOduleID from form #pymodule_configurations allowed only digit and capital character. Length<20
+  // input restriction. All input field in class inputMOduleID from form #pymodule_configurations allowed only digit and capital character and dash character. Length<20
   document.querySelectorAll('#pymodule_configurations input.inputModuleID').forEach(input => {
     input.addEventListener('input', function(e) {
-      this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 20);
+      this.value = this.value.toUpperCase().replace(/[^A-Z0-9\-]/g, '').slice(0, 20);
     });
   });
 //   document.getElementById('moduleID1L').addEventListener('input', function(e) {
