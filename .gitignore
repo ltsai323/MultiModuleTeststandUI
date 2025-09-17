@@ -1,7 +1,7 @@
 *.pyc
 .*.swp
 .*.swo
-log_*
+log/*
 *.log
 *.yaml
 DAQresults/*
