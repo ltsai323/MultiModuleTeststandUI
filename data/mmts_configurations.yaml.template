@@ -2,28 +2,28 @@ PCKeyLoc:
 1L:
   IP:
   type: Kria
-  pullerPORT: 6001
+  pullerPORT: 6002
 1C:
   IP:
   type: Kria
-  pullerPORT: 6002
+  pullerPORT: 6003
 1R:
   IP: 
   type: Kria
-  pullerPORT: 6003
+  pullerPORT: 6004
 2L:
   IP: 
   type: Trenz
-  pullerPORT: 6004
+  pullerPORT: 6005
 2C:
   IP: 
   type: Kria
-  pullerPORT: 6005
+  pullerPORT: 6006
 2R:
   IP: 
   type: Kria
-  pullerPORT: 6006
-### pullerPORT should be integer between 6001~6020 and they are related to `systemctl --user status daq-client-port6001.service`
+  pullerPORT: 6007
+### pullerPORT should be integer between 6002~6020 and they are related to `systemctl --user status daq-client-port6002.service`. Please not to use 6001 because daq-client.services uses it
 ### pullerPORT should be unique number, please don't share the value.
 ### type: Kria and Trenz
 ### 1L 1C 1R means row 1 column Left, Center, Right
