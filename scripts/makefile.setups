@@ -25,6 +25,7 @@ _setup1_clone_andrewGUI: # clone Andrew's GUI and edit configuration
 nodataPLOT := data/daqplots.nodata.png
 setup2_create_daq_storage: ## According to Andrew's configuration, create dir "daqplots" in DataLoc and put default png file in this folder
 	read -p 'modify init_bash_vars.sh, especially for variable "AndrewModuleTestingGUI_BASE"'
+	cp data/init_bash_vars.sh.template init_bash_vars.sh
 	nano init_bash_vars.sh
 	source ./init_bash_vars.sh; \
 		echo [LoadedVar] directory loading Andrew ModuleTestGUI: $$AndrewModuleTestingGUI_BASE; \
