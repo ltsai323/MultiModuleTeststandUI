@@ -10,4 +10,4 @@ export BASH_SCRIPT_FOLDER=$PWD/scripts/task2_pedestalrun/
 export FLASK_BASE=$CURRENT_PATH
 export AndrewModuleTestingGUI_BASE=
 
-[ "$AndrewModuleTestingGUI_BASE" == "" ] && echo "[InvalidPath] Need to modify variable 'AndrewModuleTestingGUI_BASE' in  $THIS_SCRIPT" && exit 1;
+if [ "$AndrewModuleTestingGUI_BASE" == "" ]; then echo "[InvalidPath] Need to modify variable 'AndrewModuleTestingGUI_BASE' in  $THIS_SCRIPT" && exit 1; fi
