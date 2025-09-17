@@ -273,8 +273,6 @@ def Configure():
     # Return JSON with message, status 200 so client JS can alert
     return jsonify({'status': 'success', 'message': conf_mesg(CONF_DICT)}), 200
 
-    ##### asdf need to add a check that required "-" in string
-
 
 
 
@@ -318,8 +316,8 @@ def Stop():
     set_server_status('stopping')
     job_stop_flags['Run'].set()
     current_app.logger.debug(f'[ServerAction][Stop] set job_stop_flags as True')
-    os.system('pkill make 2>/dev/null') ## force kill all jobs from make commands
 
+    os.system('pkill make 2>/dev/null') ## force kill all jobs from make commands
     if job_thread['Run'] and job_thread['Run'].is_alive():
         job_thread['Run'].join()
 
