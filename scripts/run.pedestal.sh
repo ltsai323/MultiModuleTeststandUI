@@ -5,12 +5,15 @@ moduleSTATUS="'$4'"
 daqINSPECTOR="'$5'"
 
 mmtsCONF=${FLASK_BASE}/data/mmts_configurations.yaml
+function the_exit() { echo "the_exit - "$1; exit 0; } ## return 0 prevent make command failed
+
 
 [ "$AndrewModuleTestingGUI_BASE" == "" ] && echo "[InvalidPath] Need to 'source init_bash_bars.sh' before use" && exit 1
 
 cd $AndrewModuleTestingGUI_BASE
 echo [BASHCMD] python3 InteractionGUI.directrun.py $mmtsCONF $moduleID $runTAG $mmtsPOSITION $moduleSTATUS $daqINSPECTOR
-python3 InteractionGUI.directrun.py $mmtsCONF $moduleID $runTAG $mmtsPOSITION $moduleSTATUS $daqINSPECTOR
-[ $? != 0 ] && echo [Error] InteractionGUI.directrun.py got error.  abort... &&  exit 0 ## return 0 prevent make command failed
+python3 InteractionGUI.directrun.py $mmtsCONF $moduleID $runTAG $mmtsPOSITION $moduleSTATUS $daqINSPECTOR \
+  || the_exit "[Error] InteractionGUI.directrun.py got error.  abort... "
+
 #python3 InteractionGUI.directrun.py "'${FLASK_BASE}/data/mmts_configurations.yaml'" '320-XH-T4C-PM-00019' 'run1' '1L' 'Untaped' 'test-user' || exit 0
 cd ..
