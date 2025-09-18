@@ -174,7 +174,6 @@ def Init():
     if isCommandRunable(shared_state.server_status,CMD_ID):
         set_server_status('initializing')
         job_stop_flags[CMD_ID].clear()
-        shared_state.DAQresult_current_modified = ''
         current_app.logger.debug('[ServerAction][{CMD_ID}] the server status is idle, activate {CMD_ID} command')
 
         def background_worker():
@@ -182,6 +181,7 @@ def Init():
                 command = ExecCMD(CMD_ID, CONF_DICT)
                 run_command(command, CMD_ID)
             finally:
+                shared_state.DAQresult_current_modified = ''
                 set_server_status('initialized')
                 logger.info("Job status set to idle.")
             logger.info('background worker ended')
