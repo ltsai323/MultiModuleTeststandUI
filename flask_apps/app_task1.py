@@ -267,6 +267,12 @@ def Configure():
     '''
 
 
+    is_empty_dict = sum( 1  if v else 0 for _,v in CONF_DICT.items()) == 0
+    if is_empty_dict:
+        errors = 'Got empty configurations!'
+        current_app.logger.warning(f'[Configure] {errors}')
+        return jsonify({'status': 'error', 'errors': errors}), 400
+
     current_app.logger.info(conf_mesg(CONF_DICT))
     current_app.logger.info(f'[Configure] Current CONF_DICT: {CONF_DICT}')
 
