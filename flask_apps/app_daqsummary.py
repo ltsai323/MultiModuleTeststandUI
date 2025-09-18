@@ -160,7 +160,7 @@ def gallery(run: str):
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
-      <title>DAQ Run1 Plots</title>
+      <title>DAQ {{run}} Plots</title>
       <style>
         body { background:#0b1020; color:#e7ecff; font-family:sans-serif; margin:0; }
         h1 { padding:20px; margin:0; }
@@ -169,7 +169,7 @@ def gallery(run: str):
       </style>
     </head>
     <body>
-      <h1>DAQ Run1 Figures</h1>
+      <h1>DAQ {{run}} Figures</h1>
       <div class="grid">
         {% for card in cards %}
           <iframe src="{{ card.url }}"></iframe>
@@ -177,7 +177,7 @@ def gallery(run: str):
       </div>
     </body>
     </html>"""
-    return render_template_string(template, cards=cards)
+    return render_template_string(template, cards=cards, run=run)
 
 
 @app.route("/gallery/<run>/<key>")
