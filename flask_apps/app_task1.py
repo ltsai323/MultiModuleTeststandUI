@@ -16,12 +16,14 @@ import os
 JOBMODE = 'SinglePedestalRun' # pedestal run
 
 andrewCONF = f'{os.environ.get("AndrewModuleTestingGUI_BASE")}/configuration.yaml'
+dirDAQresult = ''
 DEFAULT_INSPECTORS = []
 try:
     with open(andrewCONF, 'r') as fIN:
         import yaml
         conf = yaml.safe_load(fIN)
         DEFAULT_INSPECTORS = conf['Inspectors']
+        dirDAQresult = f"{conf['DataLoc']}/daqplots/"
 except FileNotFoundError as e:
     raise FileNotFoundError(f'\n\n[NoEnvVar] Need to `source ./init_bash_vars.sh` before execute this file') from e
 
@@ -401,7 +403,6 @@ def Destroy():
         current_app.logger.debug(f'[ServerAction][{CMD_ID}] Current status is {shared_state.server_status}. reject "{CMD_ID}" command')
     return '', 204
 
-dirDAQresult = '/home/ntucms/workspace/testdata/daqplots'
 @app.route('/status')
 def status():
     hasupdate = False
