@@ -13,7 +13,7 @@ import re
 import os
 ### HTTP status codes https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status
 
-JOBMODE = 'SinglePedestalRun' # pedestal run
+JOBMODE = 'task1' # single pedestal run
 
 andrewCONF = f'{os.environ.get("AndrewModuleTestingGUI_BASE")}/configuration.yaml'
 dirDAQresult = ''
