@@ -377,12 +377,6 @@ def Destroy():
 
 @app.route('/status')
 def status():
-    global III
-    import random
-    rr = random.randint(1, 10)
-    if rr > 7: III += 1
-    
-    newcontent = f'test{III}'
     shared_state.next_runtag = newcontent
     dirDAQresult = '/home/ntucms/workspace/testdata/daqplots'
     hasupdate = False
