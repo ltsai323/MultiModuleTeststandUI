@@ -10,6 +10,6 @@ server_status = 'startup'
 #job_stop_flag - threading.Event()
 #job_thread = {'thread': None}
 
-next_runtag = '' ## run tag used in `make run runTAG=next_runtag`
+runidx = 0 ## used to identify run tag. It is always increased
 
 DAQresult_current_modified = '' ## recorded state of os.path.getmtime(dirDAQresult)
