@@ -94,28 +94,28 @@
             </div>
           </div>
         </div>
-        <!-- === New Dropdown Menu === -->
-        <div id="ii4kyn" class="gjs-row">
-          <div id="i5qemj" class="gjs-cell">
-            <div id="ip1mvm">Latest DAQ Result: 
-            </div>
-            <div id="daqNewOpt">
-              <br/>
-            </div>
+      </form>
+      <!-- === New Dropdown Menu === -->
+      <div id="ii4kyn" class="gjs-row">
+        <div id="i5qemj" class="gjs-cell">
+          <div id="ip1mvm">Latest DAQ Result: 
           </div>
-          <div id="iwfnx8" class="gjs-cell">
-            <button type="button" id="daqSummaryBtn"> Check </button>
-            <select type="text" id="daqSelect" name="daqResult">
-              <!-- Options will be populated dynamically -->
-              <option value="">-- Select an option --</option>
-              {% for daqres in DAQres %}
-              <option value="{{daqres}}"> {{daqres}} </option>
-              {% endfor %}
-            </select>
-            <div id="i388gj">DAQ Result:</div>
+          <div id="daqNewOpt">
+            <br/>
           </div>
         </div>
-      </form>
+        <div id="iwfnx8" class="gjs-cell">
+          <button type="button" id="daqSummaryBtn"> Check </button>
+          <select type="text" id="daqSelect" name="daqResult">
+            <!-- Options will be populated dynamically -->
+            <option value="">-- Select an option --</option>
+            {% for daqres in DAQres %}
+            <option value="{{daqres}}"> {{daqres}} </option>
+            {% endfor %}
+          </select>
+          <div id="i388gj">DAQ Result:</div>
+        </div>
+      </div>
     </div>
   </section>
   <script>
