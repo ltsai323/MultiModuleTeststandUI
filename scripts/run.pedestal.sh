@@ -11,9 +11,9 @@ function the_exit() { echo "the_exit - "$1; exit 0; } ## return 0 prevent make c
 [ "$AndrewModuleTestingGUI_BASE" == "" ] && echo "[InvalidPath] Need to 'source init_bash_bars.sh' before use" && exit 1
 
 cd $AndrewModuleTestingGUI_BASE
-echo [BASHCMD] python3 InteractionGUI.directrun.py $mmtsCONF $moduleID $runTAG $mmtsPOSITION $moduleSTATUS $daqINSPECTOR
-python3 InteractionGUI.directrun.py $mmtsCONF $moduleID $runTAG $mmtsPOSITION $moduleSTATUS $daqINSPECTOR \
-  || the_exit "[Error] InteractionGUI.directrun.py got error.  abort... "
+echo [BASHCMD] python3 InteractionGUI.CLI.py $mmtsCONF $moduleID $runTAG $mmtsPOSITION $moduleSTATUS $daqINSPECTOR
+python3 InteractionGUI.CLI.py $mmtsCONF $moduleID $runTAG $mmtsPOSITION $moduleSTATUS $daqINSPECTOR \
+  || the_exit "[Error] InteractionGUI.CLI.py got error.  abort... "
 
-#python3 InteractionGUI.directrun.py "'${FLASK_BASE}/data/mmts_configurations.yaml'" '320-XH-T4C-PM-00019' 'run1' '1L' 'Untaped' 'test-user' || exit 0
+#python3 InteractionGUI.CLI.py "'${FLASK_BASE}/data/mmts_configurations.yaml'" '320-XH-T4C-PM-00019' 'run1' '1L' 'Untaped' 'test-user' || exit 0
 cd ..
