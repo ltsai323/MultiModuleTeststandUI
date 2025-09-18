@@ -232,27 +232,47 @@
       if (daqSelect) {
         // Skip if more than 100 options already
         if (daqSelect.options.length < 100) {
-          // Ensure DAQres is a string before processing
-          if (typeof data.DAQres === "string" && data.DAQres.trim() !== "") {
-            const value = data.DAQres.trim();
-            // Check if option already exists
-            let exists = false;
-            for (let i = 0; i < daqSelect.options.length; i++) {
-              if (daqSelect.options[i].value === value) {
-                exists = true;
-                break;
+          if (Array.isArray(data.DAQres)) {
+            data.DAQres.forEach(item => {
+              // Check if option already exists
+              let exists = false;
+              for (let i = 0; i < daqSelect.options.length; i++) {
+                if (daqSelect.options[i].value === value) {
+                  exists = true;
+                  break;
+                }
               }
-            }
+              // Append only if missing
+              if (!exists) {
+                const opt = document.createElement("option");
+                opt.value = value;
+                opt.textContent = value;
+                daqSelect.appendChild(opt);
+                document.getElementById('daqNewOpt').innerText = value;
+              }
+            } );
+          } // end of data.DAQres is array
+          //  // Ensure DAQres is a string before processing
+          //  if (typeof data.DAQres === "string" && data.DAQres.trim() !== "") {
+          //    const value = data.DAQres.trim();
+          //    // Check if option already exists
+          //    let exists = false;
+          //    for (let i = 0; i < daqSelect.options.length; i++) {
+          //      if (daqSelect.options[i].value === value) {
+          //        exists = true;
+          //        break;
+          //      }
+          //    }
 
-            // Append only if missing
-            if (!exists) {
-              const opt = document.createElement("option");
-              opt.value = value;
-              opt.textContent = value;
-              daqSelect.appendChild(opt);
-              document.getElementById('daqNewOpt').innerText = value;
-            }
-          } // end of data.DAQres is string and is not empty
+          //    // Append only if missing
+          //    if (!exists) {
+          //      const opt = document.createElement("option");
+          //      opt.value = value;
+          //      opt.textContent = value;
+          //      daqSelect.appendChild(opt);
+          //      document.getElementById('daqNewOpt').innerText = value;
+          //    }
+          //  } // end of data.DAQres is string and is not empty
         } // end of daqSelect.options.length < 100
       } // end of if daqSelect
     }

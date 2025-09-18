@@ -375,7 +375,6 @@ def Destroy():
         current_app.logger.debug(f'[ServerAction][{CMD_ID}] Current status is {shared_state.server_status}. reject "{CMD_ID}" command')
     return '', 204
 
-III = 0
 @app.route('/status')
 def status():
     global III
@@ -385,7 +384,17 @@ def status():
     
     newcontent = f'test{III}'
     shared_state.next_runtag = newcontent
-    return jsonify( {'status':shared_state.server_status, 'jobmode': shared_state.jobmode, 'DAQres': shared_state.next_runtag} )
+    dirDAQresult = '/home/ntucms/workspace/testdata/daqplots'
+    hasupdate = False
+    
+    last_modified = os.path.getmtime(dirDAQresult)
+    if last_modified != shared_state.DAQresult_current_modified:
+        hasupdate = True
+        shared_state.DAQresult_current_modified = last_modified
+    
+    ### if something updated, list all sub directories as list. Or return empty list
+    daq_result_dirs = [ subdir for subdir in os.listdir(dirDAQresult) if os.path.isdir(f'{dirDAQresult}/{subdir}') ] if hasupdate else []
+    return jsonify( {'status':shared_state.server_status, 'jobmode': shared_state.jobmode, 'DAQres': daq_result_dirs} )
 
 
 @app.route('/main.html')

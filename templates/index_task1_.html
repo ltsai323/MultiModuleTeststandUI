@@ -19,71 +19,99 @@
       <form method="POST" id="pymodule_configurations" action="/task1/submit">
         <meta name="csrf_token" type="hidden" content="{{ csrf_token() }}"/>
         <!-- === New Radio Buttons === -->
-        <div id="radioContainer" style="margin:15px 0;">
-          <label><strong>Status:</strong></label><br/>
-          <label><input type="radio" name="moduleStatus" value="Untaped"> Untaped</label>
-          <label><input type="radio" name="moduleStatus" value="Taped"> Taped</label>
-          <label><input type="radio" name="moduleStatus" value="Assembled"> Assembled</label>
-          <label><input type="radio" name="moduleStatus" value="Backside Bonded"> Backside Bonded</label>
-          <label><input type="radio" name="moduleStatus" value="Backside Encapsulated"> Backside Encapsulated</label>
-          <label><input type="radio" name="moduleStatus" value="Completely Bonded"> Completely Bonded</label>
-          <label><input type="radio" name="moduleStatus" value="Bonds Reworked"> Bonds Reworked</label>
-          <label><input type="radio" name="moduleStatus" value="Completely Encapsulated"> Completely Encapsulated</label>
-          <label><input type="radio" name="moduleStatus" value="Bolted"> Bolted</label>
-        </div>
-        <div id="id37y" class="cards">
+        <div id="radioContainer" class="cards">
+          <br/>
+          <div id="iql44" class="gjs-row">
+            <strong id="ivy0a">Module Status:</strong>
+          </div>
           <div id="iql44" class="gjs-row">
             <div id="ig3nn" class="gjs-cell form-row">
+              <label id="iy4ud"><input type="radio" name="moduleStatus" value="Untaped"/> Untaped</label>
+            </div>
+            <div id="ie7gk" class="gjs-cell form-row">
+              <label id="iio4i"><input type="radio" name="moduleStatus" value="Taped"/> Taped</label>
+            </div>
+            <div id="i0vy1u" class="gjs-cell form-row">
+              <label id="i6hsb"><input type="radio" name="moduleStatus" value="Assembled" id="iyosa-2"/> Assembled</label>
+            </div>
+            <div id="ipxwp" class="gjs-cell form-row">
+              <label id="ikckl"><input type="radio" name="moduleStatus" value="Bonds Reworked"/> Bonds Reworked</label>
+            </div>
+            <div id="ipxwpa" class="gjs-cell form-row">
+              <label id="itf5i"><input type="radio" name="moduleStatus" value="Bolted"/> Bolted</label>
+            </div>
+          </div>
+          <div id="ibmw1k" class="gjs-row">
+            <div id="im3fp" class="gjs-cell form-row">
+              <label id="i8peu-2"><input type="radio" name="moduleStatus" value="Backside Bonded"/> Backside Bonded</label>
+            </div>
+            <div id="itton" class="gjs-cell form-row">
+              <label id="i1t5o"><input type="radio" name="moduleStatus" value="Backside Encapsulated"/> Backside Encapsulated</label>
+            </div>
+            <div id="ik8pqx" class="gjs-cell form-row">
+              <label id="i9wl5-2"><input type="radio" name="moduleStatus" value="Completely Bonded" id="id36t-2"/> Completely Bonded</label>
+            </div>
+            <div id="ivnxle" class="gjs-cell form-row">
+              <label id="iu3h3-2"><input type="radio" name="moduleStatus" value="Completely Encapsulated"/> Completely Encapsulated</label>
+            </div>
+            <div id="inxoou" class="gjs-cell form-row">
+            </div>
+          </div>
+        </div>
+        <div id="ikqal8" class="cards">
+          <div id="i5oney" class="gjs-row">
+            <div id="iav7ih" class="gjs-cell form-row">
               <button type="button" class="statusModuleID" id="LED1L"></button>
-              <label id="i5tyo" class="labelModuleID">1L</label>
+              <label class="labelModuleID">1L</label>
               <input type="text" placeholder="Module ID" name="moduleID1L" class="inputModuleID" id="moduleID1L"/>
             </div>
-            <div class="gjs-cell form-row" id="ie7gk">
+            <div id="ixp0rj" class="gjs-cell form-row">
               <button type="button" class="statusModuleID" id="LED1C"></button>
-              <label class="labelModuleID" id="inp9d">1C</label>
+              <label class="labelModuleID">1C</label>
               <input type="text" placeholder="Module ID" name="moduleID1C" class="inputModuleID" id="moduleID1C"/>
             </div>
-            <div class="gjs-cell form-row" id="ipxwp">
+            <div id="i7v6dg" class="gjs-cell form-row">
               <button type="button" class="statusModuleID" id="LED1R"></button>
-              <label class="labelModuleID" id="irvqv">1R</label>
+              <label class="labelModuleID">1R</label>
               <input type="text" placeholder="Module ID" name="moduleID1R" class="inputModuleID" id="moduleID1R"/>
             </div>
           </div>
-          <div class="gjs-row" id="ibmw1k">
-            <div class="gjs-cell form-row" id="im3fp">
+          <div id="i55fvd" class="gjs-row">
+            <div id="icpqsl" class="gjs-cell form-row">
               <button type="button" class="statusModuleID" id="LED2L"></button>
-              <label class="labelModuleID" id="ip16b">2L</label>
+              <label class="labelModuleID">2L</label>
               <input type="text" placeholder="Module ID" name="moduleID2L" class="inputModuleID" id="moduleID2L"/>
             </div>
-            <div class="gjs-cell form-row" id="itton">
+            <div id="igwgq1" class="gjs-cell form-row">
               <button type="button" class="statusModuleID" id="LED2C"></button>
-              <label class="labelModuleID" id="i33rs">2C</label>
-              <input type="text" placeholder="Module ID" name="moduleID2L" class="inputModuleID" id="moduleID2C"/>
+              <label id="ii6n0i" class="labelModuleID">2C</label>
+              <input type="text" placeholder="Module ID" name="moduleID2C" class="inputModuleID" id="moduleID2C"/>
             </div>
-            <div class="gjs-cell form-row" id="ivnxle">
+            <div id="i535on" class="gjs-cell form-row">
               <button type="button" class="statusModuleID" id="LED2R"></button>
-              <label class="labelModuleID" id="i4an5f">2R</label>
+              <label id="ic4bpb" class="labelModuleID">2R</label>
               <input type="text" placeholder="Module ID" name="moduleID2R" class="inputModuleID" id="moduleID2R"/>
             </div>
           </div>
         </div>
-        
-
         <!-- === New Dropdown Menu === -->
-        <div id="dropdownContainer" style="margin:15px 0;">
-          <label for="daqSelect"><strong>DAQ Result:</strong></label>
-          <select id="daqSelect" name="daqResult">
-            <option value="">-- Select an option --</option>
-            <!-- Options will be populated dynamically -->
-          </select>
-          <button type="button" id="daqSummaryBtn"> Check </button>
+        <div id="ii4kyn" class="gjs-row">
+          <div id="i5qemj" class="gjs-cell">
+            <div id="ip1mvm">Next Run: 
+            </div>
+            <div id="daqNewOpt">
+              <br/>
+            </div>
+          </div>
+          <div id="iwfnx8" class="gjs-cell">
+            <button type="button" id="daqSummaryBtn"> Check </button>
+            <select type="text" id="daqSelect" name="daqResult"><option value="">-- Select an option --</option><!-- Options will be populated dynamically --></select>
+            <div id="i388gj">DAQ Result:</div>
+          </div>
         </div>
-          <div>Next run: </div><div id="daqNewOpt"></a>
-
       </form>
     </div>
   </section>
-
   <script>
     async function updateStatus() {
       const response = await fetch('/task1/status');
@@ -332,9 +360,6 @@ document.getElementById('pymodule_configurations').addEventListener('submit', fu
   *{
     box-sizing:border-box;
   }
-  body{
-    margin:0;
-  }
   .container-width{
     width:90%;
     max-width:1150px;
@@ -398,21 +423,13 @@ document.getElementById('pymodule_configurations').addEventListener('submit', fu
   #iql44{
     max-width:100%;
     width:100%;
-    padding:10px 20px 10px 20px;
-  }
-  #iphef{
-    margin:10px 10px 0px 0px;
-    align-items:flex-start;
-    justify-content:flex-start;
-    display:block;
-    label-parent-flex:0;
+    padding:0px 20px 0px 20px;
   }
   .labelModuleID{
     float:none;
     margin:0 5px 0px 5px;
     padding:5px 0px 0px 0px;
   }
-
   .form-row{
     min-height:auto;
     height:40px;
@@ -424,7 +441,7 @@ document.getElementById('pymodule_configurations').addEventListener('submit', fu
     height:10px;
     padding:0px 0px 0px 0px;
     min-height:0px;
-    border-radius: 5px 5px 0px 0px;
+    border-radius:5px 5px 0px 0px;
     margin:0 10px 0 0;
   }
   #ig3nn{
@@ -433,26 +450,17 @@ document.getElementById('pymodule_configurations').addEventListener('submit', fu
     justify-content:center;
     display:flex;
   }
-  #i0d8z{
-    margin:10px 10px 0px 0px;
-    align-items:flex-start;
-    justify-content:flex-start;
-    display:block;
-    label-parent-flex:0;
-  }
-
   #ipxwp{
     width:250px;
     padding:5px 5px 5px 5px;
     justify-content:center;
     display:flex;
   }
-  #i8iiq{
-    margin:10px 10px 0px 0px;
-    align-items:flex-start;
-    justify-content:flex-start;
-    display:block;
-    label-parent-flex:0;
+  #ipxwpa{
+    width:250px;
+    padding:5px 5px 5px 5px;
+    justify-content:center;
+    display:flex;
   }
   #ie7gk{
     width:250px;
@@ -460,38 +468,17 @@ document.getElementById('pymodule_configurations').addEventListener('submit', fu
     justify-content:center;
     display:flex;
   }
-  #i5lu9{
-    margin:10px 10px 0px 0px;
-    align-items:flex-start;
-    justify-content:flex-start;
-    display:block;
-    label-parent-flex:0;
-  }
   #im3fp{
     width:250px;
     padding:5px 5px 5px 5px;
     justify-content:center;
     display:flex;
   }
-  #ik107{
-    margin:10px 10px 0px 0px;
-    align-items:flex-start;
-    justify-content:flex-start;
-    display:block;
-    label-parent-flex:0;
-  }
   #itton{
     width:250px;
     padding:5px 5px 5px 5px;
     justify-content:center;
     display:flex;
-  }
-  #ixev96{
-    margin:10px 10px 0px 0px;
-    align-items:flex-start;
-    justify-content:flex-start;
-    display:block;
-    label-parent-flex:0;
   }
   .inputModuleID{
     margin:5px 5px 5px 10px;
@@ -506,14 +493,157 @@ document.getElementById('pymodule_configurations').addEventListener('submit', fu
   #ibmw1k{
     max-width:100%;
     width:100%;
-    padding:10px 20px 10px 20px;
+    padding:0px 20px 0px 20px;
   }
   #ij10l{
     padding:10px 0px 10px 0px;
     align-self:center;
     display:flex;
-    height:300px;
-    min-height:300px;
+    height:100%;
+  }
+  #radioContainer{
+    margin:15px 0;
+  }
+  #iav7ih{
+    width:250px;
+    padding:5px 5px 5px 5px;
+    justify-content:center;
+    display:flex;
+  }
+  #ixp0rj{
+    width:250px;
+    padding:5px 5px 5px 5px;
+    justify-content:center;
+    display:flex;
+  }
+  #i7v6dg{
+    width:250px;
+    padding:5px 5px 5px 5px;
+    justify-content:center;
+    display:flex;
+  }
+  #i5oney{
+    max-width:100%;
+    width:100%;
+    padding:10px 20px 10px 20px;
+  }
+  #icpqsl{
+    width:250px;
+    padding:5px 5px 5px 5px;
+    justify-content:center;
+    display:flex;
+  }
+  #igwgq1{
+    width:250px;
+    padding:5px 5px 5px 5px;
+    justify-content:center;
+    display:flex;
+  }
+  #i535on{
+    width:250px;
+    padding:5px 5px 5px 5px;
+    justify-content:center;
+    display:flex;
+  }
+  #i55fvd{
+    max-width:100%;
+    width:100%;
+    padding:10px 20px 10px 20px;
+  }
+  #i0vy1u{
+    width:250px;
+    padding:5px 5px 5px 5px;
+    justify-content:center;
+    display:flex;
+  }
+  #ik8pqx{
+    width:250px;
+    padding:5px 5px 5px 5px;
+    justify-content:center;
+    display:flex;
+  }
+  #i5qemj{
+    flex-basis:30%;
+    min-height:30px;
+  }
+  #iwfnx8{
+    flex-basis:70%;
+    min-height:30px;
+  }
+  #ii4kyn{
+    padding:10px 20px 10px 20px;
+  }
+  #i388gj{
+    justify-content:flex-start;
+    flex-direction:row;
+    align-self:auto;
+    text-align:left;
+    float:right;
+    height:20px;
+    text-decoration:none;
+    margin:5px 5px 5px 0px;
+  }
+  #daqSelect{
+    justify-content:flex-start;
+    float:right;
+    height:20px;
+    margin:5px 5px 5px 0;
+  }
+  #daqSummaryBtn{
+    justify-content:flex-start;
+    float:right;
+    height:20px;
+    margin:5px 5px 5px 0;
+  }
+  #ip1mvm{
+    justify-content:flex-start;
+    flex-direction:row;
+    align-self:auto;
+    text-align:left;
+    float:left;
+    height:20px;
+    text-decoration:none;
+    margin:5px 5px 5px 0px;
+  }
+  #daqNewOpt{
+    justify-content:flex-start;
+    flex-direction:row;
+    align-self:auto;
+    text-align:left;
+    float:left;
+    height:20px;
+    text-decoration:none;
+    margin:5px 5px 5px 0px;
+  }
+  #inxoou{
+    width:250px;
+    padding:5px 5px 5px 5px;
+    justify-content:center;
+    display:flex;
+  }
+  #iu3h3-2{
+    width:220px;
+  }
+  #i1t5o{
+    width:200px;
+  }
+  #i9wl5-2{
+    width:200px;
+  }
+  #i8peu-2{
+    width:200px;
+  }
+  #ikckl{
+    width:200px;
+  }
+  #i6hsb{
+    width:200px;
+  }
+  #iio4i{
+    width:200px;
+  }
+  #iy4ud{
+    width:200px;
   }
   @media (max-width: 768px){
     .gjs-row{
