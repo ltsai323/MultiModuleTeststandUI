@@ -174,6 +174,7 @@ def Init():
     if isCommandRunable(shared_state.server_status,CMD_ID):
         set_server_status('initializing')
         job_stop_flags[CMD_ID].clear()
+        shared_state.DAQresult_current_modified = ''
         current_app.logger.debug('[ServerAction][{CMD_ID}] the server status is idle, activate {CMD_ID} command')
 
         def background_worker():
@@ -375,10 +376,9 @@ def Destroy():
         current_app.logger.debug(f'[ServerAction][{CMD_ID}] Current status is {shared_state.server_status}. reject "{CMD_ID}" command')
     return '', 204
 
+dirDAQresult = '/home/ntucms/workspace/testdata/daqplots'
 @app.route('/status')
 def status():
-    shared_state.next_runtag = newcontent
-    dirDAQresult = '/home/ntucms/workspace/testdata/daqplots'
     hasupdate = False
     
     last_modified = os.path.getmtime(dirDAQresult)
@@ -393,7 +393,8 @@ def status():
 
 @app.route('/main.html')
 def main():
-    return render_template('index_task1.html')
+    daq_result_dirs = [ subdir for subdir in os.listdir(dirDAQresult) if os.path.isdir(f'{dirDAQresult}/{subdir}') ]
+    return render_template('index_task1.html', DAQres=daq_result_dirs)
 
 
 if __name__ == '__main__':
