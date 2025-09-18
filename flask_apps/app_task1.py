@@ -5,17 +5,29 @@ from flask import Flask, render_template, request, jsonify, Blueprint
 from flask import current_app
 from flask_wtf import FlaskForm
 from flask_wtf.csrf import CSRFProtect
-from wtforms.validators import DataRequired, Regexp
-from wtforms import StringField, SubmitField
+from wtforms.validators import DataRequired, Regexp, InputRequired
+from wtforms import StringField, SubmitField, RadioField
 import flask_apps.shared_state as shared_state
 from PythonTools.server_status import isCommandRunable
 import re
 import os
 ### HTTP status codes https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status
 
-JOBMODE = 'task1' # pedestal run
+JOBMODE = 'SinglePedestalRun' # pedestal run
+
+andrewCONF = f'{os.environ.get("AndrewModuleTestingGUI_BASE")}/configuration.yaml'
+DEFAULT_INSPECTORS = []
+try:
+    with open(andrewCONF, 'r') as fIN:
+        import yaml
+        conf = yaml.safe_load(fIN)
+        DEFAULT_INSPECTORS = conf['Inspectors']
+except FileNotFoundError as e:
+    raise FileNotFoundError(f'\n\n[NoEnvVar] Need to `source ./init_bash_vars.sh` before execute this file') from e
 
 CONF_DICT = {
+        'inspector': '',
+        'moduleSTATUS': '',
         'moduleID1L': '',
         'moduleID1C': '',
         'moduleID1R': '',
@@ -33,8 +45,10 @@ def ExecCMD(jobID:str, confDICT:dict):
     if jobID == 'Init':
         return 'make -f makefile_task1 initialize JobName=Init'
     if jobID == 'Run':
-        dictOPTs = ' '.join([ f'{key}={val}' for key,val in CONF_DICT.items() if val != '' ])
-        return 'make -f makefile_task1 run -j1 JobName=Run ' + dictOPTs
+        shared_state.runidx+=1
+        runTAG = f'run{shared_state.runidx}'
+        dictOPTs = ' '.join([ f'{key}={val}' for key,val in confDICT.items() if val != '' ])
+        return f'make -f makefile_task1 run -j6 JobName=Run runTAG={runTAG} ' + dictOPTs
     if jobID == 'Stop':
         return 'make -f makefile_task1 stop JobName=Stop'
     if jobID == 'Destroy':
@@ -198,6 +212,9 @@ def Init():
 alphanumeric_validator = Regexp("^[a-zA-Z0-9\-]*$", message="Only letters and numbers and dash allowed.")
 #alphanumeric_validator = Regexp("^[a-zA-Z0-9]*$", message="Only letters and numbers allowed.")
 class ConfigForm(FlaskForm):
+    inspector = StringField("inspector", validators=[InputRequired()])
+    moduleSTATUS = StringField("moduleSTATUS", validators=[InputRequired()])
+   #moduleSTATUS = RadioField("moduleSTATUS", validators=[InputRequired()])
     moduleID1L = StringField("moduleID1L", validators=[alphanumeric_validator])
     moduleID1C = StringField("moduleID1C", validators=[alphanumeric_validator])
     moduleID1R = StringField("moduleID1R", validators=[alphanumeric_validator])
@@ -222,6 +239,8 @@ def Configure():
 
 
     json_data = request.get_json()
+    
+    print('\n\n\n',json_data,'\n\n\n')
     if not json_data:
         return jsonify({'status': 'error', 'message': 'Missing JSON data'}), 400
 
@@ -252,7 +271,7 @@ def Configure():
 
     for varname in CONF_DICT.keys():
         value = getattr(form, varname).data if hasattr(form, varname) else ''
-        current_app.logger.debug(f'[GotValue] Form {varname} got original value "{getattr(form,varname).data}"')
+        current_app.logger.debug(f'[GotValue] Form {varname} got original value "{value}"')
         clean_val = ignore_special_characters(value)
         if len(clean_val) > 20:
             current_app.logger.warning(f'[InputTooLong] Input {varname}:{clean_val} too long, resetting.')
@@ -400,7 +419,7 @@ def status():
 @app.route('/main.html')
 def main():
     daq_result_dirs = [ subdir for subdir in os.listdir(dirDAQresult) if os.path.isdir(f'{dirDAQresult}/{subdir}') ]
-    return render_template('index_task1.html', DAQres=daq_result_dirs)
+    return render_template('index_task1.html', DAQres=daq_result_dirs, inspectors=DEFAULT_INSPECTORS)
 
 
 if __name__ == '__main__':
