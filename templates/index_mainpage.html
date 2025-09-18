@@ -1,62 +1,71 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Main Page</title>
-  <script>
-    function confirmSelection() {
-      const selected = document.querySelector('input[name="option"]:checked');
-      if (!selected) { alert("Please select an option."); return; }
+  <head>
+    <title>Main Page</title>
+    <script>
+      function confirmSelection() {
+        const selected = document.querySelector('input[name="option"]:checked');
+        if (!selected) { alert("Please select an option."); return; }
 
-      let iframeUrl;
-      // blueprint name + function name in blueprint
-           if (selected.value === "task1") { iframeUrl = "{{ url_for('app_task1.main') }}"; }
-      else if (selected.value === "task2") { iframeUrl = "{{ url_for('app_task2.main') }}"; }
-      const iframe = document.getElementById("myIframe");
-      iframe.src = iframeUrl;
+        let iframeUrl;
+        // blueprint name + function name in blueprint
+        if (selected.value === "task1") { iframeUrl = "{{ url_for('app_task1.main') }}"; }
+        else if (selected.value === "task2") { iframeUrl = "{{ url_for('app_task2.main') }}"; }
+        const iframe = document.getElementById("myIframe");
+        iframe.src = iframeUrl;
 
-      iframe.onload = function() {
+        iframe.onload = function() {
+          try {
+            iframe.style.height = iframe.contentDocument.body.scrollHeight + 'px';
+          } catch(e) { 
+            console.warn('Cannot get height, use default 400px');
+            iframe.style.height = '400px';
+          }
+        }
+
+        // nofity server for optioin update.
+        fetch("/set_option",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ option: selected.value })
+          });
+      }
+    </script>
+    <script>
+      function resizeIframe() {
+        const iframe = document.getElementById('myIframe');
         try {
-          iframe.style.height = iframe.contentDocument.body.scrollHeight + 'px';
-        } catch(e) { 
-          console.warn('Cannot get height, use default 400px');
-          iframe.style.height = '400px';
+          const iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
+          iframe.style.height = iframeDocument.body.scrollHeight + 'px';
+        } catch (e) {
+          console.warn('Cannot access iframe content: cross-origin restrictions.');
         }
       }
 
-      // nofity server for optioin update.
-      fetch("/set_option",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ option: selected.value })
-        });
-    }
-  </script>
-  <script>
-  function resizeIframe() {
-    const iframe = document.getElementById('myIframe');
-    try {
-      const iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
-      iframe.style.height = iframeDocument.body.scrollHeight + 'px';
-    } catch (e) {
-      console.warn('Cannot access iframe content: cross-origin restrictions.');
-    }
-  }
+      // Resize on iframe load
+      document.getElementById('myIframe').addEventListener('load', resizeIframe);
+    </script>
+  </head>
+  <body>
+    <div class='container-width'>
+      <h1>This is the Index Page</h1>
 
-  // Resize on iframe load
-  document.getElementById('myIframe').addEventListener('load', resizeIframe);
-</script>
-</head>
-<body>
-  <h1>This is the Index Page</h1>
+      <form id="optionsForm">
+        <label> <input type="radio" name="option" value="task1" {% if selected_option == 'task1' %} checked {% endif %}> Single Pedestal Run </label>
+        <label> <input type="radio" name="option" value="task2" {% if selected_option == 'task2' %} checked {% endif %}> test region </label>
+        <button type="button" onclick="confirmSelection()">Confirm</button>
+      </form>
 
-  <form id="optionsForm">
-    <label> <input type="radio" name="option" value="task1" {% if selected_option == 'task1' %} checked {% endif %}> Single Pedestal Run </label>
-    <label> <input type="radio" name="option" value="task2" {% if selected_option == 'task2' %} checked {% endif %}> test region </label>
-    <button type="button" onclick="confirmSelection()">Confirm</button>
-  </form>
-
-  <iframe id="myIframe" width="1500px" height="400px"
-    src="{% if selected_option == 'task1' %}{{ url_for('app_task1.main') }}{% elif selected_option == 'task2' %}{{ url_for('app_task2.main') }}{% endif %}"></iframe>
-</body>
+      <iframe id="myIframe" width="1000px" height="400px"
+                                           src="{% if selected_option == 'task1' %}{{ url_for('app_task1.main') }}{% elif selected_option == 'task2' %}{{ url_for('app_task2.main') }}{% endif %}"></iframe>
+    </div>
+  </body>
 </html>
+<style>
+  .container-width{
+    width:90%;
+    max-width:1150px;
+    margin:0 auto;
+  }
+</style>
