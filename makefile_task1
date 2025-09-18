@@ -27,7 +27,7 @@ pedestal_run: $(addprefix pedestal_,$(MODULE_POSITION)) ## run all pedestals [-j
 
 
 initialize: ## initialize
-	/bin/rm -r `python3 scripts/access_yaml_var.py $${AndrewModuleTestingGUI_BASE}/configuration.yaml DataLoc`/daqplots/*
+	/bin/rm -rf `python3 scripts/access_yaml_var.py $${AndrewModuleTestingGUI_BASE}/configuration.yaml DataLoc`/daqplots/*
 	python3 scripts/send_command_to_teststand.py data/mmts_configurations.yaml KriaOnly "kconn_pwr on"
 
 run: $(addprefix pedestal_,$(MODULE_POSITION)) ## pedestal run parallelly [-jN][runTAG=testrun][moduleSTATUS=Untaped][inspector=test-user]
