@@ -1,7 +1,7 @@
 <body id="i3bn">
   <section id="ij10l" class="flex-sect">
     <div id="it8wd" class="container-width">
-      <div id="ihtsc" class="flex-title">testing region of task1
+      <div id="ihtsc" class="flex-title">Single pedestal run
       </div>
       <div id="idewg" class="gjs-row">
         <div id="i1sqf" class="gjs-cell">
@@ -18,41 +18,54 @@
       </div>
       <form method="POST" id="pymodule_configurations" action="/task1/submit">
         <meta name="csrf_token" type="hidden" content="{{ csrf_token() }}"/>
+          <br/>
         <!-- === New Radio Buttons === -->
         <div id="radioContainer" class="cards">
-          <br/>
           <div id="iql44" class="gjs-row">
-            <strong id="ivy0a">Module Status:</strong>
+        <div class="gjs-cell" id="inta7e">
+          <div id="i8wfow">Module Status:
           </div>
+        </div>
+        <div class="gjs-cell" id="itq9y3">
+          <input list="inspectors" name="inspector" id="iwgoh5">
+          <datalist id="inspectors">
+            {% for inspector in inspectors %}
+            <option value="{{inspector}}">
+            {% endfor %}
+            </datalist>
+          <div id="i109v8">inspector: 
+          </div>
+        </div>
+        </div>
           <div id="iql44" class="gjs-row">
             <div id="ig3nn" class="gjs-cell form-row">
-              <label id="iy4ud"><input type="radio" name="moduleStatus" value="Untaped"/> Untaped</label>
+              <label id="iy4ud"><input type="radio" name="moduleSTATUS" value="Untaped"/> Untaped</label>
             </div>
             <div id="ie7gk" class="gjs-cell form-row">
-              <label id="iio4i"><input type="radio" name="moduleStatus" value="Taped"/> Taped</label>
+              <label id="iio4i"><input type="radio" name="moduleSTATUS" value="Taped"/> Taped</label>
             </div>
             <div id="i0vy1u" class="gjs-cell form-row">
-              <label id="i6hsb"><input type="radio" name="moduleStatus" value="Assembled" id="iyosa-2"/> Assembled</label>
+              <label id="i6hsb"><input type="radio" name="moduleSTATUS" value="Assembled" id="iyosa-2"/> Assembled</label>
             </div>
             <div id="ipxwp" class="gjs-cell form-row">
-              <label id="ikckl"><input type="radio" name="moduleStatus" value="Bonds Reworked"/> Bonds Reworked</label>
+              <label id="ikckl"><input type="radio" name="moduleSTATUS" value="Bonds Reworked"/> Bonds Reworked</label>
             </div>
             <div id="ipxwpa" class="gjs-cell form-row">
-              <label id="itf5i"><input type="radio" name="moduleStatus" value="Bolted"/> Bolted</label>
+              <label id="itf5i"><input type="radio" name="moduleSTATUS" value="Bolted"/> Bolted</label>
             </div>
           </div>
           <div id="ibmw1k" class="gjs-row">
             <div id="im3fp" class="gjs-cell form-row">
-              <label id="i8peu-2"><input type="radio" name="moduleStatus" value="Backside Bonded"/> Backside Bonded</label>
+              <label id="i8peu-2"><input type="radio" name="moduleSTATUS" value="Backside Bonded"/> Backside Bonded</label>
             </div>
             <div id="itton" class="gjs-cell form-row">
-              <label id="i1t5o"><input type="radio" name="moduleStatus" value="Backside Encapsulated"/> Backside Encapsulated</label>
+              <label id="i1t5o"><input type="radio" name="moduleSTATUS" value="Backside Encapsulated"/> Backside Encapsulated</label>
             </div>
             <div id="ik8pqx" class="gjs-cell form-row">
-              <label id="i9wl5-2"><input type="radio" name="moduleStatus" value="Completely Bonded" id="id36t-2"/> Completely Bonded</label>
+              <label id="i9wl5-2"><input type="radio" name="moduleSTATUS" value="Completely Bonded" id="id36t-2"/> Completely Bonded</label>
             </div>
             <div id="ivnxle" class="gjs-cell form-row">
-              <label id="iu3h3-2"><input type="radio" name="moduleStatus" value="Completely Encapsulated"/> Completely Encapsulated</label>
+              <label id="iu3h3-2"><input type="radio" name="moduleSTATUS" value="Completely Encapsulated"/> Completely Encapsulated</label>
             </div>
             <div id="inxoou" class="gjs-cell form-row">
             </div>
@@ -446,6 +459,20 @@ document.getElementById('pymodule_configurations').addEventListener('submit', fu
   #statusText{
     padding:10px 10px 10px 10px;
   }
+  #i8wfow{
+    justify-content:flex-start;
+    flex-direction:row;
+    align-self:auto;
+    text-align:left;
+    float:none;
+    height:20px;
+    text-decoration:none;
+    margin:5px 5px 5px 0px;
+  }
+  #inta7e{
+    flex-basis:70%;
+    min-height:auto;
+  }
   #iql44{
     max-width:100%;
     width:100%;
@@ -627,6 +654,26 @@ document.getElementById('pymodule_configurations').addEventListener('submit', fu
     align-self:auto;
     text-align:left;
     float:left;
+    height:20px;
+    text-decoration:none;
+    margin:5px 5px 5px 0px;
+  }
+  #itq9y3{
+    flex-basis:30%;
+    min-height:auto;
+  }
+  #iwgoh5{
+    justify-content:flex-start;
+    float:right;
+    height:20px;
+    margin:5px 5px 5px 0;
+  }
+  #i109v8{
+    justify-content:flex-start;
+    flex-direction:row;
+    align-self:auto;
+    text-align:left;
+    float:right;
     height:20px;
     text-decoration:none;
     margin:5px 5px 5px 0px;
