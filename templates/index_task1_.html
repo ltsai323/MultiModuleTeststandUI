@@ -1,7 +1,7 @@
 <body id="i3bn">
   <section id="ij10l" class="flex-sect">
     <div id="it8wd" class="container-width">
-      <div id="ihtsc" class="flex-title">testing region of task1
+      <div id="ihtsc" class="flex-title">Single pedestal run
       </div>
       <div id="idewg" class="gjs-row">
         <div id="i1sqf" class="gjs-cell">
@@ -18,11 +18,24 @@
       </div>
       <form method="POST" id="pymodule_configurations" action="/task1/submit">
         <meta name="csrf_token" type="hidden" content="{{ csrf_token() }}"/>
+        <br/>
         <!-- === New Radio Buttons === -->
         <div id="radioContainer" class="cards">
-          <br/>
           <div id="iql44" class="gjs-row">
-            <strong id="ivy0a">Module Status:</strong>
+            <div class="gjs-cell" id="inta7e">
+              <div id="i8wfow">Module Status:
+              </div>
+            </div>
+            <div class="gjs-cell" id="itq9y3">
+              <input list="inspectors" name="inspector" id="iwgoh5">
+              <datalist id="inspectors">
+                {% for inspector in inspectors %}
+                <option value="{{inspector}}">
+                {% endfor %}
+              </datalist>
+              <div id="i109v8">inspector: 
+              </div>
+            </div>
           </div>
           <div id="iql44" class="gjs-row">
             <div id="ig3nn" class="gjs-cell form-row">
@@ -141,7 +154,7 @@
             document.querySelectorAll('#pymodule_configurations input.inputModuleID').forEach(input => { input.disabled = true ; });
             document.getElementById('statusText').innerText = "server is running other task";
             return; // disable all buttons and returned
-      } } }
+          } } }
       document.getElementById('statusText').innerText = data.status;
 
       if (data.status === 'startup' ) {
@@ -233,7 +246,7 @@
         document.querySelectorAll('#pymodule_configurations input.inputModuleID').forEach(input => { input.disabled = false; });
       }
 
-          // === Populate dropdown with DAQres dynamically ===
+      // === Populate dropdown with DAQres dynamically ===
       const daqSelect = document.getElementById('daqSelect');
       if (daqSelect) {
         // Skip if more than 100 options already
@@ -286,12 +299,12 @@
     async function execjob(varname) {
       const csrfToken = document.querySelector('meta[name="csrf_token"]').getAttribute('content');
       await fetch('/task1/'+varname, {
-          method: "POST",
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken  // <-- add this header
-          },
-          body: JSON.stringify({})
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken  // <-- add this header
+        },
+        body: JSON.stringify({})
       });
       updateStatus();
     }
@@ -309,83 +322,83 @@
 
   <script>
     document.getElementById('confBtn').addEventListener('click', function() {
-    document.getElementById('pymodule_configurations').dispatchEvent(new Event('submit', { cancelable: true }));
-});
-document.getElementById('pymodule_configurations').addEventListener('submit', function(e) {
-    e.preventDefault();  // Prevent normal form submission
+      document.getElementById('pymodule_configurations').dispatchEvent(new Event('submit', { cancelable: true }));
+    });
+    document.getElementById('pymodule_configurations').addEventListener('submit', function(e) {
+      e.preventDefault();  // Prevent normal form submission
 
-    const formData = new FormData(this);
-    const csrfToken = document.querySelector('meta[name="csrf_token"]').getAttribute('content');
-    const obj = {};
-  console.info(formData);
-  formData.forEach((value, key) => {
-    obj[key] = value;
-});
+      const formData = new FormData(this);
+      const csrfToken = document.querySelector('meta[name="csrf_token"]').getAttribute('content');
+      const obj = {};
+      console.info(formData);
+      formData.forEach((value, key) => {
+        obj[key] = value;
+      });
 
-    fetch('/task1/submit', {
-          method: "POST",
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken  // <-- add this header
-          },
-          body: JSON.stringify(obj)
+      fetch('/task1/submit', {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken  // <-- add this header
+        },
+        body: JSON.stringify(obj)
       })
-    .then(response => {
-        if (!response.ok) return response.json().then(err => Promise.reject(err));
-        return response.json();
-    })
-    .then(data => {
-        if (data.status === 'success') {
+        .then(response => {
+          if (!response.ok) return response.json().then(err => Promise.reject(err));
+          return response.json();
+        })
+        .then(data => {
+          if (data.status === 'success') {
             alert(data.message);   // or update some div with the message
             // Disable inputs
             //document.querySelectorAll('#configForm input').forEach(input => input.disabled = true);
             //document.querySelector('#configForm button[type="submit"]').disabled = true;
-        } else {
+          } else {
             // Show validation errors if any
             alert('Error: ' + JSON.stringify(data.errors));
-        }
-    })
-    .catch(error => {
-        alert('Submission failed: ' + JSON.stringify(error));
+          }
+        })
+        .catch(error => {
+          alert('Submission failed: ' + JSON.stringify(error));
+        });
     });
-});
-</script>
-<script>
-  document.getElementById('daqSummaryBtn').addEventListener('click', function() {
-    const daqSelect = document.getElementById('daqSelect');
-    const selectedValue = daqSelect.value;
+  </script>
+  <script>
+    document.getElementById('daqSummaryBtn').addEventListener('click', function() {
+      const daqSelect = document.getElementById('daqSelect');
+      const selectedValue = daqSelect.value;
 
-    if (!selectedValue) {
-      alert("Please select a DAQ result first.");
-      return;
-    }
+      if (!selectedValue) {
+        alert("Please select a DAQ result first.");
+        return;
+      }
 
-    // Build the link and navigate
-    const url = `/daqsummary/gallery/${encodeURIComponent(selectedValue)}`;
-    window.open(url, "_blank");
-  });
-</script>
-<script>
-  // input restriction. All input field in class inputMOduleID from form #pymodule_configurations allowed only digit and capital character and dash character. Length<20
-  document.querySelectorAll('#pymodule_configurations input.inputModuleID').forEach(input => {
-    input.addEventListener('input', function(e) {
-      this.value = this.value.toUpperCase().replace(/[^A-Z0-9\-]/g, '').slice(0, 20);
+      // Build the link and navigate
+      const url = `/daqsummary/gallery/${encodeURIComponent(selectedValue)}`;
+      window.open(url, "_blank");
     });
-  });
-//   document.getElementById('moduleID1L').addEventListener('input', function(e) {
-//   this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 20);
-// });
-</script>
+  </script>
+  <script>
+    // input restriction. All input field in class inputMOduleID from form #pymodule_configurations allowed only digit and capital character and dash character. Length<20
+    document.querySelectorAll('#pymodule_configurations input.inputModuleID').forEach(input => {
+      input.addEventListener('input', function(e) {
+        this.value = this.value.toUpperCase().replace(/[^A-Z0-9\-]/g, '').slice(0, 20);
+      });
+    });
+    //   document.getElementById('moduleID1L').addEventListener('input', function(e) {
+    //   this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 20);
+    // });
+  </script>
 </body>
 <style>* {
-  box-sizing: border-box;
-  }
+box-sizing: border-box;
+}
   body {
     margin: 0;
   }
-  *{
-    box-sizing:border-box;
-  }
+*{
+  box-sizing:border-box;
+}
   .container-width{
     width:90%;
     max-width:1150px;
@@ -445,6 +458,20 @@ document.getElementById('pymodule_configurations').addEventListener('submit', fu
   }
   #statusText{
     padding:10px 10px 10px 10px;
+  }
+  #i8wfow{
+    justify-content:flex-start;
+    flex-direction:row;
+    align-self:auto;
+    text-align:left;
+    float:none;
+    height:20px;
+    text-decoration:none;
+    margin:5px 5px 5px 0px;
+  }
+  #inta7e{
+    flex-basis:70%;
+    min-height:auto;
   }
   #iql44{
     max-width:100%;
@@ -627,6 +654,26 @@ document.getElementById('pymodule_configurations').addEventListener('submit', fu
     align-self:auto;
     text-align:left;
     float:left;
+    height:20px;
+    text-decoration:none;
+    margin:5px 5px 5px 0px;
+  }
+  #itq9y3{
+    flex-basis:30%;
+    min-height:auto;
+  }
+  #iwgoh5{
+    justify-content:flex-start;
+    float:right;
+    height:20px;
+    margin:5px 5px 5px 0;
+  }
+  #i109v8{
+    justify-content:flex-start;
+    flex-direction:row;
+    align-self:auto;
+    text-align:left;
+    float:right;
     height:20px;
     text-decoration:none;
     margin:5px 5px 5px 0px;
