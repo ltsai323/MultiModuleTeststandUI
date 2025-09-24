@@ -170,7 +170,7 @@ def Init():
     if isCommandRunable(shared_state.server_status,CMD_ID):
         set_server_status('initializing')
         job_stop_flags[CMD_ID].clear()
-        logger.debug('[ServerAction][{CMD_ID}] the server status is idle, activate {CMD_ID} command')
+        logger.debug(f'[ServerAction][{CMD_ID}] the server status is idle, activate {CMD_ID} command')
 
         def background_worker():
             try:
@@ -281,7 +281,7 @@ def Run():
     job_stop_flags[CMD_ID].clear()
     if isCommandRunable(shared_state.server_status,CMD_ID):
         set_server_status('running')
-        logger.debug('[ServerAction][{CMD_ID}] the server status is idle, activate {CMD_ID} command')
+        logger.debug(f'[ServerAction][{CMD_ID}] the server status is idle, activate {CMD_ID} command')
 
         def background_worker():
             try:

@@ -59,13 +59,14 @@ job_stop_flags = {
 def bb(val):
     logger.warn(f'checking point {val}')
 def check_jobmode() -> bool:
+    logger.info(f'[CheckJobMode] coming jobmode {JOBMODE} and current status is {shared_state.jobmode}')
     if not shared_state.jobmode:
-        logger.debug(f'[ReplaceJobMode] jobmode modified from None to {JOBMODE}')
+        logger.info(f'[ReplaceJobMode] jobmode modified from None to {JOBMODE}')
         shared_state.jobmode = JOBMODE
         return True
 
     if shared_state.jobmode == JOBMODE:
-        logger.debug(f'[CorrectJobMode] jobmode {JOBMODE} matched, keep running on')
+        logger.info(f'[CorrectJobMode] jobmode {JOBMODE} matched, keep running on')
         return True
 
     logger.warning(f'[InvalidJobMode] jobmode "{ shared_state.jobmode }" mismatched with local "{ JOBMODE }". Ignore command')
@@ -174,7 +175,7 @@ def Init():
     if isCommandRunable(shared_state.server_status,CMD_ID):
         set_server_status('initializing')
         job_stop_flags[CMD_ID].clear()
-        current_app.logger.debug('[ServerAction][{CMD_ID}] the server status is idle, activate {CMD_ID} command')
+        current_app.logger.debug(f'[ServerAction][{CMD_ID}] the server status is idle, activate {CMD_ID} command')
 
         def background_worker():
             try:
@@ -285,7 +286,7 @@ def Run():
     job_stop_flags[CMD_ID].clear()
     if isCommandRunable(shared_state.server_status,CMD_ID):
         set_server_status('running')
-        current_app.logger.debug('[ServerAction][{CMD_ID}] the server status is idle, activate {CMD_ID} command')
+        current_app.logger.debug(f'[ServerAction][{CMD_ID}] the server status is idle, activate {CMD_ID} command')
 
         def background_worker():
             try:
