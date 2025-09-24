@@ -75,6 +75,14 @@ TEMPLATE = r"""<!doctype html>
     code{background:#0e1530;border:1px solid #2a3a7a55;padding:2px 6px;border-radius:6px}
   </style>
 </head>
+"""
+TEMPLATE = r"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>DAQ Summary</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+</head>
 <body>
   <header>
     <h1>DAQ Run1 Figures</h1>
