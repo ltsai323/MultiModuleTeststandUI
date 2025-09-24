@@ -1,11 +1,13 @@
 from flask import Flask, render_template, request, jsonify
 import flask_apps.shared_state as shared_state
 from flask_wtf.csrf import CSRFProtect
+import sys
 
 # app.py
 import logging
 import logging.config
 from datetime import datetime
+log = logging.getLogger(__name__)
 
 import os
 os.system('mkdir -p logs')
@@ -46,7 +48,7 @@ LOGGING_CONFIG = {
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "default",
-            "level": "INFO",
+            "level": "DEBUG",
             "filters": ["status_filter"],
             "stream": "ext://sys.stdout"
         },
@@ -107,10 +109,29 @@ def index_alias():
 @app.route("/set_option", methods=["POST"])
 def set_option():
     data = request.get_json()
-    if "option" in data:
+    ''' data = { 'option': 'task1' } '''
+    log.info(f'[set_option] Got option {data} and current server status {shared_state.server_status} and jobmode {shared_state.jobmode}')
+
+    ### got valid loaded json
+    if "option" not in data:
+        return jsonify({"status": "error", "message": f'[InvalidOption] set_option() received invalid input "{data}".'}), 400
+
+    ### the same jobmode: do nothing
+    if shared_state.jobmode == data["option"]:
+        return jsonify({'status': 'success', 'message': f'[NoAnyChange] job mode is {data["option"]}'})
+
+    ### change job mode: Only for status is "startup" or "destroyed"
+    if shared_state.server_status in ['startup','destroyed']:
+        mesg = f'[NewJobMode] set_option() set jobmode as {data["option"]}'
         shared_state.jobmode = data["option"]
-        return jsonify({"status": "success"})
-    return jsonify({"status": "error", "log": f'[InvalidOption] set_option() received invalid input "{data}".'}), 400
+        log.info(mesg)
+        return jsonify({"status": "success", 'message': mesg})
+    ### remain original job mode: ignore request
+    else:
+        mesg = f'[set_option] ignore changing jobmode due to jobmode {shared_state.jobmode} / status {shared_state.server_status}'
+        log.info(mesg)
+        return jsonify({"status": "success", "message": mesg})
+        
 
 #@app.route('/status')
 #def status():
@@ -118,5 +139,16 @@ def set_option():
 
 ### note only if jobmode is notSELECTED or job status is DESTROYED, allowed to select new jobmode
 
+
+
 if __name__ == "__main__":
+    import os
+    loglevel = os.environ.get('LOG_LEVEL', 'INFO') # DEBUG, INFO, WARNING
+    print(f'[LogLevel] Got {loglevel}')
+    DEBUG_MODE = True if loglevel == 'DEBUG' else False
+    logLEVEL = getattr(logging, loglevel)
+    logging.basicConfig(stream=sys.stdout,level=logLEVEL,
+            format='[basicCONFIG] %(levelname)s - %(message)s',
+            datefmt='%H:%M:%S')
+    log = logging.getLogger(__name__)
     app.run(debug=True, port=5001)
