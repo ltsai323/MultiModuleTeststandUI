@@ -1,6 +1,6 @@
-DBDatabase: hgcdb_test
+DBDatabase: hgcdb
 DBHostname: '192.168.50.213'
-DBPassword: '33665146'
+DBPassword: ''
 DBUsername: postgres
 DataLoc: /home/ntucms/workspace/testdata/
 DebugMode: false
