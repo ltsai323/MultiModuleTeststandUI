@@ -8,7 +8,7 @@ if [ ! -d "external_packages/hgcal-module-testing-gui/" ]; then
 fi
 
 
-if [ ! -d "HGCal_Module_Production_Toolkit" ]; then
-  echo "[Install youying's package (IV scan)] initialize 'hgcal-module-testing-gui' from Andrew "
+if [ ! -d "external_packages/HGCal_Module_Production_Toolkit" ]; then
+  echo "[Install youying's package (IV scan)] initialize 'HGCal_Module_Production_Toolkit' from youying "
   git clone https://github.com/youyingli/HGCal_Module_Production_Toolkit.git external_packages/HGCal_Module_Production_Toolkit
 fi
