@@ -9,13 +9,15 @@ argline2 = \n\t\t[moduleID2L][moduleID2C][moduleID2R]
 
 
 
+siwtch_delay ?= 0
+current_temperature ?= 20
+current_humidity    ?= 50
 IVscan_%:
 	@moduleID="$($(addprefix moduleID,$*))"; if [ "$${moduleID}" == "" ]; then echo [SkipModule] $(addprefix moduleID,$*) received empty, skip; fi
 	@moduleID="$($(addprefix moduleID,$*))"; if [ "$${moduleID}" != "" ]; then \
 			source ./init_bash_vars.sh && cd scripts/ && echo $$moduleID \
-			echo asdf reading temperature from DB; echo 'read LATESTtemp LATESThumidity <<< `python3 read.py`' ; LATESTtemp=20; LATESThumidity=50; \
-			sh IVscan.run.sh "$${moduleID}" "$*" "$$LATESTtemp" "$$LATESThumidity"; \
-		fi  ### temperature and humidity
+			sh IVscan.run.sh "$${moduleID}" "$*" "$(current_temperature)" "$(current_humidity)" "$(switch_dealy)"; \
+		fi
 
 
 
@@ -33,10 +35,8 @@ initialize: ## initialize
 	) \
 	|| echo "[ERROR_STATE]" ### asdf I forgot how to detect state modification
 
-run: ## all IV scan (only single threaded allowed) [runTAG=testrun][moduleSTATUS=Untaped][inspector=test-user]
-	make -f $(MAKEFILE_LIST) -j1 all_IVscan \
-		moduleID1L=$(moduleID1L) moduleID1C=$(moduleID1C) moduleID1R=$(moduleID1R) \
-		moduleID2L=$(moduleID2L) moduleID2C=$(moduleID2C) moduleID2R=$(moduleID2R) #### disable multithread!
+run: ## all IV scan (only single threaded allowed) [current_temperature=20][current_humidity=50][switch_delay=0]
+	$(MAKE) -f $(MAKEFILE_LIST) -j1 all_IVscan
 	echo "FINISHED"
 stop: ## stop pedestal run
 	source ./init_bash_vars.sh && cd scripts && \
