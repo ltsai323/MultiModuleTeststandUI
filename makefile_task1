@@ -25,6 +25,8 @@ pedestal_run: $(addprefix pedestal_,$(MODULE_POSITION)) ## run all pedestals [-j
 	echo hii
 
 
+### read DataLoc in AndrewBASE/configuration.yaml
+### read overwritten information in data/mmts_configuration.yaml
 
 initialize: ## initialize
 	/bin/rm -rf `python3 scripts/access_yaml_var.py $${AndrewModuleTestingGUI_BASE}/configuration.yaml DataLoc`/daqplots/*
