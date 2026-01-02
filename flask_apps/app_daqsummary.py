@@ -1,8 +1,8 @@
+#!/usr/bin/env python3
 from __future__ import annotations
 import os
 import re
 from flask import Flask, render_template_string, send_from_directory, send_file, url_for, abort, Response, redirect
-#!/usr/bin/env python3
 import logging
 import sys
 

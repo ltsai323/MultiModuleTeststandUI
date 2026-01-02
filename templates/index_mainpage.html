@@ -14,6 +14,7 @@
         // blueprint name + function name in blueprint
         if (selected.value === "task1") { iframeUrl = "{{ url_for('app_task1.main') }}"; }
         else if (selected.value === "task2") { iframeUrl = "{{ url_for('app_task2.main') }}"; }
+        else if (selected.value === "task3") { iframeUrl = "{{ url_for('app_task3.main') }}"; }
         const iframe = document.getElementById("myIframe");
         iframe.src = iframeUrl;
 
@@ -61,11 +62,12 @@
       <form id="optionsForm">
         <label> <input type="radio" name="option" value="task1" {% if selected_option == 'task1' %} checked {% endif %}> Single Pedestal Run </label>
         <label> <input type="radio" name="option" value="task2" {% if selected_option == 'task2' %} checked {% endif %}> test region </label>
+        <label> <input type="radio" name="option" value="task3" {% if selected_option == 'task3' %} checked {% endif %}> IV scan </label>
         <button type="button" onclick="confirmSelection()">Confirm</button>
       </form>
 
       <iframe id="myIframe" width="100%" onload="adjustIframeHeight()"
-                                           src="{% if selected_option == 'task1' %}{{ url_for('app_task1.main') }}{% elif selected_option == 'task2' %}{{ url_for('app_task2.main') }}{% endif %}"></iframe>
+                                           src="{% if selected_option == 'task1' %}{{ url_for('app_task1.main') }}{% elif selected_option == 'task2' %}{{ url_for('app_task2.main') }}{% elif selected_option == 'task3' %}{{ url_for('app_task3.main') }}{% endif %}"></iframe>
     </div>
   </body>
 </html>
