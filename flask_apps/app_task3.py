@@ -5,7 +5,7 @@ from flask import Flask, render_template, request, jsonify, Blueprint
 from flask import current_app
 from flask_wtf import FlaskForm
 from flask_wtf.csrf import CSRFProtect
-from wtforms.validators import DataRequired, Regexp, InputRequired
+from wtforms.validators import DataRequired, Regexp, InputRequired, NumberRange
 from wtforms import StringField, SubmitField, RadioField
 import flask_apps.shared_state as shared_state
 from PythonTools.server_status import isCommandRunable
@@ -28,6 +28,8 @@ except FileNotFoundError as e:
     raise FileNotFoundError(f'\n\n[NoEnvVar] Need to `source ./init_bash_vars.sh` before execute this file') from e
 
 CONF_DICT = {
+        'currentHUMIDITY': '',
+        'currentTEMPERATURE': '',
        #'inspector': '',    ### not used
        #'moduleSTATUS': '', ### not used
         'moduleID1L': '',
@@ -50,6 +52,7 @@ def ExecCMD(jobID:str, confDICT:dict):
         shared_state.runidx+=1
         runTAG = f'run{shared_state.runidx}'
         dictOPTs = ' '.join([ f'{key}={val}' for key,val in confDICT.items() if val != '' ])
+        log.debug(f'[make CMD] make -f makefile_task3 run ' + dictOPTs )
         return f'make -f makefile_task3 run ' + dictOPTs
     if jobID == 'Stop':
         return 'make -f makefile_task3 stop JobName=Stop'
@@ -215,6 +218,13 @@ def Init():
 alphanumeric_validator = Regexp("^[a-zA-Z0-9\-]*$", message="Only letters and numbers and dash allowed.")
 #alphanumeric_validator = Regexp("^[a-zA-Z0-9]*$", message="Only letters and numbers allowed.")
 class ConfigForm(FlaskForm):
+    currentTEMPERATURE = StringField("currentTEMPERATURE", validators=[InputRequired(message='Temperature Missing')])
+   #moduleSTATUS = RadioField("moduleSTATUS", validators=[InputRequired()])
+    currentHUMIDITY    = StringField("currentHUMIDITY"   , validators=[
+        NumberRange(min=0.,max=100., message='Number from 0 to 100'),
+        InputRequired(message='Humidity Missing')]
+                                     )
+
     moduleID1L = StringField("moduleID1L", validators=[alphanumeric_validator])
     moduleID1C = StringField("moduleID1C", validators=[alphanumeric_validator])
     moduleID1R = StringField("moduleID1R", validators=[alphanumeric_validator])
