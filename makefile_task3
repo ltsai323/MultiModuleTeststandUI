@@ -1,0 +1,61 @@
+##### IV curve for multiple channel
+BASE_DIR :=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+
+MODULE_POSITION := \
+	1L 1C 1R \
+	2L 2C 2R
+argline1 = \n\t\t[moduleID1L][moduleID1C][moduleID1R]
+argline2 = \n\t\t[moduleID2L][moduleID2C][moduleID2R]
+
+
+
+IVscan_%:
+	@moduleID="$($(addprefix moduleID,$*))"; if [ "$${moduleID}" == "" ]; then echo [SkipModule] $(addprefix moduleID,$*) received empty, skip; fi
+	@moduleID="$($(addprefix moduleID,$*))"; if [ "$${moduleID}" != "" ]; then \
+			source ./init_bash_vars.sh && cd scripts/ && \
+			echo asdf reading temperature from DB; echo 'read LATESTtemp LATESThumidity <<< `python3 read.py`' ; LATESTtemp=20; LATESThumidity=50; \
+			sh IVscan.run.sh "$${moduleID}" "$*" "$$LATESTtemp" "$$LATESThumidity" ### temperature and humidity
+		fi
+
+
+
+all_IVscan: $(addprefix IVscan_,$(MODULE_POSITION)) ## IV scan does not support multithread
+	echo hii
+
+
+### read DataLoc in AndrewBASE/configuration.yaml
+### read overwritten information in data/mmts_configuration.yaml
+
+initialize: ## initialize
+	( \
+		python3 scripts/initialize_rs232_devices.py -c data/mmts_configurations.yaml RS232/switch_vitek RS232/HV_keithley \
+		&& echo "[INITIZLIZED_STATE]" \
+	) \
+	|| echo "[ERROR_STATE]" ### asdf I forgot how to detect state modification
+
+run: $(addprefix IVscan_,$(MODULE_POSITION)) ## pedestal run parallelly [runTAG=testrun][moduleSTATUS=Untaped][inspector=test-user]
+	make -f $(MAKEFILE_LIST) -j1 all_IVscan \
+		moduleID1L=$(moduleID1L) moduleID1C=$(moduleID1C) moduleID1R=$(moduleID1R) \
+		moduleID2L=$(moduleID2L) moduleID2C=$(moduleID2C) moduleID2R=$(moduleID2R) #### disable multithread!
+	echo "FINISHED"
+stop: ## stop pedestal run
+	source ./init_bash_vars.sh && cd scripts && \
+		sh IVscan.stop.sh
+
+destroy: ## remove all running jobs and disable board power
+	source ./init_bash_vars.sh && cd scripts && \
+	sh IVscan.stop.sh
+
+
+
+
+test:
+	make -f $(MAKEFILE_LIST) all_IVscan moduleID1L="320XHT4CPM00019"
+
+
+IN_ARGS =  $(argline1)$(argline2)$(argline3)
+
+help:  ## Display this help
+	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make \033[32m<command>\033[0m $(IN_ARGS)\n\nCommands:\n\033[36m\033[0m\n"} /^[0-9a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+.DEFAULT_GOAL := help
