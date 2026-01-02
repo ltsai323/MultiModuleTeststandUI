@@ -1,3 +1,4 @@
+mkdir -p tmp_files
 if [ ! -f 'data/mmts_configurations.yaml' ]; then 
   cp data/mmts_configurations.yaml.template data/mmts_configurations.yaml
   vi data/mmts_configurations.yaml
@@ -22,4 +23,5 @@ else
   git clone https://github.com/ltsai323/HGCal_Module_Production_Toolkit.git external_packages/HGCal_Module_Production_Toolkit
   ln -s $PWD/data/mmts_configurations.yaml external_packages/HGCal_Module_Production_Toolkit/configuration.yaml ### use configuration.yaml in youying's repo
   mkdir external_packages/HGCal_Module_Production_Toolkit/out
+  ln -s $PWD/external_packages/HGCal_Module_Production_Toolkit/out tmp_files/out
 fi

@@ -16,7 +16,8 @@ IVscan_%:
 	@moduleID="$($(addprefix moduleID,$*))"; if [ "$${moduleID}" == "" ]; then echo [SkipModule] $(addprefix moduleID,$*) received empty, skip; fi
 	@moduleID="$($(addprefix moduleID,$*))"; if [ "$${moduleID}" != "" ]; then \
 			source ./init_bash_vars.sh && cd scripts/ && echo $$moduleID \
-			sh IVscan.run.sh "$${moduleID}" "$*" "$(current_temperature)" "$(current_humidity)" "$(switch_dealy)"; \
+			echo "$${moduleID}" >> $(tmp_file_for_summary_plot) ; \
+			sh IVscan.run.sh "$${moduleID}" "$*" "$(current_temperature)" "$(current_humidity)" "$(switch_dealy)" "$(tmp_file_for_summary_plot)"; \
 		fi
 
 
@@ -35,7 +36,10 @@ initialize: ## initialize
 	) \
 	|| echo "[ERROR_STATE]" ### asdf I forgot how to detect state modification
 
+tmp_file_for_summary_plot := $(BASE_DIR)/tmp_files/IVscan_scannedID.txt
 run: ## all IV scan (only single threaded allowed) [current_temperature=20][current_humidity=50][switch_delay=0]
+	/bin/rm -r tmp_files/out/* ## clean up
+	/bin/rm $(tmp_file_for_summary_plot)
 	$(MAKE) -f $(MAKEFILE_LIST) -j1 all_IVscan
 	echo "FINISHED"
 stop: ## stop pedestal run
