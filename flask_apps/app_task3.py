@@ -6,7 +6,7 @@ from flask import current_app
 from flask_wtf import FlaskForm
 from flask_wtf.csrf import CSRFProtect
 from wtforms.validators import DataRequired, Regexp, InputRequired, NumberRange
-from wtforms import StringField, SubmitField, RadioField
+from wtforms import StringField, SubmitField, RadioField, IntegerField
 import flask_apps.shared_state as shared_state
 from PythonTools.server_status import isCommandRunable
 import re
@@ -52,7 +52,6 @@ def ExecCMD(jobID:str, confDICT:dict):
         shared_state.runidx+=1
         runTAG = f'run{shared_state.runidx}'
         dictOPTs = ' '.join([ f'{key}={val}' for key,val in confDICT.items() if val != '' ])
-        log.debug(f'[make CMD] make -f makefile_task3 run ' + dictOPTs )
         return f'make -f makefile_task3 run ' + dictOPTs
     if jobID == 'Stop':
         return 'make -f makefile_task3 stop JobName=Stop'
@@ -199,6 +198,7 @@ def Init():
         def background_worker():
             try:
                 command = ExecCMD(CMD_ID, CONF_DICT)
+                #current_app.logger.debug(f'[bkg CMD Init] {command}')
                 run_command(command, CMD_ID)
             finally:
                 shared_state.DAQresult_current_modified = ''
@@ -220,7 +220,7 @@ alphanumeric_validator = Regexp("^[a-zA-Z0-9\-]*$", message="Only letters and nu
 class ConfigForm(FlaskForm):
     currentTEMPERATURE = StringField("currentTEMPERATURE", validators=[InputRequired(message='Temperature Missing')])
    #moduleSTATUS = RadioField("moduleSTATUS", validators=[InputRequired()])
-    currentHUMIDITY    = StringField("currentHUMIDITY"   , validators=[
+    currentHUMIDITY    = IntegerField("currentHUMIDITY"   , validators=[
         NumberRange(min=0.,max=100., message='Number from 0 to 100'),
         InputRequired(message='Humidity Missing')]
                                      )
@@ -282,7 +282,7 @@ def Configure():
     for varname in CONF_DICT.keys():
         value = getattr(form, varname).data if hasattr(form, varname) else ''
         current_app.logger.debug(f'[GotValue] Form {varname} got original value "{value}"')
-        clean_val = ignore_special_characters(value)
+        clean_val = ignore_special_characters(str(value))
         if len(clean_val) > 20:
             current_app.logger.warning(f'[InputTooLong] Input {varname}:{clean_val} too long, resetting.')
             clean_val = ''
@@ -328,6 +328,7 @@ def Run():
         def background_worker():
             try:
                 command = ExecCMD(CMD_ID, CONF_DICT)
+                #current_app.logger.debug(f'[bkg CMD Run] {command}')
                 run_command(command, CMD_ID)
             finally:
                 set_server_status('idle')
@@ -363,6 +364,7 @@ def Stop():
     def background_worker():
         try:
             command = ExecCMD(CMD_ID, CONF_DICT)
+            #current_app.logger.debug(f'[bkg CMD Stop] {command}')
             run_command(command, CMD_ID)
         finally:
             set_server_status('idle')
@@ -398,6 +400,7 @@ def Destroy():
         def background_worker():
             try:
                 command = ExecCMD(CMD_ID, CONF_DICT)
+                #current_app.logger.debug(f'[bkg CMD Destroy] {command}')
                 run_command(command, CMD_ID)
             finally:
                 logger.info("Destory ended")
