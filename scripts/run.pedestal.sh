@@ -16,4 +16,4 @@ python3 InteractionGUI.CLI.py $mmtsCONF $moduleID $runTAG $mmtsPOSITION $moduleS
   || the_exit "[Error] InteractionGUI.CLI.py got error.  abort... "
 
 #python3 InteractionGUI.CLI.py "'${FLASK_BASE}/data/mmts_configurations.yaml'" '320-XH-T4C-PM-00019' 'run1' '1L' 'Untaped' 'test-user' || exit 0
-cd ..
+cd -
