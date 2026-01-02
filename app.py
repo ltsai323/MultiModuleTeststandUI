@@ -141,14 +141,14 @@ def set_option():
 
 
 
+
 if __name__ == "__main__":
     import os
     loglevel = os.environ.get('LOG_LEVEL', 'INFO') # DEBUG, INFO, WARNING
-    print(f'[LogLevel] Got {loglevel}')
     DEBUG_MODE = True if loglevel == 'DEBUG' else False
     logLEVEL = getattr(logging, loglevel)
     logging.basicConfig(stream=sys.stdout,level=logLEVEL,
-            format='[basicCONFIG] %(levelname)s - %(message)s',
-            datefmt='%H:%M:%S')
+                        format=f'%(levelname)-7s%(filename)s#%(lineno)s %(funcName)s() >>> %(message)s',
+                        datefmt='%H:%M:%S')
     log = logging.getLogger(__name__)
     app.run(debug=True, port=5001)
