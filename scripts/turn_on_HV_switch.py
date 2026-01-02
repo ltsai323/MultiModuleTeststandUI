@@ -131,7 +131,7 @@ def main():
                 ### print(f"Initial error status: {error_status}")
                 channel = MMTSposition_to_HVchannel(options.position)
                 if channel == 0:
-                    vitrek.reset()
+                    await vitrek.reset()
                 else:
                     log.info(f'[SetCH] channel {channel} ON')
                     await only_turn_on_channel(vitrek, channel)

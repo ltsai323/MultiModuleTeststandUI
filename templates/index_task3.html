@@ -23,7 +23,7 @@
           </div>
         </div>
       </div>
-      <form method="POST" id="pymodule_configurations" action="/task1/submit">
+      <form method="POST" id="pymodule_configurations" action="/task3/submit">
         <meta name="csrf_token" type="hidden" content="{{ csrf_token() }}"/>
         <br/>
         <!-- === New Radio Buttons === -->
@@ -89,7 +89,7 @@
   </section>
   <script>
     async function updateStatus() {
-      const response = await fetch('/task1/status');
+      const response = await fetch('/task3/status');
       const data = await response.json();
 
       const initBtn = document.getElementById('initBtn');
@@ -98,9 +98,9 @@
       const stopBtn = document.getElementById('stopBtn');
       const exitBtn = document.getElementById('exitBtn');
 
-      // accept command only if jobmode is empty or task1
+      // accept command only if jobmode is empty or task3
       if (data.jobmode !== "" ) {
-        if (data.jobmode !== "task1") {
+        if (data.jobmode !== "task3") {
           if ( data.status !== "startup" && data.status !== "destroyed" ) {
             initBtn.disabled = true ;
             confBtn.disabled = true ;
@@ -254,7 +254,7 @@
 
     async function execjob(varname) {
       const csrfToken = document.querySelector('meta[name="csrf_token"]').getAttribute('content');
-      await fetch('/task1/'+varname, {
+      await fetch('/task3/'+varname, {
         method: "POST",
         headers: {
           'Content-Type': 'application/json',
@@ -291,7 +291,7 @@
         obj[key] = value;
       });
 
-      fetch('/task1/submit', {
+      fetch('/task3/submit', {
         method: "POST",
         headers: {
           'Content-Type': 'application/json',

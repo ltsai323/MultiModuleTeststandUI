@@ -28,8 +28,8 @@ except FileNotFoundError as e:
     raise FileNotFoundError(f'\n\n[NoEnvVar] Need to `source ./init_bash_vars.sh` before execute this file') from e
 
 CONF_DICT = {
-        'inspector': '',    ### not used
-        'moduleSTATUS': '', ### not used
+       #'inspector': '',    ### not used
+       #'moduleSTATUS': '', ### not used
         'moduleID1L': '',
         'moduleID1C': '',
         'moduleID1R': '',
@@ -38,9 +38,9 @@ CONF_DICT = {
         'moduleID2C': '',
         'moduleID2R': '',
 
-        'moduleID3L': '',
-        'moduleID3C': '',
-        'moduleID3R': '',
+       #'moduleID3L': '',
+       #'moduleID3C': '',
+       #'moduleID3R': '',
         }
 
 def ExecCMD(jobID:str, confDICT:dict):
@@ -215,9 +215,6 @@ def Init():
 alphanumeric_validator = Regexp("^[a-zA-Z0-9\-]*$", message="Only letters and numbers and dash allowed.")
 #alphanumeric_validator = Regexp("^[a-zA-Z0-9]*$", message="Only letters and numbers allowed.")
 class ConfigForm(FlaskForm):
-    inspector = StringField("inspector", validators=[InputRequired()])
-    moduleSTATUS = StringField("moduleSTATUS", validators=[InputRequired()])
-   #moduleSTATUS = RadioField("moduleSTATUS", validators=[InputRequired()])
     moduleID1L = StringField("moduleID1L", validators=[alphanumeric_validator])
     moduleID1C = StringField("moduleID1C", validators=[alphanumeric_validator])
     moduleID1R = StringField("moduleID1R", validators=[alphanumeric_validator])
@@ -226,9 +223,9 @@ class ConfigForm(FlaskForm):
     moduleID2C = StringField("moduleID2C", validators=[alphanumeric_validator])
     moduleID2R = StringField("moduleID2R", validators=[alphanumeric_validator])
 
-    moduleID3L = StringField("moduleID3L", validators=[alphanumeric_validator])
-    moduleID3C = StringField("moduleID3C", validators=[alphanumeric_validator])
-    moduleID3R = StringField("moduleID3R", validators=[alphanumeric_validator])
+   #moduleID3L = StringField("moduleID3L", validators=[alphanumeric_validator])
+   #moduleID3C = StringField("moduleID3C", validators=[alphanumeric_validator])
+   #moduleID3R = StringField("moduleID3R", validators=[alphanumeric_validator])
     submit = SubmitField("Configure")
 
 @app.route('/submit', methods=['POST','GET'])
