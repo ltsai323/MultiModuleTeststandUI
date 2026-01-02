@@ -9,22 +9,22 @@ log = logging.getLogger(__name__)
 import time
 import pyvisa
 
+
 def check_device_connected(resource_name):
     """Check if a device is connected to the specified resource."""
     rm = pyvisa.ResourceManager('@py')
 
     try:
-        # List all connected resources
-        resources = rm.list_resources()
-        log.debug("Connected resources:", resources)
-
-        # Check if the resource is in the list
-        if resource_name in resources:
-            log.debug(f"{resource_name} is connected.")
-            return True
-        else:
-            log.debug(f"{resource_name} is not connected.")
-            return False
+        # Attempt to open a connection to the resource
+        instrument = rm.open_resource(resource_name)
+        # If successful, close the session immediately
+        instrument.close()
+        log.debug(f"{resource_name} is connected.")
+        return True
+    except pyvisa.VisaIOError as e:
+        # Handling specific exceptions related to VISA I/O operations
+        log.debug(f"Failed to connect to {resource_name}. Error: {e}")
+        return False
     except Exception as e:
         log.debug(f"An error occurred: {e}")
         return False
@@ -41,7 +41,7 @@ def ArgParses():
     args = parser.parse_args()
     
     # args.strings will be a list of input strings
-    log.debug("Received yaml entry:", args.yamlENTRY)
+    log.debug(f"Received yaml entry: {args.yamlENTRY}")
     return args
 
 

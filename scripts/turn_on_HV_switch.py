@@ -3,6 +3,7 @@ import logging
 import sys
 from optparse import OptionParser
 from JobModule.device_VITREK_switch_control import Vitrek964i
+import asyncio
 
 async def only_turn_on_channel(vitrekINST, iCHANNEL:int):
     if iCHANNEL < 1 or iCHANNEL > 32: raise IOError(f'[InvalidChannel] channel {iCHANNEL} is invalid')
@@ -11,36 +12,9 @@ async def only_turn_on_channel(vitrekINST, iCHANNEL:int):
    #await vitrekINST.set_bank_state(2, "#h00") ## reset all relay at bank2
     await vitrekINST.reset() ## reset all relay
     await vitrekINST.set_relay_state(iCHANNEL, "ON")
-    
-def Option_Parser(argv):
-
-    usage='usage: %prog [options] arg\n'
-    parser = OptionParser(usage=usage)
-
-    parser.add_option('-p', '--position',
-            type='int', dest='position', default=None,
-            help=f'MMTS position. available options is {mmtsPOSmap.keys}. Once option received invalid entry, reset all channel'
-            )
-    parser.add_option('-d', '--delay',
-            type='float', dest='delay', default=0.05,
-            help='delay timer after turn on switch'
-            )
-    parser.add_option('-a', '--address',
-            type='str', dest='address', default=None,
-            help='RS232 device address in system. Input like "ASRL/dev/ttyUSB0::INSTR". If address set, use this address. Or use address in config file'
-            )
-    parser.add_option('-c', '--config',
-            type='str', dest='config', default='data/mmts_configurations.yaml',
-            help='Read RS232 device address like "ASRL/dev/ttyUSB0::INSTR" from yaml file. This option will be ignored if --address set'
-            )
-        
-
-
-    (options, args) = parser.parse_args(argv)
-    return options
-
 
 mmtsPOSmap = {
+        '0': 0, # resetallchannel
         '1L': 1, '1C': 2, '1R': 3,
         '2L': 4, '2C': 5, '2R': 6,
         }
@@ -48,6 +22,68 @@ def MMTSposition_to_HVchannel(mmtsPOSITION:str):
     if mmtsPOSITION in mmtsPOSmap.keys():
         return mmtsPOSmap[mmtsPOSITION]
     return 0 ## if invalid option. Regard it as disable everything
+    
+#def Option_Parser(argv):
+#
+#    usage='usage: %prog [options] arg\n'
+#    parser = OptionParser(usage=usage)
+#
+#    parser.add_option('-p', '--position',
+#            type='str', dest='position', default=None,
+#            help=f'MMTS position. available options is {mmtsPOSmap.keys}. Once option received invalid entry, reset all channel'
+#            )
+#    parser.add_option('-d', '--delay',
+#            type='float', dest='delay', default=0.05,
+#            help='delay timer after turn on switch'
+#            )
+#    parser.add_option('-a', '--address',
+#            type='str', dest='address', default=None,
+#            help='RS232 device address in system. Input like "ASRL/dev/ttyUSB0::INSTR". If address set, use this address. Or use address in config file'
+#            )
+#    parser.add_option('-c', '--config',
+#            type='str', dest='config', default='data/mmts_configurations.yaml',
+#            help='Read RS232 device address like "ASRL/dev/ttyUSB0::INSTR" from yaml file. This option will be ignored if --address set'
+#            )
+#        
+#
+#
+#    (options, args) = parser.parse_args(argv)
+#    return options
+def Option_Parser(argv):
+    usage = 'usage: %prog [options] arg\n'
+    parser = OptionParser(usage=usage)
+
+    pos_choices = sorted(mmtsPOSmap.keys())
+
+    parser.add_option(
+        '-p', '--position',
+        type='choice', choices=pos_choices,
+        dest='position', default=None,
+        help=f"MMTS position. Choices: {', '.join(pos_choices)}, 0 for reset all channel"
+    )
+
+    parser.add_option(
+        '-d', '--delay',
+        type='float', dest='delay', default=0.05,
+        help='delay timer after turn on switch'
+    )
+    parser.add_option(
+        '-a', '--address',
+        type='str', dest='address', default=None,
+        help='RS232 device address in system. Input like "ASRL/dev/ttyUSB0::INSTR". '
+             'If address set, use this address. Or use address in config file'
+    )
+    parser.add_option(
+        '-c', '--config',
+        type='str', dest='config', default='data/mmts_configurations.yaml',
+        help='Read RS232 device address like "ASRL/dev/ttyUSB0::INSTR" from yaml file. '
+             'This option will be ignored if --address set'
+    )
+
+    (options, args) = parser.parse_args(argv)
+    return options
+
+
 
 
 def address_from_yaml(yamlFILE):
@@ -64,12 +100,13 @@ RS232:
 
 def main():
     options = Option_Parser(sys.argv[1:])
+
     """Comprehensive example usage of the Vitrek964i class with all methods"""
     # Create controller instance
     log.debug(f'[options] {options}')
 
 
-    addr = parser.address if parser.address else address_from_yaml(parser.configfile)
+    addr = options.address if options.address else address_from_yaml(options.config)
     vitrek_device = Vitrek964i(addr)
     try:
         async def async_main(vitrek):
@@ -92,7 +129,6 @@ def main():
                 ### # Check for any errors
                 ### error_status = await vitrek.get_error_status()
                 ### print(f"Initial error status: {error_status}")
-                channel = address_from_yaml(options.position)
                 channel = MMTSposition_to_HVchannel(options.position)
                 if channel == 0:
                     vitrek.reset()
