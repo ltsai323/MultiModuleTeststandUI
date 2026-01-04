@@ -153,4 +153,5 @@ if __name__ == "__main__":
                         format=f'%(levelname)-7s%(filename)s#%(lineno)s %(funcName)s() >>> %(message)s',
                         datefmt='%H:%M:%S')
     log = logging.getLogger(__name__)
-    app.run(debug=True, port=5001)
+   #app.run(debug=True, port=5005) ### for test product
+    app.run(debug=True, port=5001) ### for stable product
