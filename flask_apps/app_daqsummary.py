@@ -47,35 +47,35 @@ def has_png(path: str) -> bool:
     except OSError:
         return False
 # ---------------- Template (inline for single-file app) ----------------
-TEMPLATE = r"""<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>DAQ Run1 Plots</title>
-  <style>
-    :root { --bg:#0b1020; --card:#121a33; --ink:#e7ecff; --muted:#9fb0ffb3; }
-    *{box-sizing:border-box}
-    body{margin:0;background:linear-gradient(180deg,#0b1020 0%,#0b1020 60%,#0e1530 100%);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
-    header{max-width:2000px;margin:0 auto;padding:24px 20px 8px}
-    h1{margin:0 0 6px}
-    .sub{color:var(--muted);font-size:.95rem}
-    .grid{max-width:2000px;margin:16px auto 60px;padding:0 20px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-    @media (max-width:1100px){.grid{grid-template-columns:repeat(2,1fr)}}
-    @media (max-width:720px){.grid{grid-template-columns:1fr}}
-    .block{background:radial-gradient(120% 120% at 100% 0%,#1a244a 0%,#0f1836 50%,var(--card) 100%);border-radius:16px;border:1px solid #2a3a7a55;box-shadow:0 10px 30px #000a; padding:14px}
-    .block-title{display:flex;justify-content:space-between;align-items:center;margin:2px 2px 10px;padding:8px 10px;background:#0e1530;border:1px solid #2a3a7a66;border-radius:12px}
-    .figwrap{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    @media (max-width:560px){.figwrap{grid-template-columns:1fr}}
-    figure{margin:0;padding:10px;border-radius:12px;background:#0b122a;border:1px solid #2a3a7a55}
-    img{width:100%;height:260px;object-fit:contain;display:block;border-radius:8px;background:#050915}
-    figcaption{margin-top:8px;font-size:.85rem;color:var(--muted);word-break:break-all}
-    .badge{font-size:.75rem;color:var(--muted)}
-    .legend{max-width:2000px;margin:0 auto 28px;padding:0 20px;color:var(--muted);font-size:.9rem}
-    code{background:#0e1530;border:1px solid #2a3a7a55;padding:2px 6px;border-radius:6px}
-  </style>
-</head>
-"""
+### TEMPLATE = r"""<!doctype html>
+### <html lang="en">
+### <head>
+###   <meta charset="utf-8">
+###   <meta name="viewport" content="width=device-width, initial-scale=1">
+###   <title>DAQ Run1 Plots</title>
+###   <style>
+###     :root { --bg:#0b1020; --card:#121a33; --ink:#e7ecff; --muted:#9fb0ffb3; }
+###     *{box-sizing:border-box}
+###     body{margin:0;background:linear-gradient(180deg,#0b1020 0%,#0b1020 60%,#0e1530 100%);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+###     header{max-width:2000px;margin:0 auto;padding:24px 20px 8px}
+###     h1{margin:0 0 6px}
+###     .sub{color:var(--muted);font-size:.95rem}
+###     .grid{max-width:2000px;margin:16px auto 60px;padding:0 20px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+###     @media (max-width:1100px){.grid{grid-template-columns:repeat(2,1fr)}}
+###     @media (max-width:720px){.grid{grid-template-columns:1fr}}
+###     .block{background:radial-gradient(120% 120% at 100% 0%,#1a244a 0%,#0f1836 50%,var(--card) 100%);border-radius:16px;border:1px solid #2a3a7a55;box-shadow:0 10px 30px #000a; padding:14px}
+###     .block-title{display:flex;justify-content:space-between;align-items:center;margin:2px 2px 10px;padding:8px 10px;background:#0e1530;border:1px solid #2a3a7a66;border-radius:12px}
+###     .figwrap{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+###     @media (max-width:560px){.figwrap{grid-template-columns:1fr}}
+###     figure{margin:0;padding:10px;border-radius:12px;background:#0b122a;border:1px solid #2a3a7a55}
+###     img{width:100%;height:260px;object-fit:contain;display:block;border-radius:8px;background:#050915}
+###     figcaption{margin-top:8px;font-size:.85rem;color:var(--muted);word-break:break-all}
+###     .badge{font-size:.75rem;color:var(--muted)}
+###     .legend{max-width:2000px;margin:0 auto 28px;padding:0 20px;color:var(--muted);font-size:.9rem}
+###     code{background:#0e1530;border:1px solid #2a3a7a55;padding:2px 6px;border-radius:6px}
+###   </style>
+### </head>
+### """
 TEMPLATE = r"""<!doctype html>
 <html lang="en">
 <head>
