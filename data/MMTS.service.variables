@@ -1,0 +1,5 @@
+LOG_LEVEL=INFO
+BASH_SCRIPT_FOLDER=/home/ntucms/.local/MultimoduleTeststandUI/scripts/task2_pedestalrun/
+PYTHONPATH=/home/ntucms/.local/MultimoduleTeststandUI/:$PYTHONPATH
+AndrewModuleTestingGUI_BASE=/home/ntucms/.local/MultimoduleTeststandUI/external_packages/hgcal-module-testing-gui
+

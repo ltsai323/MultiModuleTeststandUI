@@ -1,0 +1,15 @@
+[Unit]
+Description=MultiModuleTeststand web server
+After=network.target nss-user-lookup.target
+
+[Service]
+Type=idle
+User=ntucms
+WorkingDirectory=/home/ntucms/.local/MultimoduleTeststandUI
+EnvironmentFile=/home/ntucms/.local/MultimoduleTeststandUI/data/MMTS.service.variables
+ExecStart=python3 app.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
