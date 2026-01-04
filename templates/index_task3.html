@@ -304,6 +304,13 @@
       document.getElementById('pymodule_configurations').dispatchEvent(new Event('submit', { cancelable: true }));
     });
     document.getElementById('pymodule_configurations').addEventListener('submit', function(e) {
+      // 🔹 Trigger HTML5 validation
+      if (!this.checkValidity()) {
+        e.preventDefault();        // stop submission
+        this.reportValidity();     // show browser validation UI
+        return;
+      }
+
       e.preventDefault();  // Prevent normal form submission
 
       const formData = new FormData(this);
