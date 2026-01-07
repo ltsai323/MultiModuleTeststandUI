@@ -88,6 +88,7 @@ logging.config.dictConfig(LOGGING_CONFIG)
 import flask_apps.app_task1    as app_task1
 import flask_apps.app_task2    as app_task2
 import flask_apps.app_task3    as app_task3
+import flask_apps.app_task3_plot    as app_plot3
 import flask_apps.app_daqsummary as app_daqsummary
 
 app = Flask(__name__)
@@ -96,6 +97,7 @@ csrf = CSRFProtect(app)
 app.register_blueprint(app_task1.app, url_prefix='/task1')
 app.register_blueprint(app_task2.app, url_prefix='/task2')
 app.register_blueprint(app_task3.app, url_prefix='/task3')
+app.register_blueprint(app_plot3.app)
 
 app.register_blueprint(app_daqsummary.app)
 
@@ -153,5 +155,5 @@ if __name__ == "__main__":
                         format=f'%(levelname)-7s%(filename)s#%(lineno)s %(funcName)s() >>> %(message)s',
                         datefmt='%H:%M:%S')
     log = logging.getLogger(__name__)
-   #app.run(debug=True, port=5005) ### for test product
-    app.run(debug=True, port=5001) ### for stable product
+    app.run(debug=True, port=5005) ### for test product
+   #app.run(debug=True, port=5001) ### for stable product

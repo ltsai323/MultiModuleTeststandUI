@@ -88,25 +88,12 @@
         </div>
       </form>
       <!-- === New Dropdown Menu === -->
-      <div id="ii4kyn" class="gjs-row">
-        <div id="i5qemj" class="gjs-cell">
-          <div id="ip1mvm">Latest IV Scan Result: 
-          </div>
-          <div id="daqNewOpt">
-            <br/>
-          </div>
-        </div>
-        <div id="iwfnx8" class="gjs-cell">
-          <button type="button" id="daqSummaryBtn"> Check </button>
-          <select type="text" id="daqSelect" name="daqResult">
-            <!-- Options will be populated dynamically -->
-            <option value="">-- Select an option --</option>
-            {% for daqres in DAQres %}
-            <option value="{{daqres}}"> {{daqres}} </option>
-            {% endfor %}
-          </select>
-          <div id="i388gj">Scan Result:</div>
-        </div>
+      <div id="ii4kyn" class="gjs-row", style="width:100%">
+        <iframe
+            id="summaryFrame"
+            src="{{ url_for('plot_task3.block_page', run='summary', key='Summary') }}"
+            style="width:100%; height:350px; border:none">
+        </iframe>
       </div>
     </div>
   </section>
