@@ -1,3 +1,4 @@
+SHELL := /bin/bash
 BASE_DIR :=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 moduleSTATUS := Untaped
 # ['Untaped', 'Taped', 'Assembled', 'Backside Bonded', 'Backside Encapsulated', 'Completely Bonded', 'Bonds Reworked', 'Completely Encapsulated', 'Bolted' ]
