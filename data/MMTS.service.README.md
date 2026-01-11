@@ -3,10 +3,10 @@
 ```
 chmod +x ../app.py
 ### edit path in `data/MMTS.service` and `data/MMTS.service.variables`
-sudo mv MMTS.service /etc/systemd/system/
-
+cd .. && python3 data/MMTS.service.createscript.py
 sudo cp MMTS.service /etc/systemd/system/
-sudo systemctl reload-daemon
+sudo systemctl daemon-reload
 sudo systemctl start MMTS.service ### activate service
 #sudo systemctl stop  MMTS.service ### stop service
 #journalctl -u MMTS.service  ### check error messages
+```
