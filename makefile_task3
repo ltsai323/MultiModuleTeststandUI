@@ -34,7 +34,7 @@ initialize: ## initialize
 		python3 scripts/initialize_rs232_devices.py -c data/mmts_configurations.yaml RS232/switch_vitek RS232/HV_keithley \
 		&& echo "[INITIZLIZED_STATE]" \
 	) \
-	|| echo "[ERROR_STATE]" ### asdf I forgot how to detect state modification
+	|| (echo "[ERROR_STATE]"; exit 1)
 
 tmp_file_for_summary_plot := $(BASE_DIR)/tmp_files/IVscan_scannedID.txt
 run: ## all IV scan (only single threaded allowed) [currentTEMPERATURE=20][currentHUMIDITY=50][switch_delay=0]
