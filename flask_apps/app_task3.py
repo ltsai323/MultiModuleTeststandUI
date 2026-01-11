@@ -111,7 +111,12 @@ def set_thread(runTYPE, tHREAD:threading.Thread):
     job_thread[runTYPE] = tHREAD
 
 
+
 def set_server_status(newSTAT):
+    if shared_state.server_status == 'error': ## if error
+        if newSTAT not in [ 'destroying', ]:
+            return
+
     shared_state.server_status = newSTAT
 
 def server_status_is(checkSTAT):
@@ -174,8 +179,12 @@ def run_command(cmd: str, jobID):
             logger.error(f'[{jobID}][Error - ErrorMessage     ] run_command() "{e}"')
     finally:
         process.wait()
-        set_server_status('idle')
-        logger.info(f'[{jobID}][finally] run_command() sets system to idle')
+        if process.returncode == 0:
+            set_server_status('idle')
+            logger.info(f'[{jobID}][finally] run_command() sets system to idle')
+        else:
+            set_server_status('error')
+            logger.info(f'[{jobID}][error] run_command() sets system to error. Please destroy and initialize it')
 
 
 
