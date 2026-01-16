@@ -440,7 +440,7 @@ def status():
 @app.route('/main.html')
 def main():
     daq_result_dirs = [ subdir for subdir in os.listdir(dirDAQresult) if os.path.isdir(f'{dirDAQresult}/{subdir}') ]
-    return render_template('index_task3.html', DAQres=daq_result_dirs, inspectors=DEFAULT_INSPECTORS)
+    return render_template('index_task3.html', DAQres=daq_result_dirs, inspectors=DEFAULT_INSPECTORS, currentCONF=CONF_DICT)
 
 
 if __name__ == '__main__':
