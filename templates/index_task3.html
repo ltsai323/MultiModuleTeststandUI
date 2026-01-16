@@ -55,34 +55,34 @@
             <div id="iav7ih" class="gjs-cell form-row">
               <button type="button" class="statusModuleID" id="LED1L"></button>
               <label class="labelModuleID">1L</label>
-              <input type="text" placeholder="Module ID" name="moduleID1L" class="inputModuleID" value="{% currentCONF["moduleID1L"] %}" id="moduleID1L"/>
+              <input type="text" placeholder="Module ID" name="moduleID1L" class="inputModuleID" value="{{ currentCONF.get('moduleID1L') | e }}" id="moduleID1L"/>
             </div>
             <div id="ixp0rj" class="gjs-cell form-row">
               <button type="button" class="statusModuleID" id="LED1C"></button>
               <label class="labelModuleID">1C</label>
-              <input type="text" placeholder="Module ID" name="moduleID1C" class="inputModuleID" id="moduleID1C"/>
+              <input type="text" placeholder="Module ID" name="moduleID1C" class="inputModuleID" value="{{ currentCONF.get('moduleID1C') | e }}" id="moduleID1C"/>
             </div>
             <div id="i7v6dg" class="gjs-cell form-row">
               <button type="button" class="statusModuleID" id="LED1R"></button>
               <label class="labelModuleID">1R</label>
-              <input type="text" placeholder="Module ID" name="moduleID1R" class="inputModuleID" id="moduleID1R"/>
+              <input type="text" placeholder="Module ID" name="moduleID1R" class="inputModuleID" value="{{ currentCONF.get('moduleID1R') | e }}" id="moduleID1R"/>
             </div>
           </div>
           <div id="i55fvd" class="gjs-row">
             <div id="icpqsl" class="gjs-cell form-row">
               <button type="button" class="statusModuleID" id="LED2L"></button>
               <label class="labelModuleID">2L</label>
-              <input type="text" placeholder="Module ID" name="moduleID2L" class="inputModuleID" id="moduleID2L"/>
+              <input type="text" placeholder="Module ID" name="moduleID2L" class="inputModuleID" value="{{ currentCONF.get('moduleID2L') | e }}" id="moduleID2L"/>
             </div>
             <div id="igwgq1" class="gjs-cell form-row">
               <button type="button" class="statusModuleID" id="LED2C"></button>
               <label id="ii6n0i" class="labelModuleID">2C</label>
-              <input type="text" placeholder="Module ID" name="moduleID2C" class="inputModuleID" id="moduleID2C"/>
+              <input type="text" placeholder="Module ID" name="moduleID2C" class="inputModuleID" value="{{ currentCONF.get('moduleID2C') | e }}" id="moduleID2C"/>
             </div>
             <div id="i535on" class="gjs-cell form-row">
               <button type="button" class="statusModuleID" id="LED2R"></button>
               <label id="ic4bpb" class="labelModuleID">2R</label>
-              <input type="text" placeholder="Module ID" name="moduleID2R" class="inputModuleID" id="moduleID2R"/>
+              <input type="text" placeholder="Module ID" name="moduleID2R" class="inputModuleID" value="{{ currentCONF.get('moduleID2R') | e }}" id="moduleID2R"/>
             </div>
           </div>
         </div>
