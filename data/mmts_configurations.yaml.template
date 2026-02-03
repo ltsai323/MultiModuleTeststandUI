@@ -52,5 +52,5 @@ database_name: 'hgcdb'
 user: 'postgres'
 password: ''
 host: '192.168.50.213'
-framework_path: 'path to repo https://github.com/youyingli/HGCal_Module_Production_Toolkit/blob/main/scripts/make_iv_curve.py'
+framework_path: '/home/pi/.local/MultiModuleTeststandUI/external_packages/HGCal_Module_Production_Toolkit'
 

@@ -2,47 +2,73 @@
 Use mini conda handling the python libraries. Note that this GUI should be deployed on Linux.
 We recommended you use SSH forward 
 To install the dependency, you need to use the following commands:
-```
-#!/usr/bin/env sh
-conda config --append channels anaconda
-conda config --append channels conda-forge
 
-envNAME=myPython3p9
-conda create --name $envNAME python=3.9
-conda activate $envNAME
-conda install flask flask-socketio requests sphinx paramiko pyvisa pyvisa-py pyyaml flask-wtf myst-parser flask-cors
+### 1. Clone This Repository and external package
+```
+### clone this repository
+git clone git@github.com:ltsai323/MultiModuleTeststandUI.git
+if [ "$?" != 0 ] && echo "[ERROR - UnableToCloneMMTS] Failed to clone MMTS"
+
+cd MultiModuleTeststandUI
+
+### clone external used repository
+sh setup.sh
+```
+Need to modify **data/mmts_configurations.yaml**, this yaml config file will be used in flask DAQ and `external_packages/HGCal_Module_Production_Toolkit`.
+and **external_packages/HGCal_Module_Production_Toolkit/configuration.yaml** for Andrew's GUI.
+
+
+
+### 2. Python libraries using Python Virtual Environment
+```
+python3 -m venv .venv
+source .venv/bin/activate
+pip3 install   flask   flask-socketio   requests   sphinx   paramiko   pyvisa   pyvisa-py   pyyaml   flask-wtf   myst-parser   flask-cors   pymeasure   psycopg psycopg2-binary
+sudo apt update
+sudo apt install python3-psycopg python3-psycopg-c
+sudo apt update && sudo apt install firewalld
 ```
 
-Or you can load the file `used_packages_conda.txt` for building dependencies.
-```
-#!/usr/bin/env sh
-conda config --append channels anaconda
-conda config --append channels conda-forge
+### 3. check README.task3.md
+Check instructions in **README.task3.md**
 
-envNAME=myPython3p9
-conda create -n $envNAME --file used_packages_conda.txt 
-conda activate $envNAME
+### 4. Open firewall
+open firewall port 5001 such you can access server [http://127.0.0.1:5001](http://127.0.0.1:5001)
 ```
+#!/usr/bin/env bash
+
+sudo sh data/open_firewall.sh
+```
+
+### 5. Put this reopsitory as a system service
+
+```
+chmod +x ../app.py
+### edit path in `data/MMTS.service` and `data/MMTS.service.variables`
+python3 data/MMTS.service.createscript.py
+
+sudo cp data/MMTS.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl start MMTS.service ### activate service
+#sudo systemctl stop  MMTS.service ### stop service
+#journalctl -u MMTS.service  ### check error messages
+```
+
+
+
+
+
 
 ## Run GUI
 ```
-#!/usr/bin/env sh
-source ./use_python_lib.sh
-python3 app.py
+#!/usr/bin/env bash
+source .venv/bin/activate
+source ./init_bash_vars.sh
+.venv/bin/python3 app.py
 ```
 then open the link [http://127.0.0.1:5001](http://127.0.0.1:5001)
 
 
-## GUI developing
-### app.py
-Which provided a entry webpage at [mainpage](http://127.0.0.1:5001) for selecting job mode.
-
-
-### flask_apps/app_task2.py
-Provide a sub webpage executing `make -f makefile_task2` with related option.
-This job mode is to take pedestal run parallelly on modules.
-
-Once the form was filled with hexaboard ID, there activated related position of kria.
 
 
 ## Directly run without GUI
@@ -71,4 +97,69 @@ Each single kria runs command. Note that pullerPort should be modified for assig
     - `./daq-client -p 6002 &`
 * waiting for 8 seconds
 * `python3 pedestal_run.py -i $kriaIP -f $yamlfile -d $moduleID -I --pullerPort=6002`
+
+
+
+# Debug Region
+## 0. Check logging in system
+Use `journalctl -u MMTS.service` to check messages.
+
+## 1. Run GUI without creating service
+At repository directory, activate python virtual environment and BASH variables using ` source .venv/bin/activate; source ./init_bash_vars.sh `
+Then run command `python3 app.py` to activate flask server.
+
+Then open link [https://127.0.0.1:5005](https://127.0.0.1:5005) from browser.
+
+## 2. Direct run command in CLI without flask server
+The buttons on flask server executes commands in GNU make.
+So you can execute commands
+```
+#!/usr/bin/env bash
+
+### by default, it shows help information
+make -f makefile_task3
+
+# Usage: make <command>
+# 		[moduleID1L][moduleID1C][moduleID1R]
+# 		[moduleID2L][moduleID2C][moduleID2R]
+# 
+# Commands:
+# 
+#   all_IVscan       IV scan does not support multithread
+#   initialize       initialize
+#   run              all IV scan (only single threaded allowed) [currentTEMPERATURE=20][currentHUMIDITY=50][switch_delay=0]
+#   stop             stop pedestal run
+#   destroy          remove all running jobs and disable board power
+#   help             Display this help
+```
+
+
+
+```
+#!/usr/bin/env bash
+
+### help information
+make -f makefile_task3 help
+
+### initialize button
+make -f makefile_task3 initialize
+
+### configure button: flask server collects the run argument. So makefile didn't provide this command
+
+### run button. If moduleID not set, skip this Vitrek channel.
+make -f makefile_task3 run currentTEMPERATURE=20 currentHUMIDITY=50 switch_delay=0 \
+    moduleID1L=320MHF2WDNT0460 moduleID1C=320MHF2WDNT0460 moduleID1R=320MHF2WDNT0460 \
+    moduleID2L=320MHF2WDNT0460 moduleID2C=320MHF2WDNT0460 moduleID2R=320MHF2WDNT0460
+
+
+### stop button.
+make -f makefile_task3 stop
+
+### destroy button
+make -f makefile_task3 destroy
+```
+
+
+
+
 
