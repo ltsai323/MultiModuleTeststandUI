@@ -456,7 +456,7 @@ class IntegratedTestController:
 async def main():
     # Create controller with appropriate resource names
     controller = IntegratedTestController(
-        keithley_resource="ASRL/dev/ttyUSB0::INSTR",
+        keithley_resource="ASRL/dev/ttyUSB2::INSTR",
         switch_resource="ASRL/dev/ttyUSB1::INSTR",
     )
 

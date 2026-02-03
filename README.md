@@ -1,153 +1,165 @@
 ## Installations
-Use mini conda handling the python libraries.
+Use mini conda handling the python libraries. Note that this GUI should be deployed on Linux.
+We recommended you use SSH forward 
 To install the dependency, you need to use the following commands:
-```
-#!/usr/bin/env sh
-conda config --append channels anaconda
-conda config --append channels conda-forge
 
-envNAME=myPython3p9
-conda create --name $envNAME python=3.9
-conda activate $envNAME
-conda install flask flask-socketio requests sphinx paramiko pyvisa pyvisa-py pyyaml flask-wtf myst-parser flask-cors
+### 1. Clone This Repository and external package
+```
+### clone this repository
+git clone git@github.com:ltsai323/MultiModuleTeststandUI.git
+if [ "$?" != 0 ] && echo "[ERROR - UnableToCloneMMTS] Failed to clone MMTS"
+
+cd MultiModuleTeststandUI
+
+### clone external used repository
+sh setup.sh
+```
+Need to modify **data/mmts_configurations.yaml**, this yaml config file will be used in flask DAQ and `external_packages/HGCal_Module_Production_Toolkit`.
+and **external_packages/HGCal_Module_Production_Toolkit/configuration.yaml** for Andrew's GUI.
+
+
+
+### 2. Python libraries using Python Virtual Environment
+```
+python3 -m venv .venv
+source .venv/bin/activate
+pip3 install   flask   flask-socketio   requests   sphinx   paramiko   pyvisa   pyvisa-py   pyyaml   flask-wtf   myst-parser   flask-cors   pymeasure   psycopg psycopg2-binary
+sudo apt update
+sudo apt install python3-psycopg python3-psycopg-c
+sudo apt update && sudo apt install firewalld
 ```
 
-Or you can load the file `used_packages_conda.txt` for building dependencies.
-```
-#!/usr/bin/env sh
-conda config --append channels anaconda
-conda config --append channels conda-forge
+### 3. check README.task3.md
+Check instructions in **README.task3.md**
 
-envNAME=myPython3p9
-conda create -n $envNAME --file used_packages_conda.txt 
-conda activate $envNAME
+### 4. Open firewall
+open firewall port 5001 such you can access server [http://127.0.0.1:5001](http://127.0.0.1:5001)
+```
+#!/usr/bin/env bash
+
+sudo sh data/open_firewall.sh
 ```
 
-## Run code
+### 5. Put this reopsitory as a system service
+
 ```
-#!/usr/bin/env sh
-python3 app.py
+chmod +x ../app.py
+### edit path in `data/MMTS.service` and `data/MMTS.service.variables`
+python3 data/MMTS.service.createscript.py
+
+sudo cp data/MMTS.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl start MMTS.service ### activate service
+#sudo systemctl stop  MMTS.service ### stop service
+#journalctl -u MMTS.service  ### check error messages
+```
+
+
+
+
+
+
+## Run GUI
+```
+#!/usr/bin/env bash
+source .venv/bin/activate
+source ./init_bash_vars.sh
+.venv/bin/python3 app.py
 ```
 then open the link [http://127.0.0.1:5001](http://127.0.0.1:5001)
 
-### run job fragments
+
+
+
+## Directly run without GUI
+The GUI execute commands in makefile. So use `make help` checking all related commands.
+
+* `make -f makefile_task2 initialize`
+* `make -f makefile_task2 run -j3`
+* `make -f makefile_task2 stop`
+* `make -f makefile_task2 destroy`
+
+
+## DAQ steps
+### step1 initialize
+* Turn on kria power
+* load all related kria firmwares
+### step2 configure
+
+### step3 run
+Each single kria runs command. Note that pullerPort should be modified for assigning kria physically.
+
+* reload kria status and activate daq-client at background
+    - `ssh root@$kriaIP 'fw-loader load /opt/cms-hgcal-firmware/hgc-test-systems/hexaboard-hd-tester-v2p0-trophy-v2/'`
+    - `ssh root@$kriaIP 'systemctl restart i2c-server.service && systemctl restart daq-server.service'`
+    - `ssh root@$kriaIP 'systemctl status i2c-server.service && systemctl status daq-server.service'`
+    - `sleep 0.5`
+    - `./daq-client -p 6002 &`
+* waiting for 8 seconds
+* `python3 pedestal_run.py -i $kriaIP -f $yamlfile -d $moduleID -I --pullerPort=6002`
+
+
+
+# Debug Region
+## 0. Check logging in system
+Use `journalctl -u MMTS.service` to check messages.
+
+## 1. Run GUI without creating service
+At repository directory, activate python virtual environment and BASH variables using ` source .venv/bin/activate; source ./init_bash_vars.sh `
+Then run command `python3 app.py` to activate flask server.
+
+Then open link [https://127.0.0.1:5005](https://127.0.0.1:5005) from browser.
+
+## 2. Direct run command in CLI without flask server
+The buttons on flask server executes commands in GNU make.
+So you can execute commands
 ```
-#!/usr/bin/env sh
-python3 jobfrag_sshconn.py
+#!/usr/bin/env bash
+
+### by default, it shows help information
+make -f makefile_task3
+
+# Usage: make <command>
+# 		[moduleID1L][moduleID1C][moduleID1R]
+# 		[moduleID2L][moduleID2C][moduleID2R]
+# 
+# Commands:
+# 
+#   all_IVscan       IV scan does not support multithread
+#   initialize       initialize
+#   run              all IV scan (only single threaded allowed) [currentTEMPERATURE=20][currentHUMIDITY=50][switch_delay=0]
+#   stop             stop pedestal run
+#   destroy          remove all running jobs and disable board power
+#   help             Display this help
 ```
-To create a jobfrag, you need to make a function for your job like function [execute_command_with_timeout()](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/jobfrag_sshconn.py#L21).
-Then you need to test it individually like function [test_direct_run()](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/jobfrag_sshconn.py#L67C5-L67C20).
 
-Pack the function into an inherited class [JobFrag](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/jobfrag_sshconn.py#L95-L96).
-The GUI requires your function implementing the above functions
+
+
 ```
-import jobfrag_base
-class JobFrag(jobfrag_base.JobFragBase):
-    def __init__(self, hostNAME:str, userNAME:str, privateKEYfile:str, timeOUT:float,
-                 stdOUT, stdERR,
-                 cmdTEMPLATEs:dict, argCONFIGs:dict, argSETUPs:dict):
-        # this function should allow the configurations input parameters
-        pass
+#!/usr/bin/env bash
 
-    def __del__(self):
-        pass
+### help information
+make -f makefile_task3 help
 
-    def Initialize(self):
-        pass
+### initialize button
+make -f makefile_task3 initialize
 
-    def Configure(self, updatedCONF:dict) -> bool:
-        # this function allows a input dictionary that GUI is able to update parameter
-        return True
+### configure button: flask server collects the run argument. So makefile didn't provide this command
 
-        
-    def Run(self):
-        pass
+### run button. If moduleID not set, skip this Vitrek channel.
+make -f makefile_task3 run currentTEMPERATURE=20 currentHUMIDITY=50 switch_delay=0 \
+    moduleID1L=320MHF2WDNT0460 moduleID1C=320MHF2WDNT0460 moduleID1R=320MHF2WDNT0460 \
+    moduleID2L=320MHF2WDNT0460 moduleID2C=320MHF2WDNT0460 moduleID2R=320MHF2WDNT0460
 
-    def Stop(self):
-        pass
+
+### stop button.
+make -f makefile_task3 stop
+
+### destroy button
+make -f makefile_task3 destroy
 ```
-such as the function cound be read as a module
-
-# Documents
-https://hep1.phys.ntu.edu.tw/~ltsai/html/index.html
-
-## File descriptions
-### app.py
-
-This is the main function that activates the whole flask server.
-No any input arguments required. All configurations are put into app_actbtn.py and app_bkgrun.py
-### app_actbtn.py
-
-Store the button functions of the webpage.
-
-### app_bkgrun.py
-
-Tell flask server handling the background running jobs.
-To prevent the whole webpage holding.
-Developers should execute jobs in background instead of foreground.
-Such as you need to handle the background threads using threading module.
-
-### app_global_variables.py
-
-The global variables used for Flask
-
-### app_socketio.py
-
-The socket connection make a communication between client and server frequently and efficiently.
-A Flask Jsonify() is used to send a big message and socket is designed to send small message frequently.
-
-### DebugManager.py
-
-The message manager for debugging
-
-### LoggingMgr.py
-
-The message manager for logging. The screen output like "print()" should be replaced into  log.info(), log.warning(), log.error().
-Check logging module in python for help
-
-### WebStatus.py
-
-store web status such as webpage can be reloaded
-
-### jobfrag_base.py
-
-An abstract class prepared for flask server. Every jobfrag should contain these functions.
-
-### jobfrag_sshconn.pyinstance.
-
-The basic function for ssh connection. This code should be directly tested and pack them into jobfrag.
-
-### jobmodule_example.py
-
-example code loads jobfrag and create it as a module being executed serially.
-
-### jobmodule_example_2sshconnection.py
-
-example code loads jobfrag and create it as a module being executed serially.
-
-### jobmodule_single_module_pedestalrun_no_power_handling.py
-
-example code loads jobfrag and create it as a module being executed serially.
-
-### threading_tools.py
 
 
 
-# To do list
-## hi
-* [ ] 
 
 
-## Future features
-* [ ] Handle multiple connections 
-
-### Job Priority
-* [ ] execute_job_from_queue() : reads priorities of activing jobs.
-* [ ] AbleToAcceptNewJob() should be moved into job priority instead of True and False.
-* [ ] AbltoToAcceptNewJob(): how do I put job priority into this function.
-* [ ] Is job_priority able to be controlled from rs232.py code?
-* [ ] AddJob() should accept job priority. Such that every job is able to check priority before execute.
-
-
-### Known issue
-* [ ] add a guide to solve permission denied accessing RS232 device

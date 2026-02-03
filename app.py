@@ -1,70 +1,161 @@
-from flask import Flask, render_template, jsonify, request
-import app_global_variables as gVAR
-import app_actbtn as app_actbtn
-from PythonTools.DebugManager import BUG
+from flask import Flask, render_template, request, jsonify
+import flask_apps.shared_state as shared_state
 from flask_wtf.csrf import CSRFProtect
-from flask_cors import CORS
-from flask import current_app
+import sys
 
-app = Flask(__name__, static_folder='./static')
-app.config.from_object(gVAR.TestConfig) # initialize global variables
+# app.py
+import logging
+import logging.config
+from datetime import datetime
+log = logging.getLogger(__name__)
 
-CORS(app, resources={r"/*": {"origins": ["http://127.0.0.1:5001", "http://127.0.0.1:5000"]}})
-# add csrf protect asdf
-app.secret_key = 'your_secret_key'  # Required for CSRF protection. The availability checking required
+import os
+os.system('mkdir -p logs')
+logfile = datetime.now().strftime("logs/app_%Y%m%d-%H%M%S.log")
+
+
+class StatusFilter(logging.Filter):
+    def filter(self, record):
+        # Return False to exclude log records containing "/status HTTP/1.1"
+        msg = record.getMessage()
+        if "/status HTTP/1.1" in msg:
+            return False
+        return True
+
+#logging.basicConfig(
+#    level=logging.DEBUG,
+#    format='[basicCONFIG AAAA] %(levelname)s - %(message)s',
+#    datefmt='%H:%M:%S'
+#)
+#logger = logging.getLogger('flask.app')
+#logger = logging.getLogger('werkzeug')
+#logger.addFilter(StatusFilter())
+LOGGING_CONFIG = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "status_filter": {
+            "()": StatusFilter
+        }
+    },
+    "formatters": {
+        "default": {
+            "format": "[%(levelname)s] %(asctime)s - %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S"
+        }
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "default",
+            "level": "DEBUG",
+            "filters": ["status_filter"],
+            "stream": "ext://sys.stdout"
+        },
+        "file": {
+            "class": "logging.FileHandler",
+            "formatter": "default",
+            "level": "DEBUG",
+            "filename": logfile,
+            "encoding": "utf8",
+            "mode": "a"
+        }
+    },
+    "loggers": {
+        # Configure your Flask app logger
+        "flask.app": {  # Replace with your app's module name or use app.logger.name
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": False
+        },
+        # Werkzeug logger - optional, also filtered
+        "werkzeug": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "filters": ["status_filter"],
+            "propagate": False
+        }
+    },
+    "root": {
+        "level": "WARNING",
+        "handlers": ["console", "file"]
+    }
+}
+logging.config.dictConfig(LOGGING_CONFIG)
+
+
+
+import flask_apps.app_task1    as app_task1
+import flask_apps.app_task2    as app_task2
+import flask_apps.app_task3    as app_task3
+import flask_apps.app_task3_plot    as app_plot3
+import flask_apps.app_daqsummary as app_daqsummary
+
+app = Flask(__name__)
+app.config["SECRET_KEY"] = '7eCZ^6nUxb6hjN5EbLYak&fvt'
 csrf = CSRFProtect(app)
+app.register_blueprint(app_task1.app, url_prefix='/task1')
+app.register_blueprint(app_task2.app, url_prefix='/task2')
+app.register_blueprint(app_task3.app, url_prefix='/task3')
+app.register_blueprint(app_plot3.app)
+
+app.register_blueprint(app_daqsummary.app)
 
 
-
-
-
-@app.route('/', methods=['GET', 'POST'])
-@app.route('/index')
+@app.route("/")
 def index():
-    '''
-home pages
+    return render_template("index_mainpage.html", selected_option=shared_state.jobmode)
 
-It shows the current status of the whole jobs
-This page shows action buttons configured from `app_actbtn.py`.
-    '''
+@app.route("/index.html")
+def index_alias():
+    return render_template("index_mainpage.html", selected_option=shared_state.jobmode)
 
-    return render_template('index.html')
-    #return render_template('index.ref.html')
+@app.route("/set_option", methods=["POST"])
+def set_option():
+    data = request.get_json()
+    ''' data = { 'option': 'task1' } '''
+    log.info(f'[set_option] Got option {data} and current server status {shared_state.server_status} and jobmode {shared_state.jobmode}')
 
+    ### got valid loaded json
+    if "option" not in data:
+        return jsonify({"status": "error", "message": f'[InvalidOption] set_option() received invalid input "{data}".'}), 400
 
-@app.route('/show_logpage')
-def show_logpage():
-    button_id = request.args.get('btnID')  # Retrieve the 'file' parameter from the URL
-    if button_id:
-        try:
-            # Try to open the specific file based on the provided file name
-            with open(f'logs/log_{button_id}', 'r') as file:
-                content = file.read()
-        except Exception as e:
-            content = f"Error reading file log_{button_id}: {str(e)}"
+    ### the same jobmode: do nothing
+    if shared_state.jobmode == data["option"]:
+        return jsonify({'status': 'success', 'message': f'[NoAnyChange] job mode is {data["option"]}'})
+
+    ### change job mode: Only for status is "startup" or "destroyed"
+    if shared_state.server_status in ['startup','destroyed']:
+        mesg = f'[NewJobMode] set_option() set jobmode as {data["option"]}'
+        shared_state.jobmode = data["option"]
+        log.info(mesg)
+        return jsonify({"status": "success", 'message': mesg})
+    ### remain original job mode: ignore request
     else:
-        content = "No file specified."
+        mesg = f'[set_option] ignore changing jobmode due to jobmode {shared_state.jobmode} / status {shared_state.server_status}'
+        log.info(mesg)
+        return jsonify({"status": "success", "message": mesg})
+        
 
-    return render_template('show_logpage.html', btnID=button_id, content=content)
+#@app.route('/status')
+#def status():
+#    return jsonify( {'status':shared_state.server_status, 'jobmode':shared_state.jobmode} )
 
-
-
-if __name__ == '__main__':
-
-    app.job_is_running = False
-    from app_socketio import socketio
-    # regist functions from app_actbtn.py
-    app.register_blueprint(app_actbtn.app_b)
-    #app_actbtn.module_init(app_actbtn.app_b)
-    import app_DAQresults
-    app.register_blueprint(app_DAQresults.app_b)
+### note only if jobmode is notSELECTED or job status is DESTROYED, allowed to select new jobmode
 
 
-    socketio.init_app(app)
 
-    host='0.0.0.0'
-    #host='192.168.51.213'
-    port=5001
-    print(f'[Web activated] {host}@{port}')
-    socketio.run(app,host=host, port=port)
 
+if __name__ == "__main__":
+    import os
+    loglevel = os.environ.get('LOG_LEVEL', 'INFO') # DEBUG, INFO, WARNING
+    DEBUG_MODE = True if loglevel == 'DEBUG' else False
+    logLEVEL = getattr(logging, loglevel)
+    logging.basicConfig(stream=sys.stdout,level=logLEVEL,
+                        format=f'%(levelname)-7s%(filename)s#%(lineno)s %(funcName)s() >>> %(message)s',
+                        datefmt='%H:%M:%S')
+    log = logging.getLogger(__name__)
+    if DEBUG_MODE:
+        app.run(debug=True, port=5005) ### for test product only use http://127.0.0.1:5005 access this port. http://192.168.o.x:5005 cannot access this port
+    else:
+        app.run(debug=True, port=5001, host='0.0.0.0') ### for stable product so you can use http://192.16..o.x:5001 access it

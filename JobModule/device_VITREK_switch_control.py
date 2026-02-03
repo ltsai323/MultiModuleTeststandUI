@@ -1,3 +1,12 @@
+#!/usr/bin/env python3
+import logging
+import sys
+import pyvisa
+
+log = logging.getLogger(__name__)
+
+#DEVICE_ADDRESS = "ASRL/dev/ttyUSB1::INSTR"
+DEVICE_ADDRESS = "ASRL/dev/DAQrs232_HVswitch::INSTR"
 import asyncio
 import pyvisa
 import time
@@ -67,7 +76,7 @@ class Vitrek964i:
     def disconnect(self):
         """Disconnect from the device and clean up resources"""
         if self.instrument:
-            self.reset()
+            asyncio.run(self.reset())
             self.instrument.close()
             self.instrument = None
         if hasattr(self, 'rm') and self.rm:
@@ -391,10 +400,11 @@ class Vitrek964i:
             print(f"Error loading configuration: {e}")
             return False
 
+
 async def main():
     """Comprehensive example usage of the Vitrek964i class with all methods"""
     # Create controller instance
-    vitrek = Vitrek964i("ASRL/dev/ttyUSB1::INSTR")
+    vitrek = Vitrek964i(DEVICE_ADDRESS)
 
     try:
         # Connect to the device
@@ -524,9 +534,11 @@ async def main():
         print(f"Error during operation: {e}")
     finally:
         # Always disconnect properly
-        vitrek.disconnect()
+        await vitrek.disconnect()
         print("Test sequence completed")
 
 # Run the example
 if __name__ == "__main__":
     asyncio.run(main())
+    #mymain()
+

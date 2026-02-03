@@ -45,7 +45,7 @@ function button_clicking_configure(btnID) {
 
       $.ajax({
         type: 'POST',
-        url: '/submit',
+        url: '/task2/submit',
         data: formData,
         success: function(response) {
           if (response.status === 'success') {
@@ -90,9 +90,9 @@ function button_clicking_socketIO(btnID) {
   });
 }
 
-button_clicking_fetch    ('btnCONN');
-button_clicking_socketIO ('btnINIT');
-button_clicking_configure('btnCONF');
-button_clicking_socketIO ('btnEXEC');
-button_clicking_socketIO ('btnSTOP');
-button_clicking_socketIO ('btnEXIT');
+//button_clicking_fetch    ('btnCONN');
+//button_clicking_socketIO ('btnINIT');
+//button_clicking_configure('btnCONF');
+//button_clicking_socketIO ('btnEXEC');
+//button_clicking_socketIO ('btnSTOP');
+//button_clicking_socketIO ('btnEXIT');

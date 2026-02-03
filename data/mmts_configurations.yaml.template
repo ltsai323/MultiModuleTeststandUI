@@ -1,0 +1,56 @@
+### used for run.pedestal.sh and run.IVscan.sh
+PCKeyLoc:  '/home/theUSER/.ssh/HGCtrler_key_kria' ### all kria should use the same private key
+1L:
+  IP:
+  type: Kria
+  pullerPORT: 6002
+  HVchannel: 1 ### used for IV scan channel
+1C:
+  IP:
+  type: Kria
+  pullerPORT: 6003
+  HVchannel: 2
+1R:
+  IP: 
+  type: Kria
+  pullerPORT: 6004
+  HVchannel: 3
+2L:
+  IP: 
+  type: Trenz
+  pullerPORT: 6005
+  HVchannel: 4
+2C:
+  IP: 
+  type: Kria
+  pullerPORT: 6006
+  HVchannel: 5
+2R:
+  IP: 
+  type: Kria
+  pullerPORT: 6007
+  HVchannel: 6
+### pullerPORT should be integer between 6002~6020 and they are related to `systemctl --user status daq-client-port6002.service`. Please not to use 6001 because daq-client.services uses it
+### pullerPORT should be unique number, please don't share the value.
+### type: Kria and Trenz
+### 1L 1C 1R means row 1 column Left, Center, Right
+
+### used for run.IVscan.sh
+RS232:
+  switch_vitek: 'ASRL/dev/DAQrs232_HVswitch::INSTR'
+  HV_keithley: 'ASRL/dev/DAQrs232_keithley::INSTR'
+
+## configs in run.IVscan.sh
+DBDatabase: 'hgcdb'
+DBHostname: '192.168.50.213'
+DBPassword: ''
+DBUsername: 'postgres'
+inspector: NTULab
+
+### used for https://github.com/youyingli/HGCal_Module_Production_Toolkit/blob/main/scripts/make_iv_curve.py
+database_name: 'hgcdb'
+user: 'postgres'
+password: ''
+host: '192.168.50.213'
+framework_path: '/home/pi/.local/MultiModuleTeststandUI/external_packages/HGCal_Module_Production_Toolkit'
+

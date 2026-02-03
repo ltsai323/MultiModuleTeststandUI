@@ -1208,7 +1208,7 @@ async def validate_instrument(resource_name):
 # Example usage
 async def main():
     # Use appropriate device address
-    resource_name = "ASRL/dev/ttyUSB0::INSTR"
+    resource_name = "ASRL/dev/ttyUSB1::INSTR"
 
     # Validate instrument
     error = await validate_instrument(resource_name)

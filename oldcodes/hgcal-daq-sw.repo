@@ -1,6 +1,0 @@
-[hgcal-daq-sw]
-name=HGCAL-DAQ-SW
-baseurl=https://hgc-online-sw.web.cern.ch/hgc-online-sw/hgcal-daq-sw/almalinux/9/x86_64/
-enabled=1
-gpgcheck=0
-metadata_expire=1m
