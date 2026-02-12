@@ -69,6 +69,15 @@
       <iframe id="myIframe" width="100%" onload="adjustIframeHeight()"
                                            src="{% if selected_option == 'task1' %}{{ url_for('app_task1.main') }}{% elif selected_option == 'task2' %}{{ url_for('app_task2.main') }}{% elif selected_option == 'task3' %}{{ url_for('app_task3.main') }}{% endif %}"></iframe>
     </div>
+    <div class='container-width'>
+      <div style="width:100%">
+        <iframe
+            src="http://hep11.phys.ntu.edu.tw:3000/d/stock_hd_materials/ntulab-material-stocks-for-hd?orgId=1&kiosk&refresh=15s&theme=dark"
+            style="width:100%; height:300px; border:none">
+        </iframe>
+      </div>
+    </div>
+
   </body>
 </html>
 <style>
