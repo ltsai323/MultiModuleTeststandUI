@@ -62,16 +62,16 @@ CONF_DICT = {
 
 def ExecCMD(jobID:str, confDICT:dict):
     if jobID == 'Init':
-        return 'make -f makefile_task3 initialize JobName=Init'
+        return 'make -n -f makefile_task3 initialize JobName=Init'
     if jobID == 'Run':
         shared_state.runidx+=1
         runTAG = f'run{shared_state.runidx}'
         dictOPTs = ' '.join([ f'{key}={val}' for key,val in confDICT.items() if val != '' ])
-        return f'make -f makefile_task3 run ' + dictOPTs
+        return f'make -n -f makefile_task3 run ' + dictOPTs
     if jobID == 'Stop':
-        return 'make -f makefile_task3 stop JobName=Stop'
+        return 'make -n -f makefile_task3 stop JobName=Stop'
     if jobID == 'Destroy':
-        return 'make -f makefile_task3 destroy JobName=Destroy'
+        return 'make -n -f makefile_task3 destroy JobName=Destroy'
 
 
 
