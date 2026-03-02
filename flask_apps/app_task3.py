@@ -35,14 +35,29 @@ CONF_DICT = {
         'moduleID1L': '',
         'moduleID1C': '',
         'moduleID1R': '',
-
         'moduleID2L': '',
         'moduleID2C': '',
         'moduleID2R': '',
+        'moduleID3L': '',
+        'moduleID3C': '',
+        'moduleID3R': '',
 
-       #'moduleID3L': '',
-       #'moduleID3C': '',
-       #'moduleID3R': '',
+        'moduleID4L': '',
+        'moduleID4C': '',
+        'moduleID4R': '',
+        'moduleID5L': '',
+        'moduleID5C': '',
+        'moduleID5R': '',
+        'moduleID6L': '',
+        'moduleID6C': '',
+        'moduleID6R': '',
+
+        'moduleID7L': '',
+        'moduleID7C': '',
+        'moduleID7R': '',
+        'moduleID8L': '',
+        'moduleID8C': '',
+        'moduleID8R': '',
         }
 
 def ExecCMD(jobID:str, confDICT:dict):
@@ -237,14 +252,29 @@ class ConfigForm(FlaskForm):
     moduleID1L = StringField("moduleID1L", validators=[alphanumeric_validator])
     moduleID1C = StringField("moduleID1C", validators=[alphanumeric_validator])
     moduleID1R = StringField("moduleID1R", validators=[alphanumeric_validator])
-
     moduleID2L = StringField("moduleID2L", validators=[alphanumeric_validator])
     moduleID2C = StringField("moduleID2C", validators=[alphanumeric_validator])
     moduleID2R = StringField("moduleID2R", validators=[alphanumeric_validator])
+    moduleID3L = StringField("moduleID3L", validators=[alphanumeric_validator])
+    moduleID3C = StringField("moduleID3C", validators=[alphanumeric_validator])
+    moduleID3R = StringField("moduleID3R", validators=[alphanumeric_validator])
 
-   #moduleID3L = StringField("moduleID3L", validators=[alphanumeric_validator])
-   #moduleID3C = StringField("moduleID3C", validators=[alphanumeric_validator])
-   #moduleID3R = StringField("moduleID3R", validators=[alphanumeric_validator])
+    moduleID4L = StringField("moduleID4L", validators=[alphanumeric_validator])
+    moduleID4C = StringField("moduleID4C", validators=[alphanumeric_validator])
+    moduleID4R = StringField("moduleID4R", validators=[alphanumeric_validator])
+    moduleID5L = StringField("moduleID5L", validators=[alphanumeric_validator])
+    moduleID5C = StringField("moduleID5C", validators=[alphanumeric_validator])
+    moduleID5R = StringField("moduleID5R", validators=[alphanumeric_validator])
+    moduleID6L = StringField("moduleID6L", validators=[alphanumeric_validator])
+    moduleID6C = StringField("moduleID6C", validators=[alphanumeric_validator])
+    moduleID6R = StringField("moduleID6R", validators=[alphanumeric_validator])
+
+    moduleID7L = StringField("moduleID7L", validators=[alphanumeric_validator])
+    moduleID7C = StringField("moduleID7C", validators=[alphanumeric_validator])
+    moduleID7R = StringField("moduleID7R", validators=[alphanumeric_validator])
+    moduleID8L = StringField("moduleID8L", validators=[alphanumeric_validator])
+    moduleID8C = StringField("moduleID8C", validators=[alphanumeric_validator])
+    moduleID8R = StringField("moduleID8R", validators=[alphanumeric_validator])
     submit = SubmitField("Configure")
 
 @app.route('/submit', methods=['POST','GET'])
@@ -301,6 +331,13 @@ def Configure():
 
     conf_mesg = lambda d: f'''Configurations\n
         1L: {d.get('moduleID1L', ''):12s}\n1C: {d.get('moduleID1C', ''):12s}\n1R: {d.get('moduleID1R', ''):12s}\n
+        2L: {d.get('moduleID2L', ''):12s}\n2C: {d.get('moduleID2C', ''):12s}\n2R: {d.get('moduleID2R', ''):12s}\n
+        3L: {d.get('moduleID3L', ''):12s}\n3C: {d.get('moduleID3C', ''):12s}\n3R: {d.get('moduleID3R', ''):12s}\n
+        4L: {d.get('moduleID4L', ''):12s}\n4C: {d.get('moduleID4C', ''):12s}\n4R: {d.get('moduleID4R', ''):12s}\n
+        5L: {d.get('moduleID5L', ''):12s}\n5C: {d.get('moduleID5C', ''):12s}\n5R: {d.get('moduleID5R', ''):12s}\n
+        6L: {d.get('moduleID6L', ''):12s}\n6C: {d.get('moduleID6C', ''):12s}\n6R: {d.get('moduleID6R', ''):12s}\n
+        7L: {d.get('moduleID7L', ''):12s}\n7C: {d.get('moduleID7C', ''):12s}\n7R: {d.get('moduleID7R', ''):12s}\n
+        8L: {d.get('moduleID8L', ''):12s}\n8C: {d.get('moduleID8C', ''):12s}\n8R: {d.get('moduleID8R', ''):12s}\n
         Note: Configuration saved. Please verify the settings.
     '''
 
