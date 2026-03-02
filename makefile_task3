@@ -4,9 +4,21 @@ BASE_DIR :=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 MODULE_POSITION := \
 	1L 1C 1R \
-	2L 2C 2R
+	2L 2C 2R \
+	3L 3C 3R \
+	4L 4C 4R \
+	5L 5C 5R \
+	6L 6C 6R \
+	7L 7C 7R \
+	8L 8C 8R
 argline1 = \n\t\t[moduleID1L][moduleID1C][moduleID1R]
 argline2 = \n\t\t[moduleID2L][moduleID2C][moduleID2R]
+argline3 = \n\t\t[moduleID3L][moduleID3C][moduleID3R]
+argline4 = \n\t\t[moduleID4L][moduleID4C][moduleID4R]
+argline5 = \n\t\t[moduleID5L][moduleID5C][moduleID5R]
+argline6 = \n\t\t[moduleID6L][moduleID6C][moduleID6R]
+argline7 = \n\t\t[moduleID7L][moduleID7C][moduleID7R]
+argline8 = \n\t\t[moduleID8L][moduleID8C][moduleID8R]
 
 
 
@@ -58,7 +70,7 @@ test:
 	make -f $(MAKEFILE_LIST) all_IVscan moduleID1L="320XHT4CPM00019"
 
 
-IN_ARGS =  $(argline1)$(argline2)$(argline3)
+IN_ARGS =  $(argline1)$(argline2)$(argline3)$(argline4)$(argline5)$(argline6)$(argline7)$(argline8)
 
 help:  ## Display this help
 	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make \033[32m<command>\033[0m $(IN_ARGS)\n\nCommands:\n\033[36m\033[0m\n"} /^[0-9a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
