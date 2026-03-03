@@ -61,17 +61,18 @@ CONF_DICT = {
         }
 
 def ExecCMD(jobID:str, confDICT:dict):
+    make_command = 'make -n' if shared_state.debug_mode else 'make'
     if jobID == 'Init':
-        return 'make -n -f makefile_task3 initialize JobName=Init'
+        return f'{make_command} -f makefile_task3 initialize JobName=Init'
     if jobID == 'Run':
         shared_state.runidx+=1
         runTAG = f'run{shared_state.runidx}'
         dictOPTs = ' '.join([ f'{key}={val}' for key,val in confDICT.items() if val != '' ])
-        return f'make -n -f makefile_task3 run ' + dictOPTs
+        return f'{make_command} -f makefile_task3 run ' + dictOPTs
     if jobID == 'Stop':
-        return 'make -n -f makefile_task3 stop JobName=Stop'
+        return f'{make_command} -f makefile_task3 stop JobName=Stop'
     if jobID == 'Destroy':
-        return 'make -n -f makefile_task3 destroy JobName=Destroy'
+        return f'{make_command} -f makefile_task3 destroy JobName=Destroy'
 
 
 
@@ -330,15 +331,15 @@ def Configure():
 
 
     conf_mesg = lambda d: f'''Configurations\n
-        1L: {d.get('moduleID1L', ''):12s}\n1C: {d.get('moduleID1C', ''):12s}\n1R: {d.get('moduleID1R', ''):12s}\n
-        2L: {d.get('moduleID2L', ''):12s}\n2C: {d.get('moduleID2C', ''):12s}\n2R: {d.get('moduleID2R', ''):12s}\n
-        3L: {d.get('moduleID3L', ''):12s}\n3C: {d.get('moduleID3C', ''):12s}\n3R: {d.get('moduleID3R', ''):12s}\n
-        4L: {d.get('moduleID4L', ''):12s}\n4C: {d.get('moduleID4C', ''):12s}\n4R: {d.get('moduleID4R', ''):12s}\n
-        5L: {d.get('moduleID5L', ''):12s}\n5C: {d.get('moduleID5C', ''):12s}\n5R: {d.get('moduleID5R', ''):12s}\n
-        6L: {d.get('moduleID6L', ''):12s}\n6C: {d.get('moduleID6C', ''):12s}\n6R: {d.get('moduleID6R', ''):12s}\n
-        7L: {d.get('moduleID7L', ''):12s}\n7C: {d.get('moduleID7C', ''):12s}\n7R: {d.get('moduleID7R', ''):12s}\n
-        8L: {d.get('moduleID8L', ''):12s}\n8C: {d.get('moduleID8C', ''):12s}\n8R: {d.get('moduleID8R', ''):12s}\n
-        Note: Configuration saved. Please verify the settings.
+1L:{d.get('moduleID1L', ''):16s} 1C:{d.get('moduleID1C', ''):16s} 1R:{d.get('moduleID1R', ''):16s}\n
+2L:{d.get('moduleID2L', ''):16s} 2C:{d.get('moduleID2C', ''):16s} 2R:{d.get('moduleID2R', ''):16s}\n
+3L:{d.get('moduleID3L', ''):16s} 3C:{d.get('moduleID3C', ''):16s} 3R:{d.get('moduleID3R', ''):16s}\n
+4L:{d.get('moduleID4L', ''):16s} 4C:{d.get('moduleID4C', ''):16s} 4R:{d.get('moduleID4R', ''):16s}\n
+5L:{d.get('moduleID5L', ''):16s} 5C:{d.get('moduleID5C', ''):16s} 5R:{d.get('moduleID5R', ''):16s}\n
+6L:{d.get('moduleID6L', ''):16s} 6C:{d.get('moduleID6C', ''):16s} 6R:{d.get('moduleID6R', ''):16s}\n
+7L:{d.get('moduleID7L', ''):16s} 7C:{d.get('moduleID7C', ''):16s} 7R:{d.get('moduleID7R', ''):16s}\n
+8L:{d.get('moduleID8L', ''):16s} 8C:{d.get('moduleID8C', ''):16s} 8R:{d.get('moduleID8R', ''):16s}\n
+Note: Configuration saved. Please verify the settings.
     '''
 
 
@@ -353,7 +354,7 @@ def Configure():
 
     set_server_status('configured')
     # Return JSON with message, status 200 so client JS can alert
-    return jsonify({'status': 'success', 'message': conf_mesg(CONF_DICT)}), 200
+    return jsonify({'status': 'success', 'message': conf_mesg(CONF_DICT).replace('  ','__')}), 200
 
 
 

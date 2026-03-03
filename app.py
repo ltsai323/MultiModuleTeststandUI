@@ -156,6 +156,8 @@ if __name__ == "__main__":
                         datefmt='%H:%M:%S')
     log = logging.getLogger(__name__)
     if DEBUG_MODE:
+        shared_state.debug_mode = True
         app.run(debug=True, port=5005) ### for test product only use http://127.0.0.1:5005 access this port. http://192.168.o.x:5005 cannot access this port
     else:
+        shared_state.debug_mode = False
         app.run(debug=True, port=5001, host='0.0.0.0') ### for stable product so you can use http://192.16..o.x:5001 access it
