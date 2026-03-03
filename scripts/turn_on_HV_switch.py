@@ -14,11 +14,17 @@ async def only_turn_on_channel(vitrekINST, iCHANNEL:int):
     await vitrekINST.reset() ## reset all relay
     await vitrekINST.set_relay_state(iCHANNEL, "ON")
 
-# mmtsPOSmap = {
-#         '0': 0, # resetallchannel
-#         '1L': 1, '1C': 2, '1R': 3,
-#         '2L': 4, '2C': 5, '2R': 6,
-#         }
+mmtsPOSmap__ = {
+        '0': 0, # resetallchannel
+        '1L': 1, '1C': 2, '1R': 3,
+        '2L': 4, '2C': 5, '2R': 6,
+        '3L': 7, '3C': 8, '3R': 9,
+        '4L':10, '4C': 5, '4R': 6,
+        '5L': 4, '5C': 5, '5R': 6,
+        '6L': 4, '6C': 5, '6R': 6,
+        '7L': 4, '7C': 5, '7R': 6,
+        '8L': 4, '8C': 5, '8R': 6,
+        }
 def GetHVChannel(mmtsPOSITION:str, mmtsPOSmap:dict):
     HV_channel = mmtsPOSmap.get(mmtsPOSITION, 0)
     if HV_channel == 0:
@@ -57,7 +63,7 @@ def Option_Parser(argv):
     usage = 'usage: %prog [options] arg\n'
     parser = OptionParser(usage=usage)
 
-    #pos_choices = sorted(mmtsPOSmap.keys())
+    pos_choices = sorted(mmtsPOSmap__.keys())
 
     parser.add_option(
         '-p', '--position',
