@@ -17,12 +17,10 @@ JOBMODE = 'task3' # IV scan
 
 andrewCONF = f'{os.environ.get("AndrewModuleTestingGUI_BASE")}/configuration.yaml'
 dirDAQresult = ''
-DEFAULT_INSPECTORS = []
 try:
     with open(andrewCONF, 'r') as fIN:
         import yaml
         conf = yaml.safe_load(fIN)
-        DEFAULT_INSPECTORS = conf['Inspectors']
         dirDAQresult = f"{conf['DataLoc']}/daqplots/"
 except FileNotFoundError as e:
     raise FileNotFoundError(f'\n\n[NoEnvVar] Need to `source ./init_bash_vars.sh` before execute this file') from e
@@ -478,7 +476,7 @@ def status():
 @app.route('/main.html')
 def main():
     daq_result_dirs = [ subdir for subdir in os.listdir(dirDAQresult) if os.path.isdir(f'{dirDAQresult}/{subdir}') ]
-    return render_template('index_task3.html', DAQres=daq_result_dirs, inspectors=DEFAULT_INSPECTORS, currentCONF=CONF_DICT, ccc='')
+    return render_template('index_task3.html', DAQres=daq_result_dirs, currentCONF=CONF_DICT, ccc='')
 
 
 if __name__ == '__main__':
