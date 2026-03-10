@@ -266,3 +266,5 @@ password: ''
 host: '192.168.50.213'
 framework_path: '/home/pi/.local/MultiModuleTeststandUI/external_packages/HGCal_Module_Production_Toolkit'
 
+grafana_dashboard_url: "http://hep11.phys.ntu.edu.tw:3000/d/thermalcycle_thermalBoxEnv_/thermal-box-environment?orgId=1&from=now-1h&to=now&timezone=browser&kiosk"
+

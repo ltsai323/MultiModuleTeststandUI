@@ -13,6 +13,15 @@ import os
 os.system('mkdir -p logs')
 logfile = datetime.now().strftime("logs/app_%Y%m%d-%H%M%S.log")
 
+mmtsCONF = 'data/mmts_configurations.yaml'
+grafana_dashboard = ''
+try:
+    with open(mmtsCONF, 'r') as fIN:
+        import yaml
+        conf = yaml.safe_load(fIN)
+        grafana_dashboard = conf['grafana_dashboard_url']
+except FileNotFoundError as e:
+    raise FileNotFoundError(f'\n\n[LackOfMMTSconf] Need to create configuration file "data/mmts_configuration.yaml"') from e
 
 class StatusFilter(logging.Filter):
     def filter(self, record):
@@ -104,11 +113,11 @@ app.register_blueprint(app_daqsummary.app)
 
 @app.route("/")
 def index():
-    return render_template("index_mainpage.html", selected_option=shared_state.jobmode)
+    return render_template("index_mainpage.html", selected_option=shared_state.jobmode, dashboardURL=grafana_dashboard)
 
 @app.route("/index.html")
 def index_alias():
-    return render_template("index_mainpage.html", selected_option=shared_state.jobmode)
+    return render_template("index_mainpage.html", selected_option=shared_state.jobmode, dashboardURL=grafana_dashboard)
 
 @app.route("/set_option", methods=["POST"])
 def set_option():
