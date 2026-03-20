@@ -36,7 +36,8 @@ IVscan_%:
 
 
 all_IVscan: $(addprefix IVscan_,$(MODULE_POSITION)) ## IV scan does not support multithread
-	echo hii
+	echo "[FINISHED] all IV scan finished"
+	echo "[IDLE_STATE]"
 
 
 ### read DataLoc in AndrewBASE/configuration.yaml
