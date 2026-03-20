@@ -21,16 +21,8 @@ task1a_setup_andrewGUI: ## clone Andrew's GUI and edit configuration. If you ins
 	fi
 	if [ -f "$(andrewGUI_default_path)/configuration.yaml" ]; then echo "[ConfigExisted] Use $(andrewGUI_default_path)/configuration.yaml instead of creating new one."; fi
 
-nodataPLOT := data/daqplots.nodata.png
-task1b_create_daq_storage: ## According to Andrew's configuration, create dir "daqplots" in DataLoc and put default png file in this folder
-	source ./init_bash_vars.sh; \
-		echo [LoadedVar] directory loading Andrew ModuleTestGUI: $$AndrewModuleTestingGUI_BASE; \
-		read -p "create sub directory from conf['DataLoc'] in $(andrewGUI_default_path)/configuration.yaml"; \
-		echo "mkdir directory conf['DataLoc']/daqplots/ according to $${$(andrewGUI_default_path)/configuration.yaml}"; \
-		data_loc=`python3 scripts/access_yaml_var.py $(andrewGUI_default_path)/configuration.yaml DataLoc`; echo "Loaded DataLoc = $${data_loc}"; \
-		mkdir -p $${data_loc}/daqplots ; cp $(nodataPLOT) $${data_loc}/
 
-task1c_create_daqclient_service: ## edit daq-client.service for using port 6001~6020. And put them into ~/.config/systemd/user/. Use `systemctl --user restart daq-client-port6001.service` to active service
+task1b_create_daqclient_service: ## edit daq-client.service for using port 6001~6020. And put them into ~/.config/systemd/user/. Use `systemctl --user restart daq-client-port6001.service` to active service
 	echo "creating daq-client-port*.service in ~/.config/systemd/user/"
 	sh scripts/setup.create_daqclients.sh
 
@@ -48,11 +40,16 @@ task3a_clone_IVscan_codes: ## clone IV scan packages
 		ln -s $$PWD/external_packages/HGCal_Module_Production_Toolkit/out tmp_files/out; \
 	fi
 
+nodataPLOT := data/daqplots.nodata.png
 task3b_create_mmts_configuration: ## create mmts_configuration
 	python3 scripts/setup.mmts_configurations.py 
 	nano data/mmts_configurations.yaml
 	ln -s $$PWD/data/mmts_configurations.yaml external_packages/HGCal_Module_Production_Toolkit/configuration.yaml ### use configuration.yaml in youying's repo
 	if [ ! -f "$(andrewGUI_default_path)/configuration.yaml" ]; then ln -s $$PWD/data/mmts_configurations.yaml $(andrewGUI_default_path)/configuration.yaml; fi
+	read -p "create sub directory from conf['DataLoc'] in $(andrewGUI_default_path)/configuration.yaml"; \
+	echo "mkdir directory conf['DataLoc']/daqplots/ according to $${$(andrewGUI_default_path)/configuration.yaml}"; \
+	data_loc=`python3 scripts/access_yaml_var.py $(andrewGUI_default_path)/configuration.yaml DataLoc`; echo "Loaded DataLoc = $${data_loc}"; \
+	mkdir -p $${data_loc}/daqplots ; cp $(nodataPLOT) $${data_loc}/
 
 
 
@@ -71,7 +68,7 @@ flaskb_open_firewall_port5001: ## open firewall port 5001 such you can access se
 
 
 ### use python virtual environment to activate this app
-pyenva_make_virtual_environment:
+flaskc_make_virtual_environment: ## create python virtual envuironment
 	python3 -m venv .venv
 	source .venv/bin/activate
 	pip3 install   flask   flask-socketio   requests   sphinx   paramiko   pyvisa   pyvisa-py   pyyaml   flask-wtf   myst-parser   flask-cors   pymeasure   psycopg psycopg2-binary
@@ -80,8 +77,22 @@ pyenva_make_virtual_environment:
 	#sudo apt install python3-psycopg python3-psycopg-c
 	#sudo apt update && sudo apt install firewalld
 
+flaskd_make_app_as_system_service: ## make this MultimoduleTeststandUI as a system service
+	chmod +x ../app.py
+	### edit path in `data/MMTS.service` and `data/MMTS.service.variables`
+	python3 data/MMTS.service.createscript.py
+	sudo cp data/MMTS.service /etc/systemd/system/
+	sudo systemctl daemon-reload
+	sudo systemctl start MMTS.service ### activate service
+	sudo systemctl enable MMTS.service ### activate service
+	#sudo systemctl stop  MMTS.service ### stop service
+	#journalctl -u MMTS.service  ### check error messages
 
-all: 
+all: \
+	task1a_setup_andrewGUI task1b_create_daqclient_service \
+	task3a_clone_IVscan_codes task3b_create_mmts_configuration \
+	flaska_modify_teststand_IP_address flaskb_open_firewall_port5001 flaskc_make_virtual_environment flaskd_make_app_as_system_service
+
 
 
 IN_ARGS = [opts]
