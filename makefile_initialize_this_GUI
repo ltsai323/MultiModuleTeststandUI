@@ -30,14 +30,15 @@ task1b_create_daqclient_service: ## edit daq-client.service for using port 6001~
 
 
 ### task3 IV scan setup
+youyingSCRIPT_default_path = external_packages/HGCal_Module_Production_Toolkit
 task3a_clone_IVscan_codes: ## clone IV scan packages
 	if [ -d "external_packages/HGCal_Module_Production_Toolkit" ]; then \
 		echo "[ExistedPackage] youying's package (IV scan) found"; \
 	else \
 		echo "[Install youying's package (IV scan)] initialize 'HGCal_Module_Production_Toolkit' from youying "; \
-		git clone https://github.com/ltsai323/HGCal_Module_Production_Toolkit.git external_packages/HGCal_Module_Production_Toolkit; \
-		mkdir external_packages/HGCal_Module_Production_Toolkit/out; \
-		ln -s $$PWD/external_packages/HGCal_Module_Production_Toolkit/out tmp_files/out; \
+		git clone https://github.com/ltsai323/HGCal_Module_Production_Toolkit.git $(youyingSCRIPT_default_path); \
+		if [ -d "$(youyingSCRIPT_default_path)/out" ]; then rmdir $(youyingSCRIPT_default_path)/out; fi; \
+		mkdir -p tmp_files/out; ln -s $$PWD/tmp_files/out $(youyingSCRIPT_default_path)/out; \
 	fi
 
 nodataPLOT := data/daqplots.nodata.png
