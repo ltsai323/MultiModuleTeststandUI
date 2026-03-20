@@ -34,7 +34,7 @@ if __name__ == '__main__':
         conf = yaml.safe_load(fIN)
         
         ssh_key = conf.pop('PCKeyLoc')
-        for mmtsPOS, confCONTENT in conf.items():
+        for mmtsPOS, confCONTENT in conf['MMTS_channel_config'].items():
             ipADDR = confCONTENT['IP']
             tsKIND = confCONTENT['type']
             if not ipADDR:
