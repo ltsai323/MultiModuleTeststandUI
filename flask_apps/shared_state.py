@@ -7,6 +7,7 @@ threading_lock = threading.Lock()
 # threading_lock.acquire()
 # threading_lock.release()
 server_status = 'startup'
+debug_mode = False
 #job_stop_flag - threading.Event()
 #job_thread = {'thread': None}
 

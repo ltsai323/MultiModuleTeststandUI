@@ -4,6 +4,7 @@ import sys
 from optparse import OptionParser
 from JobModule.device_VITREK_switch_control import Vitrek964i
 import asyncio
+log = logging.getLogger(__name__)
 
 async def only_turn_on_channel(vitrekINST, iCHANNEL:int):
     if iCHANNEL < 1 or iCHANNEL > 32: raise IOError(f'[InvalidChannel] channel {iCHANNEL} is invalid')
@@ -13,15 +14,24 @@ async def only_turn_on_channel(vitrekINST, iCHANNEL:int):
     await vitrekINST.reset() ## reset all relay
     await vitrekINST.set_relay_state(iCHANNEL, "ON")
 
-mmtsPOSmap = {
+mmtsPOSmap__ = {
         '0': 0, # resetallchannel
         '1L': 1, '1C': 2, '1R': 3,
         '2L': 4, '2C': 5, '2R': 6,
+        '3L': 7, '3C': 8, '3R': 9,
+        '4L':10, '4C': 5, '4R': 6,
+        '5L': 4, '5C': 5, '5R': 6,
+        '6L': 4, '6C': 5, '6R': 6,
+        '7L': 4, '7C': 5, '7R': 6,
+        '8L': 4, '8C': 5, '8R': 6,
         }
-def MMTSposition_to_HVchannel(mmtsPOSITION:str):
-    if mmtsPOSITION in mmtsPOSmap.keys():
-        return mmtsPOSmap[mmtsPOSITION]
-    return 0 ## if invalid option. Regard it as disable everything
+def GetHVChannel(mmtsPOSITION:str, mmtsPOSmap:dict):
+    HV_channel = mmtsPOSmap.get(mmtsPOSITION, 0)
+    if HV_channel == 0:
+        log.info(f'[Reset HVSwitch] mmtsPOSITION "{mmtsPOSITION}" not in mmtsPOSmap, by default it is used to reset HV switch')
+    else:
+        log.info(f'[TurnOn HVSwitch ch{HV_channel}] mmtsPOSITION "{mmtsPOSITION}" found, turn on ch{HV_channel}')
+    return HV_channel
     
 #def Option_Parser(argv):
 #
@@ -53,7 +63,7 @@ def Option_Parser(argv):
     usage = 'usage: %prog [options] arg\n'
     parser = OptionParser(usage=usage)
 
-    pos_choices = sorted(mmtsPOSmap.keys())
+    pos_choices = sorted(mmtsPOSmap__.keys())
 
     parser.add_option(
         '-p', '--position',
@@ -98,6 +108,56 @@ RS232:
         conf = yaml.safe_load(fIN)
         return conf['RS232']['switch_vitek']
 
+def channel_mapping_from_yaml(yamlFILE):
+    '''
+    yaml file content as
+
+```
+MMTS_channel_config:
+  1L:
+    IP:
+    type: Kria
+    pullerPORT: 6002
+    HVchannel: 1 ### used for IV scan channel
+  1C:
+    IP:
+    type: Kria
+    pullerPORT: 6003
+    HVchannel: 2
+  1R:
+    IP: 
+    type: Kria
+    pullerPORT: 6004
+    HVchannel: 3
+  2L:
+    IP: 
+    type: Trenz
+    pullerPORT: 6005
+    HVchannel: 4
+  2C:
+    IP: 
+    type: Kria
+    pullerPORT: 6006
+    HVchannel: 5
+  2R:
+    IP: 
+    type: Kria
+    pullerPORT: 6007
+    HVchannel: 6
+```
+    
+    And read tag 1L and HVchannel 1.
+    '''
+    import yaml
+    with open(yamlFILE, 'r') as fIN:
+        conf = yaml.safe_load(fIN)
+        mmts_position_map = {
+                mmts_position: int(conf['HVchannel'])
+            for mmts_position, conf in conf['MMTS_channel_config'].items()
+        }
+        return mmts_position_map
+    
+
 def main():
     options = Option_Parser(sys.argv[1:])
 
@@ -107,6 +167,7 @@ def main():
 
 
     addr = options.address if options.address else address_from_yaml(options.config)
+    mmts_position_map = channel_mapping_from_yaml(options.config)
     vitrek_device = Vitrek964i(addr)
     try:
         async def async_main(vitrek):
@@ -125,11 +186,7 @@ def main():
                 connected = vitrek.is_connected()
                 log.debug(f"Connected status: {connected}")
 
-                ### print("\n===== ERROR STATUS CHECK =====")
-                ### # Check for any errors
-                ### error_status = await vitrek.get_error_status()
-                ### print(f"Initial error status: {error_status}")
-                channel = MMTSposition_to_HVchannel(options.position)
+                channel = GetHVChannel(options.position, mmts_position_map)
                 if channel == 0:
                     await vitrek.reset()
                 else:
@@ -147,7 +204,6 @@ def main():
         #print("Test sequence completed")
         pass ### not to reset device
 
-log = logging.getLogger(__name__)
 if __name__ == '__main__':
     import os
     loglevel = os.environ.get('LOG_LEVEL', 'INFO') # DEBUG, INFO, WARNING

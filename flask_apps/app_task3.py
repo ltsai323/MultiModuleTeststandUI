@@ -17,12 +17,10 @@ JOBMODE = 'task3' # IV scan
 
 andrewCONF = f'{os.environ.get("AndrewModuleTestingGUI_BASE")}/configuration.yaml'
 dirDAQresult = ''
-DEFAULT_INSPECTORS = []
 try:
     with open(andrewCONF, 'r') as fIN:
         import yaml
         conf = yaml.safe_load(fIN)
-        DEFAULT_INSPECTORS = conf['Inspectors']
         dirDAQresult = f"{conf['DataLoc']}/daqplots/"
 except FileNotFoundError as e:
     raise FileNotFoundError(f'\n\n[NoEnvVar] Need to `source ./init_bash_vars.sh` before execute this file') from e
@@ -35,28 +33,44 @@ CONF_DICT = {
         'moduleID1L': '',
         'moduleID1C': '',
         'moduleID1R': '',
-
         'moduleID2L': '',
         'moduleID2C': '',
         'moduleID2R': '',
+        'moduleID3L': '',
+        'moduleID3C': '',
+        'moduleID3R': '',
 
-       #'moduleID3L': '',
-       #'moduleID3C': '',
-       #'moduleID3R': '',
+        'moduleID4L': '',
+        'moduleID4C': '',
+        'moduleID4R': '',
+        'moduleID5L': '',
+        'moduleID5C': '',
+        'moduleID5R': '',
+        'moduleID6L': '',
+        'moduleID6C': '',
+        'moduleID6R': '',
+
+        'moduleID7L': '',
+        'moduleID7C': '',
+        'moduleID7R': '',
+        'moduleID8L': '',
+        'moduleID8C': '',
+        'moduleID8R': '',
         }
 
 def ExecCMD(jobID:str, confDICT:dict):
+    make_command = 'make -n' if shared_state.debug_mode else 'make'
     if jobID == 'Init':
-        return 'make -f makefile_task3 initialize JobName=Init'
+        return f'{make_command} -f makefile_task3 initialize JobName=Init'
     if jobID == 'Run':
         shared_state.runidx+=1
         runTAG = f'run{shared_state.runidx}'
         dictOPTs = ' '.join([ f'{key}={val}' for key,val in confDICT.items() if val != '' ])
-        return f'make -f makefile_task3 run ' + dictOPTs
+        return f'{make_command} -f makefile_task3 run ' + dictOPTs
     if jobID == 'Stop':
-        return 'make -f makefile_task3 stop JobName=Stop'
+        return f'{make_command} -f makefile_task3 stop JobName=Stop'
     if jobID == 'Destroy':
-        return 'make -f makefile_task3 destroy JobName=Destroy'
+        return f'{make_command} -f makefile_task3 destroy JobName=Destroy'
 
 
 
@@ -237,14 +251,29 @@ class ConfigForm(FlaskForm):
     moduleID1L = StringField("moduleID1L", validators=[alphanumeric_validator])
     moduleID1C = StringField("moduleID1C", validators=[alphanumeric_validator])
     moduleID1R = StringField("moduleID1R", validators=[alphanumeric_validator])
-
     moduleID2L = StringField("moduleID2L", validators=[alphanumeric_validator])
     moduleID2C = StringField("moduleID2C", validators=[alphanumeric_validator])
     moduleID2R = StringField("moduleID2R", validators=[alphanumeric_validator])
+    moduleID3L = StringField("moduleID3L", validators=[alphanumeric_validator])
+    moduleID3C = StringField("moduleID3C", validators=[alphanumeric_validator])
+    moduleID3R = StringField("moduleID3R", validators=[alphanumeric_validator])
 
-   #moduleID3L = StringField("moduleID3L", validators=[alphanumeric_validator])
-   #moduleID3C = StringField("moduleID3C", validators=[alphanumeric_validator])
-   #moduleID3R = StringField("moduleID3R", validators=[alphanumeric_validator])
+    moduleID4L = StringField("moduleID4L", validators=[alphanumeric_validator])
+    moduleID4C = StringField("moduleID4C", validators=[alphanumeric_validator])
+    moduleID4R = StringField("moduleID4R", validators=[alphanumeric_validator])
+    moduleID5L = StringField("moduleID5L", validators=[alphanumeric_validator])
+    moduleID5C = StringField("moduleID5C", validators=[alphanumeric_validator])
+    moduleID5R = StringField("moduleID5R", validators=[alphanumeric_validator])
+    moduleID6L = StringField("moduleID6L", validators=[alphanumeric_validator])
+    moduleID6C = StringField("moduleID6C", validators=[alphanumeric_validator])
+    moduleID6R = StringField("moduleID6R", validators=[alphanumeric_validator])
+
+    moduleID7L = StringField("moduleID7L", validators=[alphanumeric_validator])
+    moduleID7C = StringField("moduleID7C", validators=[alphanumeric_validator])
+    moduleID7R = StringField("moduleID7R", validators=[alphanumeric_validator])
+    moduleID8L = StringField("moduleID8L", validators=[alphanumeric_validator])
+    moduleID8C = StringField("moduleID8C", validators=[alphanumeric_validator])
+    moduleID8R = StringField("moduleID8R", validators=[alphanumeric_validator])
     submit = SubmitField("Configure")
 
 @app.route('/submit', methods=['POST','GET'])
@@ -300,8 +329,15 @@ def Configure():
 
 
     conf_mesg = lambda d: f'''Configurations\n
-        1L: {d.get('moduleID1L', ''):12s}\n1C: {d.get('moduleID1C', ''):12s}\n1R: {d.get('moduleID1R', ''):12s}\n
-        Note: Configuration saved. Please verify the settings.
+1L:{d.get('moduleID1L', ''):16s} 1C:{d.get('moduleID1C', ''):16s} 1R:{d.get('moduleID1R', ''):16s}\n
+2L:{d.get('moduleID2L', ''):16s} 2C:{d.get('moduleID2C', ''):16s} 2R:{d.get('moduleID2R', ''):16s}\n
+3L:{d.get('moduleID3L', ''):16s} 3C:{d.get('moduleID3C', ''):16s} 3R:{d.get('moduleID3R', ''):16s}\n
+4L:{d.get('moduleID4L', ''):16s} 4C:{d.get('moduleID4C', ''):16s} 4R:{d.get('moduleID4R', ''):16s}\n
+5L:{d.get('moduleID5L', ''):16s} 5C:{d.get('moduleID5C', ''):16s} 5R:{d.get('moduleID5R', ''):16s}\n
+6L:{d.get('moduleID6L', ''):16s} 6C:{d.get('moduleID6C', ''):16s} 6R:{d.get('moduleID6R', ''):16s}\n
+7L:{d.get('moduleID7L', ''):16s} 7C:{d.get('moduleID7C', ''):16s} 7R:{d.get('moduleID7R', ''):16s}\n
+8L:{d.get('moduleID8L', ''):16s} 8C:{d.get('moduleID8C', ''):16s} 8R:{d.get('moduleID8R', ''):16s}\n
+Note: Configuration saved. Please verify the settings.
     '''
 
 
@@ -316,7 +352,7 @@ def Configure():
 
     set_server_status('configured')
     # Return JSON with message, status 200 so client JS can alert
-    return jsonify({'status': 'success', 'message': conf_mesg(CONF_DICT)}), 200
+    return jsonify({'status': 'success', 'message': conf_mesg(CONF_DICT).replace('  ','__')}), 200
 
 
 
@@ -440,7 +476,7 @@ def status():
 @app.route('/main.html')
 def main():
     daq_result_dirs = [ subdir for subdir in os.listdir(dirDAQresult) if os.path.isdir(f'{dirDAQresult}/{subdir}') ]
-    return render_template('index_task3.html', DAQres=daq_result_dirs, inspectors=DEFAULT_INSPECTORS, currentCONF=CONF_DICT, ccc='')
+    return render_template('index_task3.html', DAQres=daq_result_dirs, currentCONF=CONF_DICT, ccc='')
 
 
 if __name__ == '__main__':
