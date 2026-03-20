@@ -37,7 +37,7 @@ open firewall port 5001 such you can access server [http://127.0.0.1:5001](http:
 ```
 #!/usr/bin/env bash
 
-sudo sh data/open_firewall.sh
+sudo sh scripts/open_firewall.sh
 ```
 
 ### 5. Put this reopsitory as a system service
