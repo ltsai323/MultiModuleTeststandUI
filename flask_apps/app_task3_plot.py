@@ -30,7 +30,7 @@ try:
     with open(CONF_FILE, 'r') as fIN:
         import yaml
         conf = yaml.safe_load(fIN)
-        BASE_PLOTS_DIR = f'{conf["path_HGCal_Module_Production_Toolkit"]}/out/'
+        BASE_PLOTS_DIR = f'{conf["MMTS_package_path"]["HGCal_Module_Production_Toolkit"]}/out/'
     DEFAULT_IMG = f'{os.environ.get("FLASK_BASE")}/data/daqplots.nodata.png'
 except FileNotFoundError as e:
     raise FileNotFoundError(f'\n\n[NoEnvVar] Need to `source ./init_bash_vars.sh` before execute this file') from e
