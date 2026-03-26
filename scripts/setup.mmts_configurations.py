@@ -42,14 +42,13 @@ def mmts_configs(pathto_HGCal_Module_Production_Toolkit, pathto_hgcal_module_tes
 
     mmts_config_dict = {
             'inspector': 'any string',
-            'path_HGCal_Module_Production_Toolkit': pathto_HGCal_Module_Production_Toolkit,
-            'path_hgcal_module_testing_gui': pathto_hgcal_module_testing_gui,
+            #'path_HGCal_Module_Production_Toolkit': pathto_HGCal_Module_Production_Toolkit,
+            #'path_hgcal_module_testing_gui': pathto_hgcal_module_testing_gui,
             'MMTS_package_path': { 'HGCal_Module_Production_Toolkit': 'external_packages/HGCal_Module_Production_Toolkit', 'hgcal_module_testing_gui': 'external_packages/hgcal-module-testing-gui', },
             'externalURL': {
                 'EnvMonitor':   { 'URL': 'link to grafana dashboard', 'height': '350px', },
                 'IVCurveOnline' { 'URL': 'link to grafana dashboard', 'height': '650px', },
             }
-            'grafana_dashboard_url': urlto_GRAFANAdashbaord,
 
             'RS232': { 'switch_vitek': 'ASRL/dev/DAQrs232_HVswitch::INSTR', 'HV_keithley': 'ASRL/dev/DAQrs232_keithley::INSTR' },
 
