@@ -47,7 +47,8 @@ all_IVscan: $(addprefix IVscan_,$(MODULE_POSITION)) ## IV scan does not support 
 
 initialize: ## initialize
 	@( \
-		python3 scripts/initialize_rs232_devices.py -c data/mmts_configurations.yaml RS232/switch_vitek RS232/HV_keithley \
+		python3 scripts/initialize_rs232_devices.py -c data/mmts_configurations.yaml RS232/switch_vitek RS232/HV_keithley; \
+		sh IVscan.initialize.sh; \
 		&& echo "[INITIZLIZED_STATE]" \
 	) \
 	|| (echo "[ERROR_STATE]"; exit 1)
