@@ -14,8 +14,5 @@ export FLASK_BASE=$CURRENT_PATH
 export LOG_LEVEL=INFO
 
 ######### loading libraries from Andrew's UI
-#export AndrewModuleTestingGUI_BASE=/home/ntucms/workspace/hgcal-module-testing-gui
 export AndrewModuleTestingGUI_BASE=$PWD/external_packages/hgcal-module-testing-gui
-#if [ "$AndrewModuleTestingGUI_BASE" == "" ]; then echo "[InvalidPath] Need to modify variable 'AndrewModuleTestingGUI_BASE' in  $THIS_SCRIPT" && exit 1; fi
-#if [ ! -d "$AndrewModuleTestingGUI_BASE" ]; then echo "[InvalidPath] variable 'AndrewModuleTestingGUI_BASE' should access correct path"; exit 2; fi
 

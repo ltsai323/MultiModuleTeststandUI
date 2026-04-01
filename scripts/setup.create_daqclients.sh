@@ -59,6 +59,11 @@ Create_user_daqclient_services 6017
 Create_user_daqclient_services 6018
 Create_user_daqclient_services 6019
 Create_user_daqclient_services 6020
+Create_user_daqclient_services 6021
+Create_user_daqclient_services 6022
+Create_user_daqclient_services 6023
+Create_user_daqclient_services 6024
+Create_user_daqclient_services 6025
 
 
 echo "[Usage] command 'systemctl --user restart daq-client-port6001.service'"

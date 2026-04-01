@@ -106,7 +106,7 @@ RS232:
     import yaml
     with open(yamlFILE, 'r') as fIN:
         conf = yaml.safe_load(fIN)
-        return conf['RS232']['switch_vitek']
+        return conf['MMTS_hardwares']['vitek']['Resource']
 
 def channel_mapping_from_yaml(yamlFILE):
     '''

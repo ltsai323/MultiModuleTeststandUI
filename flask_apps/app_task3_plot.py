@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+''' Deprecated file since I used grafana dashboard building figures. '''
 from __future__ import annotations
 import os
 import re
@@ -29,7 +30,7 @@ try:
     with open(CONF_FILE, 'r') as fIN:
         import yaml
         conf = yaml.safe_load(fIN)
-        BASE_PLOTS_DIR = f'{conf["framework_path"]}/out/'
+        BASE_PLOTS_DIR = f'{conf["MMTS_package_path"]["HGCal_Module_Production_Toolkit"]}/out/'
     DEFAULT_IMG = f'{os.environ.get("FLASK_BASE")}/data/daqplots.nodata.png'
 except FileNotFoundError as e:
     raise FileNotFoundError(f'\n\n[NoEnvVar] Need to `source ./init_bash_vars.sh` before execute this file') from e
@@ -65,38 +66,6 @@ def plot_version(filepath: str):
 
 
 
-###  my old code
-### @app.route("/plots/<path:filepath>")
-### def serve_plot(filepath: str):
-###     """Serve a plot from BASE_PLOTS_DIR if present, otherwise serve DEFAULT_IMG.
-###     This keeps all basePath logic in Python so you can add auth, logging, etc.
-###     """
-###     # Security: only allow our strict pattern and no path segments
-###     log.debug(f'[RequestedFilename] {filepath}')
-### 
-###     filename = filepath
-### 
-###     fs_path = os.path.join(BASE_PLOTS_DIR, filename)
-###     log.debug(f'[RequiredFigure] full path "{fs_path}"')
-###     if has_png(fs_path):
-###         log.debug(f'sending image {filepath}')
-###         return send_from_directory(BASE_PLOTS_DIR, filepath)
-### 
-###     # Fallback: default image
-###     if has_png(DEFAULT_IMG):
-###         log.debug(f'sending default image {DEFAULT_IMG}')
-###         return send_file(DEFAULT_IMG)
-### 
-###     # Last-resort vector placeholder if DEFAULT_IMG is missing
-###     svg = f"""
-###     <svg xmlns='http://www.w3.org/2000/svg' width='800' height='500'>
-###       <rect width='100%' height='100%' fill='#0b1020'/>
-###       <text x='50%' y='45%' text-anchor='middle' fill='#9fb0ff' font-size='22' font-family='monospace'>Missing figure</text>
-###       <text x='50%' y='55%' text-anchor='middle' fill='#9fb0ff' font-size='16' font-family='monospace'>{{{filepath}}}</text>
-###     </svg>
-###     """.replace("{{{filepath}}}", filepath)
-###     log.warning(f'no any file sent!!!')
-###     return Response(svg, mimetype="image/svg+xml")
 
 @app.route("/plots/<path:filepath>")
 def serve_plot(filepath: str):
@@ -132,55 +101,6 @@ def serve_plot(filepath: str):
     return Response(svg, mimetype="image/svg+xml")
 
 
-###  my old code
-### @app.route("/gallery/<run>/<key>")
-### def block_page(run: str, key: str):
-###     """Render a page for a single block, showing its two plots."""
-###     ''' run only allowed "summary" '''
-###     imgs = []
-###     if run == 'summary':
-###         for fname in ('summary0_ZoomTemp_IV.png', 'summary1_Minus40_IV.png', 'summary2_Plus20_IV.png'):
-###             fs_path = os.path.join(BASE_PLOTS_DIR, fname)
-###             exists = has_png(fs_path)
-###             src = url_for("plot_task3.serve_plot", filepath=fname)
-###             imgs.append({"file": fname, "src": src, "exists": exists})
-###     else:
-###         #fname = f"{run}/{key}-{i}.png"
-###         pass
-###     self_url = url_for("plot_task3.block_page", run=run, key=key)
-### 
-###     template = r"""<!doctype html>
-###     <html lang="en">
-###     <head>
-###       <meta charset="utf-8">
-###       <meta name="viewport" content="width=device-width, initial-scale=1">
-###       <title>IV Curves</title>
-###       <style>
-###         html { overflow:hidden; }
-###         body { background:#121a33; color:#e7ecff; font-family:sans-serif; margin:0; padding:12px; overflow:hidden; }
-###         .block-title { font-weight:bold; margin-bottom:10px; }
-###         .block-title{display:flex;justify-content:space-between;align-items:center;margin:2px 2px 10px;padding:8px 10px;background:#0e1530;border:1px solid #2a3a7a66;border-radius:12px}
-###         .figwrap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-###         figure{margin:0;padding:10px;border-radius:12px;background:#0b122a;border:1px solid #2a3a7a55}
-###         img{width:100%;object-fit:contain;display:block;border-radius:8px;background:#050915}
-###         figcaption{margin-top:8px;font-size:.85rem;color:var(--muted);word-break:break-all}
-###       </style>
-###     </head>
-###     <body>
-###       <a href="{{ self_url }}" target="_blank">
-###         <div class="block-title">IV {{ key }}</div>
-###       </a>
-###       <div class="figwrap">
-###         {% for img in imgs %}
-###         <figure>
-###           <img src="{{ img.src }}" alt="{{ img.file }}" />
-###           <figcaption>{{ img.file }}</figcaption>
-###         </figure>
-###         {% endfor %}
-###       </div>
-###     </body>
-###     </html>"""
-###     return render_template_string(template, run=run, key=key, imgs=imgs)
 
 
 @app.route("/gallery/<run>/<key>")
@@ -275,6 +195,7 @@ def block_page(run: str, key: str):
 
 
 if __name__ == "__main__":
+    ''' Deprecated file since I used grafana dashboard building figures. '''
     import os
     loglevel = os.environ.get('LOG_LEVEL', 'INFO') # DEBUG, INFO, WARNING
     DEBUG_MODE = True if loglevel == 'DEBUG' else False
@@ -296,3 +217,4 @@ if __name__ == "__main__":
     _app.register_blueprint(app)
     _app.run(host="0.0.0.0", port=5005, debug=True)
 
+    ''' Deprecated file since I used grafana dashboard building figures. '''

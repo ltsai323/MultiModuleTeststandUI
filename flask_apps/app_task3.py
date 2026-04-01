@@ -25,6 +25,18 @@ try:
 except FileNotFoundError as e:
     raise FileNotFoundError(f'\n\n[NoEnvVar] Need to `source ./init_bash_vars.sh` before execute this file') from e
 
+mmtsCONF = 'data/mmts_configurations.yaml'
+external_URL = ''
+external_URL_height = '200px'
+try:
+    with open(mmtsCONF, 'r') as fIN:
+        import yaml
+        conf = yaml.safe_load(fIN)
+        external_URL = conf['externalURL']['IVCurveOnline']['URL']
+        external_URL_height = conf['externalURL']['IVCurveOnline']['height']
+except FileNotFoundError as e:
+    raise FileNotFoundError(f'\n\n[LackOfMMTSconf] Need to create configuration file "data/mmts_configuration.yaml"') from e
+
 CONF_DICT = {
         'currentHUMIDITY': '',
         'currentTEMPERATURE': '',
@@ -66,6 +78,13 @@ def ExecCMD(jobID:str, confDICT:dict):
         shared_state.runidx+=1
         runTAG = f'run{shared_state.runidx}'
         dictOPTs = ' '.join([ f'{key}={val}' for key,val in confDICT.items() if val != '' ])
+
+        ### a patch
+        if int(confDICT['currentHUMIDITY']) < 12.0:
+            dictOPTs += ' maxVOLTAGE=850'
+        else:
+            dictOPTs += ' maxVOLTAGE=500'
+        ### a patch END
         return f'{make_command} -f makefile_task3 run ' + dictOPTs
     if jobID == 'Stop':
         return f'{make_command} -f makefile_task3 stop JobName=Stop'
@@ -459,6 +478,7 @@ def Destroy():
         current_app.logger.debug(f'[ServerAction][{CMD_ID}] Current status is {shared_state.server_status}. reject "{CMD_ID}" command')
     return '', 204
 
+### asdf deleted?
 @app.route('/status')
 def status():
     hasupdate = False
@@ -476,7 +496,7 @@ def status():
 @app.route('/main.html')
 def main():
     daq_result_dirs = [ subdir for subdir in os.listdir(dirDAQresult) if os.path.isdir(f'{dirDAQresult}/{subdir}') ]
-    return render_template('index_task3.html', DAQres=daq_result_dirs, currentCONF=CONF_DICT, ccc='')
+    return render_template('index_task3.html', DAQres=daq_result_dirs, currentCONF=CONF_DICT, ccc='', IVCurveOnline_URL=external_URL, IVCurveOnline_height=external_URL_height,)
 
 
 if __name__ == '__main__':

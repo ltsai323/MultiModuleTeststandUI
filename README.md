@@ -11,47 +11,39 @@ if [ "$?" != 0 ] && echo "[ERROR - UnableToCloneMMTS] Failed to clone MMTS"
 
 cd MultiModuleTeststandUI
 
-### clone external used repository
-sh setup.sh
-```
-Need to modify **data/mmts_configurations.yaml**, this yaml config file will be used in flask DAQ and `external_packages/HGCal_Module_Production_Toolkit`.
-and **external_packages/HGCal_Module_Production_Toolkit/configuration.yaml** for Andrew's GUI.
-
-
-
-### 2. Python libraries using Python Virtual Environment
-```
-python3 -m venv .venv
-source .venv/bin/activate
-pip3 install   flask   flask-socketio   requests   sphinx   paramiko   pyvisa   pyvisa-py   pyyaml   flask-wtf   myst-parser   flask-cors   pymeasure   psycopg psycopg2-binary
-sudo apt update
-sudo apt install python3-psycopg python3-psycopg-c
-sudo apt update && sudo apt install firewalld
+### initialize this GUI
+make -f makefile_initialize_this_GUI help
 ```
 
-### 3. check README.task3.md
-Check instructions in **README.task3.md**
-
-### 4. Open firewall
-open firewall port 5001 such you can access server [http://127.0.0.1:5001](http://127.0.0.1:5001)
 ```
-#!/usr/bin/env bash
+make -f makefile_initialize_this_GUI help
 
-sudo sh data/open_firewall.sh
+# Usage: make <command> [opts]
+# 
+# Commands:
+# 
+#   task1a_setup_andrewGUI  clone Andrew's GUI and edit configuration. If you installed andrewGUI, use andrewGUI_install_path to link folder. [andrewGUI_install_path=/some/path/to/hgcal-module-testing-gui]
+#   task1b_create_daqclient_service  edit daq-client.service for using port 6002~6025. And put them into ~/.config/systemd/user/. Use `systemctl --user restart daq-client-port6001.service` to active service
+#   task1c_create_output_folder  make directory from hgcal-module-testing-gui/configuration.yaml
+#   task3a_clone_IVscan_codes  clone IV scan packages
+#   task3b_create_mmts_configuration  create mmts_configuration
+#   flaska_open_firewall_port5001  open firewall port 5001 such you can access server http://127.0.0.1:5001
+#   flaskb_make_virtual_environment  create python virtual envuironment
+#   flaskc_make_app_as_system_service  make this MultimoduleTeststandUI as a system service
+#   help             Display this help
 ```
 
-### 5. Put this reopsitory as a system service
-
 ```
-chmod +x ../app.py
-### edit path in `data/MMTS.service` and `data/MMTS.service.variables`
-python3 data/MMTS.service.createscript.py
-
-sudo cp data/MMTS.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl start MMTS.service ### activate service
-#sudo systemctl stop  MMTS.service ### stop service
-#journalctl -u MMTS.service  ### check error messages
+### all initialize actions
+make -f makefile_initialize_this_GUI task1a_setup_andrewGUI  andrewGUI_install_path=/some/path/to/hgcal-module-testing-gui
+make -f makefile_initialize_this_GUI task1b_create_daqclient_service
+make -f makefile_initialize_this_GUI task1c_create_output_folder
+make -f makefile_initialize_this_GUI task3a_clone_IVscan_codes
+make -f makefile_initialize_this_GUI task3b_create_mmts_configuration
+### Need to modify **data/mmts_configurations.yaml**, this yaml config file will be used in flask DAQ and `external_packages/HGCal_Module_Production_Toolkit` for Andrew's GUI.
+make -f makefile_initialize_this_GUI flaska_open_firewall_port5001
+make -f makefile_initialize_this_GUI flaskb_make_virtual_environment
+make -f makefile_initialize_this_GUI flaskc_make_app_as_system_service
 ```
 
 
@@ -70,94 +62,6 @@ then open the link [http://127.0.0.1:5001](http://127.0.0.1:5001)
 
 
 
-
-## Directly run without GUI
-The GUI execute commands in makefile. So use `make help` checking all related commands.
-
-* `make -f makefile_task2 initialize`
-* `make -f makefile_task2 run -j3`
-* `make -f makefile_task2 stop`
-* `make -f makefile_task2 destroy`
-
-
-## DAQ steps
-### step1 initialize
-* Turn on kria power
-* load all related kria firmwares
-### step2 configure
-
-### step3 run
-Each single kria runs command. Note that pullerPort should be modified for assigning kria physically.
-
-* reload kria status and activate daq-client at background
-    - `ssh root@$kriaIP 'fw-loader load /opt/cms-hgcal-firmware/hgc-test-systems/hexaboard-hd-tester-v2p0-trophy-v2/'`
-    - `ssh root@$kriaIP 'systemctl restart i2c-server.service && systemctl restart daq-server.service'`
-    - `ssh root@$kriaIP 'systemctl status i2c-server.service && systemctl status daq-server.service'`
-    - `sleep 0.5`
-    - `./daq-client -p 6002 &`
-* waiting for 8 seconds
-* `python3 pedestal_run.py -i $kriaIP -f $yamlfile -d $moduleID -I --pullerPort=6002`
-
-
-
-# Debug Region
-## 0. Check logging in system
-Use `journalctl -u MMTS.service` to check messages.
-
-## 1. Run GUI without creating service
-At repository directory, activate python virtual environment and BASH variables using ` source .venv/bin/activate; source ./init_bash_vars.sh `
-Then run command `python3 app.py` to activate flask server.
-
-Then open link [https://127.0.0.1:5005](https://127.0.0.1:5005) from browser.
-
-## 2. Direct run command in CLI without flask server
-The buttons on flask server executes commands in GNU make.
-So you can execute commands
-```
-#!/usr/bin/env bash
-
-### by default, it shows help information
-make -f makefile_task3
-
-# Usage: make <command>
-# 		[moduleID1L][moduleID1C][moduleID1R]
-# 		[moduleID2L][moduleID2C][moduleID2R]
-# 
-# Commands:
-# 
-#   all_IVscan       IV scan does not support multithread
-#   initialize       initialize
-#   run              all IV scan (only single threaded allowed) [currentTEMPERATURE=20][currentHUMIDITY=50][switch_delay=0]
-#   stop             stop pedestal run
-#   destroy          remove all running jobs and disable board power
-#   help             Display this help
-```
-
-
-
-```
-#!/usr/bin/env bash
-
-### help information
-make -f makefile_task3 help
-
-### initialize button
-make -f makefile_task3 initialize
-
-### configure button: flask server collects the run argument. So makefile didn't provide this command
-
-### run button. If moduleID not set, skip this Vitrek channel.
-make -f makefile_task3 run currentTEMPERATURE=20 currentHUMIDITY=50 switch_delay=0 \
-    moduleID1L=320MHF2WDNT0460 moduleID1C=320MHF2WDNT0460 moduleID1R=320MHF2WDNT0460 \
-    moduleID2L=320MHF2WDNT0460 moduleID2C=320MHF2WDNT0460 moduleID2R=320MHF2WDNT0460
-
-
-### stop button.
-make -f makefile_task3 stop
-
-### destroy button
-make -f makefile_task3 destroy
-```
 
 
 

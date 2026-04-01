@@ -14,12 +14,14 @@ os.system('mkdir -p logs')
 logfile = datetime.now().strftime("logs/app_%Y%m%d-%H%M%S.log")
 
 mmtsCONF = 'data/mmts_configurations.yaml'
-grafana_dashboard = ''
+external_URL = ''
+external_URL_height = '200px'
 try:
     with open(mmtsCONF, 'r') as fIN:
         import yaml
         conf = yaml.safe_load(fIN)
-        grafana_dashboard = conf['grafana_dashboard_url']
+        external_URL = conf['externalURL']['EnvMonitor']['URL']
+        external_URL_height = conf['externalURL']['EnvMonitor']['height']
 except FileNotFoundError as e:
     raise FileNotFoundError(f'\n\n[LackOfMMTSconf] Need to create configuration file "data/mmts_configuration.yaml"') from e
 
@@ -96,8 +98,7 @@ logging.config.dictConfig(LOGGING_CONFIG)
 
 import flask_apps.app_task1    as app_task1
 import flask_apps.app_task2    as app_task2
-import flask_apps.app_task3    as app_task3
-import flask_apps.app_task3_plot    as app_plot3
+import flask_apps.app_task3    as app_task3 #import flask_apps.app_task3_plot    as app_plot3
 import flask_apps.app_daqsummary as app_daqsummary
 
 app = Flask(__name__)
@@ -106,18 +107,18 @@ csrf = CSRFProtect(app)
 app.register_blueprint(app_task1.app, url_prefix='/task1')
 app.register_blueprint(app_task2.app, url_prefix='/task2')
 app.register_blueprint(app_task3.app, url_prefix='/task3')
-app.register_blueprint(app_plot3.app)
+#app.register_blueprint(app_plot3.app)
 
 app.register_blueprint(app_daqsummary.app)
 
 
 @app.route("/")
 def index():
-    return render_template("index_mainpage.html", selected_option=shared_state.jobmode, dashboardURL=grafana_dashboard)
+    return render_template("index_mainpage.html", selected_option=shared_state.jobmode, EnvMonitor_URL=external_URL, EnvMonitor_height=external_URL_height)
 
 @app.route("/index.html")
 def index_alias():
-    return render_template("index_mainpage.html", selected_option=shared_state.jobmode, dashboardURL=grafana_dashboard)
+    return render_template("index_mainpage.html", selected_option=shared_state.jobmode, EnvMonitor_URL=external_URL, EnvMonitor_height=external_URL_height)
 
 @app.route("/set_option", methods=["POST"])
 def set_option():
@@ -166,7 +167,8 @@ if __name__ == "__main__":
     log = logging.getLogger(__name__)
     if DEBUG_MODE:
         shared_state.debug_mode = True
-        app.run(debug=True, port=5005) ### for test product only use http://127.0.0.1:5005 access this port. http://192.168.o.x:5005 cannot access this port
+        app.run(debug=True, port=5005, host='0.0.0.0') ### for test product only use http://127.0.0.1:5005 access this port. http://192.168.o.x:5005 cannot access this port
     else:
         shared_state.debug_mode = False
         app.run(debug=True, port=5001, host='0.0.0.0') ### for stable product so you can use http://192.16..o.x:5001 access it
+

@@ -2,7 +2,7 @@
 
 ```
 chmod +x ../app.py
-### edit path in `data/MMTS.service` and `data/MMTS.service.variables`
+### edit path in `data/MMTS.service`
 cd .. && python3 data/MMTS.service.createscript.py
 sudo cp data/MMTS.service /etc/systemd/system/
 sudo systemctl daemon-reload
