@@ -98,7 +98,7 @@ logging.config.dictConfig(LOGGING_CONFIG)
 
 import flask_apps.app_task1    as app_task1
 import flask_apps.app_task2    as app_task2
-import flask_apps.app_task3    as app_task3 #import flask_apps.app_task3_plot    as app_plot3
+import flask_apps.app_task3    as app_task3
 import flask_apps.app_daqsummary as app_daqsummary
 
 app = Flask(__name__)

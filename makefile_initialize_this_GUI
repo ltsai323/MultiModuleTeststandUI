@@ -1,5 +1,7 @@
 .PHONY: help
 
+BASE_DIR :=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+
 check_defined = \
     $(strip $(foreach 1,$1, \
     $(call __check_defined,$1,$(strip $(value 2)))))
@@ -46,10 +48,10 @@ task3a_clone_IVscan_codes: ## clone IV scan packages
 
 nodataPLOT := data/daqplots.nodata.png
 task3b_create_mmts_configuration: ## create mmts_configuration
-	python3 scripts/setup.mmts_configurations.py 
-	nano data/mmts_configurations.yaml
-	ln -s $$PWD/data/mmts_configurations.yaml external_packages/HGCal_Module_Production_Toolkit/configuration.yaml ### use configuration.yaml in youying's repo
-	if [ ! -f "$(andrewGUI_default_path)/configuration.yaml" ]; then ln -s $$PWD/data/mmts_configurations.yaml $(andrewGUI_default_path)/configuration.yaml; fi
+	@if [ -f "$(BASE_DIR)/data/mmts_configurations.yaml" ]; then read -p "[original MMTS_CONFIGURATION detected], do you want to update the file?" && vimdiff $(BASE_DIR)/data/mmts_configurations.yaml $(BASE_DIR)/data/mmts_configurations.yaml.default; else cp $(BASE_DIR)/data/mmts_configurations.yaml.default $(BASE_DIR)/data/mmts_configurations.yaml; fi
+	read -p "edit data/mmts_configurations.yaml" && vim $(BASE_DIR)/data/mmts_configurations.yaml
+	@[ ! -f "$(BASE_DIR)/external_packages/HGCal_Module_Production_Toolkit/configuration.yaml" ] && ln -s $(BASE_DIR)/data/mmts_configurations.yaml $(BASE_DIR)/external_packages/HGCal_Module_Production_Toolkit/configuration.yaml ### use configuration.yaml in youying's repo
+	@[ ! -f "$(andrewGUI_default_path)/configuration.yaml" ] && ln -s $$PWD/data/mmts_configurations.yaml $(andrewGUI_default_path)/configuration.yaml
 
 
 

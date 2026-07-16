@@ -5,10 +5,11 @@ from flask import Flask, render_template, request, jsonify, Blueprint
 from flask import current_app
 from flask_wtf import FlaskForm
 from flask_wtf.csrf import CSRFProtect
-from wtforms.validators import DataRequired, Regexp, InputRequired, NumberRange
+from wtforms.validators import DataRequired, Regexp, InputRequired, NumberRange, AnyOf
 from wtforms import StringField, SubmitField, RadioField, IntegerField
 import flask_apps.shared_state as shared_state
 from PythonTools.server_status import isCommandRunable
+from datetime import datetime
 import re
 import os
 ### HTTP status codes https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status
@@ -28,20 +29,24 @@ except FileNotFoundError as e:
 mmtsCONF = 'data/mmts_configurations.yaml'
 external_URL = ''
 external_URL_height = '200px'
+thermalcycle_stagenames = {}
 try:
     with open(mmtsCONF, 'r') as fIN:
         import yaml
         conf = yaml.safe_load(fIN)
         external_URL = conf['externalURL']['IVCurveOnline']['URL']
         external_URL_height = conf['externalURL']['IVCurveOnline']['height']
+        thermalcycle_stagenames = conf['thermalcycle_stagenames']
+
+
 except FileNotFoundError as e:
     raise FileNotFoundError(f'\n\n[LackOfMMTSconf] Need to create configuration file "data/mmts_configuration.yaml"') from e
 
 CONF_DICT = {
         'currentHUMIDITY': '',
         'currentTEMPERATURE': '',
-       #'inspector': '',    ### not used
-       #'moduleSTATUS': '', ### not used
+        'stageID': '',
+        'maxVOLTAGE': '',
         'moduleID1L': '',
         'moduleID1C': '',
         'moduleID1R': '',
@@ -72,24 +77,20 @@ CONF_DICT = {
 
 def ExecCMD(jobID:str, confDICT:dict):
     make_command = 'make -n' if shared_state.debug_mode else 'make'
+   #make_command = 'make -n'
     if jobID == 'Init':
-        return f'{make_command} -f makefile_task3 initialize JobName=Init'
+        return f'{make_command} -f makefile_task3  initialize JobName=Init'
     if jobID == 'Run':
         shared_state.runidx+=1
         runTAG = f'run{shared_state.runidx}'
         dictOPTs = ' '.join([ f'{key}={val}' for key,val in confDICT.items() if val != '' ])
 
-        ### a patch
-        if int(confDICT['currentHUMIDITY']) < 12.0:
-            dictOPTs += ' maxVOLTAGE=850'
-        else:
-            dictOPTs += ' maxVOLTAGE=500'
         ### a patch END
-        return f'{make_command} -f makefile_task3 run ' + dictOPTs
+        return f'{make_command} -f makefile_task3  run ' + dictOPTs
     if jobID == 'Stop':
-        return f'{make_command} -f makefile_task3 stop JobName=Stop'
+        return f'{make_command} -f makefile_task3  stop JobName=Stop'
     if jobID == 'Destroy':
-        return f'{make_command} -f makefile_task3 destroy JobName=Destroy'
+        return f'{make_command} -f makefile_task3  destroy JobName=Destroy'
 
 
 
@@ -137,7 +138,6 @@ def set_thread(runTYPE, tHREAD:threading.Thread):
         logger.warning(f'[InvalidRunType] set_thread() add "{runTYPE}" in the threading pool')
 
     if job_thread[runTYPE] and job_thread[runTYPE].is_alive():
-        #logger.warning(f'[JobIsRunning] set_thread() got running thread. overwrite this running thread')
         logger.warning(f'[JobIsRunning] set_thread() got running thread. waiting for previous thread finished')
         job_thread[runTYPE].join()
 
@@ -260,12 +260,20 @@ def Init():
 alphanumeric_validator = Regexp("^[a-zA-Z0-9\-]*$", message="Only letters and numbers and dash allowed.")
 #alphanumeric_validator = Regexp("^[a-zA-Z0-9]*$", message="Only letters and numbers allowed.")
 class ConfigForm(FlaskForm):
-    currentTEMPERATURE = StringField("currentTEMPERATURE", validators=[InputRequired(message='Temperature Missing')])
+   #currentTEMPERATURE = StringField("currentTEMPERATURE", validators=[InputRequired(message='Temperature Missing')])
+    currentTEMPERATURE = IntegerField("currentTEMPERATURE", validators=[
+        NumberRange(min=-50.,max=50., message='Number from -50 to 50'),
+        InputRequired(message='Temperature Missing')]
+                                     )
    #moduleSTATUS = RadioField("moduleSTATUS", validators=[InputRequired()])
     currentHUMIDITY    = IntegerField("currentHUMIDITY"   , validators=[
         NumberRange(min=0.,max=100., message='Number from 0 to 100'),
         InputRequired(message='Humidity Missing')]
                                      )
+    maxVOLTAGE = StringField("maxVOLTAGE", validators=[InputRequired(message='Max Voltage Missing')])
+    stageID    = StringField("stageID"   , validators=[InputRequired(message='select a stage'),
+                                                       AnyOf(values=thermalcycle_stagenames.keys(), message=f"Invalid choice, available choices '{thermalcycle_stagenames.keys()}'")
+                                                      ])
 
     moduleID1L = StringField("moduleID1L", validators=[alphanumeric_validator])
     moduleID1C = StringField("moduleID1C", validators=[alphanumeric_validator])
@@ -346,18 +354,39 @@ def Configure():
         CONF_DICT[varname] = clean_val
         current_app.logger.debug(f'[UpdateConfigure] Input {varname}:{CONF_DICT[varname]} updated.')
 
+    if CONF_DICT.get('stageID', ''): ## add date as postfix to stageID. The recorded value would be "stage1-20260308' YYYYMMDD
+        now = datetime.now()
+       #CONF_DICT['stageID'] = f'{CONF_DICT["stageID"]}-{now.strftime("%Y%m%d-%H%M")}'
+        CONF_DICT['stageID'] = f'{CONF_DICT["stageID"]}-{now.strftime("%Y%m%d")}'
 
-    conf_mesg = lambda d: f'''Configurations\n
-1L:{d.get('moduleID1L', ''):16s} 1C:{d.get('moduleID1C', ''):16s} 1R:{d.get('moduleID1R', ''):16s}\n
-2L:{d.get('moduleID2L', ''):16s} 2C:{d.get('moduleID2C', ''):16s} 2R:{d.get('moduleID2R', ''):16s}\n
-3L:{d.get('moduleID3L', ''):16s} 3C:{d.get('moduleID3C', ''):16s} 3R:{d.get('moduleID3R', ''):16s}\n
-4L:{d.get('moduleID4L', ''):16s} 4C:{d.get('moduleID4C', ''):16s} 4R:{d.get('moduleID4R', ''):16s}\n
-5L:{d.get('moduleID5L', ''):16s} 5C:{d.get('moduleID5C', ''):16s} 5R:{d.get('moduleID5R', ''):16s}\n
-6L:{d.get('moduleID6L', ''):16s} 6C:{d.get('moduleID6C', ''):16s} 6R:{d.get('moduleID6R', ''):16s}\n
-7L:{d.get('moduleID7L', ''):16s} 7C:{d.get('moduleID7C', ''):16s} 7R:{d.get('moduleID7R', ''):16s}\n
-8L:{d.get('moduleID8L', ''):16s} 8C:{d.get('moduleID8C', ''):16s} 8R:{d.get('moduleID8R', ''):16s}\n
-Note: Configuration saved. Please verify the settings.
-    '''
+
+#    conf_mesg = lambda d: f'''Configurations\n
+#1L:{d.get('moduleID1L', ''):16s} 1C:{d.get('moduleID1C', ''):16s} 1R:{d.get('moduleID1R', ''):16s}\n
+#2L:{d.get('moduleID2L', ''):16s} 2C:{d.get('moduleID2C', ''):16s} 2R:{d.get('moduleID2R', ''):16s}\n
+#3L:{d.get('moduleID3L', ''):16s} 3C:{d.get('moduleID3C', ''):16s} 3R:{d.get('moduleID3R', ''):16s}\n
+#4L:{d.get('moduleID4L', ''):16s} 4C:{d.get('moduleID4C', ''):16s} 4R:{d.get('moduleID4R', ''):16s}\n
+#5L:{d.get('moduleID5L', ''):16s} 5C:{d.get('moduleID5C', ''):16s} 5R:{d.get('moduleID5R', ''):16s}\n
+#6L:{d.get('moduleID6L', ''):16s} 6C:{d.get('moduleID6C', ''):16s} 6R:{d.get('moduleID6R', ''):16s}\n
+#7L:{d.get('moduleID7L', ''):16s} 7C:{d.get('moduleID7C', ''):16s} 7R:{d.get('moduleID7R', ''):16s}\n
+#8L:{d.get('moduleID8L', ''):16s} 8C:{d.get('moduleID8C', ''):16s} 8R:{d.get('moduleID8R', ''):16s}\n
+#Note: Configuration saved. Please verify the settings.
+#    '''
+    def conf_mesg(d):
+        input_modules = [ moduleID for dict_key, moduleID in d.items() if moduleID and 'moduleID' in dict_key ]
+        moduleID_set = set()
+        duplicates = set(x for x in input_modules if x in moduleID_set or moduleID_set.add(x))
+
+        got_n_modules = len(input_modules)
+        
+        has_duplicate_moduleID = len(duplicates) != 0
+        check1_mesg = f'\nHOWEVER duplicate modules:\n  {duplicates}' if has_duplicate_moduleID else '\nNo duplicate module'
+
+
+        return f'''
+got {got_n_modules} modules.
+{check1_mesg}
+'''
+
 
 
     is_empty_dict = sum( 1  if v else 0 for _,v in CONF_DICT.items()) == 0
@@ -496,7 +525,14 @@ def status():
 @app.route('/main.html')
 def main():
     daq_result_dirs = [ subdir for subdir in os.listdir(dirDAQresult) if os.path.isdir(f'{dirDAQresult}/{subdir}') ]
-    return render_template('index_task3.html', DAQres=daq_result_dirs, currentCONF=CONF_DICT, ccc='', IVCurveOnline_URL=external_URL, IVCurveOnline_height=external_URL_height,)
+    return render_template('index_task3.html',
+                           DAQres=daq_result_dirs,
+                           currentCONF=CONF_DICT,
+                           ccc='',
+                           IVCurveOnline_URL=external_URL,
+                           IVCurveOnline_height=external_URL_height,
+                           thermalCYCLE_stageNAMEdict = thermalcycle_stagenames,
+                           )
 
 
 if __name__ == '__main__':
