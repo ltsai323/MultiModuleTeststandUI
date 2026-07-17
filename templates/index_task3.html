@@ -928,16 +928,6 @@ function setupInputRestriction() {
     });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  setupConfigureButton();
-  setupFormSubmission();
-  setupDaqSummaryButton();
-  setupInputRestriction();
-
-  updateStatus();
-  setInterval(updateStatus, 1000);
-});
-
 
 function setupMultiRowPaste() {
   const moduleInputs = Array.from(
@@ -1013,6 +1003,16 @@ function setupMultiRowPaste() {
     });
   });
 }
+document.addEventListener("DOMContentLoaded", () => {
+  setupConfigureButton();
+  setupFormSubmission();
+  setupDaqSummaryButton();
+  setupInputRestriction();
+
+  updateStatus();
+  setInterval(updateStatus, 1000);
+});
+
   </script>
 </body>
 
