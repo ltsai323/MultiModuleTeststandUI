@@ -1,6 +1,6 @@
 ## Installations
 Use mini conda handling the python libraries. Note that this GUI should be deployed on Linux.
-
+We recommended you use SSH forward 
 To install the dependency, you need to use the following commands:
 
 ### 1. Clone This Repository and external package
@@ -66,22 +66,4 @@ then open the link [http://127.0.0.1:5001](http://127.0.0.1:5001)
 
 
 
-
-## Notes
-
-### How about dockerize this repo?
-
-Since the docker would be executed using ROOT instead of current user, the bash part of this repo needs to be rewritten, so I gave up this part.
-
-### How to upgrade code
-
-```
-git pull
-cd external_packages/HGCal_Module_Production_Toolkit && git pull
-systemctl restart MMTS.service
-```
-
-### A lot of barcode shold be pasted into GUI!
-
-For IV scan webpages, you can open a text editor then record all barcode in this file. Then copy them directed into the text boxes. The barcodes would be separated automatically.
 

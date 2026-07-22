@@ -540,25 +540,25 @@ fieldset.env-control legend {
           </fieldset>
 
           <fieldset class="env-control">
-            <legend>Thermal-cycle stage</legend>
+            <legend>Thermal-cycle iteration</legend>
 
-            {% set selected_stageID = currentCONF.get('stageID', '') %}
+            {% set selected_iteration = currentCONF.get('iteration', '') %}
 
             <select
-              name="stageID"
-              id="stageID"
+              name="iteration"
+              id="iteration"
               class="configuration-input"
               required>
 
-              <option value="" disabled {% if not selected_stageID %}selected{% endif %}>
-                Select a stage
+              <option value="" disabled {% if not selected_iteration %}selected{% endif %}>
+                Select an iteration
               </option>
 
-              {% for stageID, stage_desc in thermalCYCLE_stageNAMEdict.items() %}
+              {% for iteration, iteration_desc in thermalCYCLE_iterationDICT.items() %}
               <option
-                value="{{ stageID | e }}"
-                {% if stageID == selected_stageID %}selected{% endif %}>
-                {{ stage_desc }}
+                value="{{ iteration | e }}"
+                {% if iteration == selected_iteration %}selected{% endif %}>
+                {{ iteration_desc }}
               </option>
               {% endfor %}
 
@@ -802,6 +802,7 @@ async function updateStatus() {
     document.getElementById("statusText").innerText = "status fetch failed";
     console.error(error);
   }
+	
 }
 
 async function execjob(varname) {
