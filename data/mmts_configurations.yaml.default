@@ -176,11 +176,11 @@ externalURL:
     height: 650px
 inspector: NTU Lab ### this option would be filled to database "inspector"
 
-thermalcycle_stagenames:
-  ### key would be put into database. (with postfix date). The recorded value would be "stage1-20260308' YYYYMMDD
-  ### and value would be shown on MMTS GUI option. Feel free to modify the descriptions.
-  stage1: 'stage1: room condition, high humidity'
-  stage2: 'stage2: first low temperature'
-  stage3: 'stage3: last low temperature'
-  stage4: 'stage4: final IV, normal temperature'
+thermalcycle_iterations:
+  ### key would be put into hgcapi - mmts_iv_test - iteration
+  ### value as a description would be shown on MMTS GUI option.
+  iteration_1: 'iteration_1: room condition, high humidity'
+  iteration_2: 'iteration_2: first low temperature'
+  iteration_3: 'iteration_3: last low temperature'
+  iteration_4: 'iteration_4: final IV, normal temperature'
   test: 'testing here'

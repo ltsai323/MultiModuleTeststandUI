@@ -29,24 +29,27 @@ except FileNotFoundError as e:
 mmtsCONF = 'data/mmts_configurations.yaml'
 external_URL = ''
 external_URL_height = '200px'
-thermalcycle_stagenames = {}
+thermalcycle_iterations = {}
 try:
     with open(mmtsCONF, 'r') as fIN:
         import yaml
         conf = yaml.safe_load(fIN)
         external_URL = conf['externalURL']['IVCurveOnline']['URL']
         external_URL_height = conf['externalURL']['IVCurveOnline']['height']
-        thermalcycle_stagenames = conf['thermalcycle_stagenames']
+        thermalcycle_iterations = conf['thermalcycle_iterations']
 
 
 except FileNotFoundError as e:
     raise FileNotFoundError(f'\n\n[LackOfMMTSconf] Need to create configuration file "data/mmts_configuration.yaml"') from e
 
+### intrinsic configuration would be defined in flask server instead of user input
+INTRINSIC_CONF = [ 'batch' ]
 CONF_DICT = {
-        'currentHUMIDITY': '',
-        'currentTEMPERATURE': '',
-        'stageID': '',
-        'maxVOLTAGE': '',
+        'batch': '',    # YYYYMMDD-HHMMSS
+        'currentHUMIDITY': '', # 0~100
+        'currentTEMPERATURE': '', 
+        'iteration': '', # batch1
+        'maxVOLTAGE': '', # 500 or 850
         'moduleID1L': '',
         'moduleID1C': '',
         'moduleID1R': '',
@@ -257,8 +260,7 @@ def Init():
 
     return '', 204
 
-alphanumeric_validator = Regexp("^[a-zA-Z0-9\-]*$", message="Only letters and numbers and dash allowed.")
-#alphanumeric_validator = Regexp("^[a-zA-Z0-9]*$", message="Only letters and numbers allowed.")
+alphanumeric_validator = Regexp(r"^[a-zA-Z0-9-]*$", message="Only letters and numbers and dash allowed.")
 class ConfigForm(FlaskForm):
    #currentTEMPERATURE = StringField("currentTEMPERATURE", validators=[InputRequired(message='Temperature Missing')])
     currentTEMPERATURE = IntegerField("currentTEMPERATURE", validators=[
@@ -271,8 +273,8 @@ class ConfigForm(FlaskForm):
         InputRequired(message='Humidity Missing')]
                                      )
     maxVOLTAGE = StringField("maxVOLTAGE", validators=[InputRequired(message='Max Voltage Missing')])
-    stageID    = StringField("stageID"   , validators=[InputRequired(message='select a stage'),
-                                                       AnyOf(values=thermalcycle_stagenames.keys(), message=f"Invalid choice, available choices '{thermalcycle_stagenames.keys()}'")
+    iteration  = StringField("iteration"   , validators=[InputRequired(message='select an iteration'),
+                                                       AnyOf(values=thermalcycle_iterations.keys(), message=f"Invalid choice, available choices '{thermalcycle_iterations.keys()}'")
                                                       ])
 
     moduleID1L = StringField("moduleID1L", validators=[alphanumeric_validator])
@@ -345,6 +347,8 @@ def Configure():
     current_app.logger.debug(f'[LoadFormFromClient] Form "{vars(form)}"')
 
     for varname in CONF_DICT.keys():
+        if varname in INTRINSIC_CONF: continue ## pass some variable not from configuration
+
         value = getattr(form, varname).data if hasattr(form, varname) else ''
         current_app.logger.debug(f'[GotValue] Form {varname} got original value "{value}"')
         clean_val = ignore_special_characters(str(value))
@@ -352,25 +356,15 @@ def Configure():
             current_app.logger.warning(f'[InputTooLong] Input {varname}:{clean_val} too long, resetting.')
             clean_val = ''
         CONF_DICT[varname] = clean_val
+
+        if varname == 'iteration': ## add date as postfix
+            now = datetime.now()
+            CONF_DICT['batch'] = now.strftime("%Y%m%d-%H%M%S")
+
+
         current_app.logger.debug(f'[UpdateConfigure] Input {varname}:{CONF_DICT[varname]} updated.')
 
-    if CONF_DICT.get('stageID', ''): ## add date as postfix to stageID. The recorded value would be "stage1-20260308' YYYYMMDD
-        now = datetime.now()
-       #CONF_DICT['stageID'] = f'{CONF_DICT["stageID"]}-{now.strftime("%Y%m%d-%H%M")}'
-        CONF_DICT['stageID'] = f'{CONF_DICT["stageID"]}-{now.strftime("%Y%m%d")}'
 
-
-#    conf_mesg = lambda d: f'''Configurations\n
-#1L:{d.get('moduleID1L', ''):16s} 1C:{d.get('moduleID1C', ''):16s} 1R:{d.get('moduleID1R', ''):16s}\n
-#2L:{d.get('moduleID2L', ''):16s} 2C:{d.get('moduleID2C', ''):16s} 2R:{d.get('moduleID2R', ''):16s}\n
-#3L:{d.get('moduleID3L', ''):16s} 3C:{d.get('moduleID3C', ''):16s} 3R:{d.get('moduleID3R', ''):16s}\n
-#4L:{d.get('moduleID4L', ''):16s} 4C:{d.get('moduleID4C', ''):16s} 4R:{d.get('moduleID4R', ''):16s}\n
-#5L:{d.get('moduleID5L', ''):16s} 5C:{d.get('moduleID5C', ''):16s} 5R:{d.get('moduleID5R', ''):16s}\n
-#6L:{d.get('moduleID6L', ''):16s} 6C:{d.get('moduleID6C', ''):16s} 6R:{d.get('moduleID6R', ''):16s}\n
-#7L:{d.get('moduleID7L', ''):16s} 7C:{d.get('moduleID7C', ''):16s} 7R:{d.get('moduleID7R', ''):16s}\n
-#8L:{d.get('moduleID8L', ''):16s} 8C:{d.get('moduleID8C', ''):16s} 8R:{d.get('moduleID8R', ''):16s}\n
-#Note: Configuration saved. Please verify the settings.
-#    '''
     def conf_mesg(d):
         input_modules = [ moduleID for dict_key, moduleID in d.items() if moduleID and 'moduleID' in dict_key ]
         moduleID_set = set()
@@ -400,7 +394,7 @@ got {got_n_modules} modules.
 
     set_server_status('configured')
     # Return JSON with message, status 200 so client JS can alert
-    return jsonify({'status': 'success', 'message': conf_mesg(CONF_DICT).replace('  ','__')}), 200
+    return jsonify({'status': 'success', 'message': conf_mesg(CONF_DICT)}), 200
 
 
 
@@ -531,7 +525,7 @@ def main():
                            ccc='',
                            IVCurveOnline_URL=external_URL,
                            IVCurveOnline_height=external_URL_height,
-                           thermalCYCLE_stageNAMEdict = thermalcycle_stagenames,
+                           thermalCYCLE_iterationDICT = thermalcycle_iterations,
                            )
 
 
