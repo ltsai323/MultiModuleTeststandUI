@@ -82,7 +82,7 @@ def ExecCMD(jobID:str, confDICT:dict):
     make_command = 'make -n' if shared_state.debug_mode else 'make'
    #make_command = 'make -n'
     if jobID == 'Init':
-        return f'{make_command} -n -f makefile_task3  initialize JobName=Init'
+        return f'{make_command} -f makefile_task3  initialize JobName=Init'
     if jobID == 'Run':
         shared_state.runidx+=1
         runTAG = f'run{shared_state.runidx}'
@@ -91,9 +91,9 @@ def ExecCMD(jobID:str, confDICT:dict):
         ### a patch END
         return f'{make_command} -f makefile_task3  run ' + dictOPTs
     if jobID == 'Stop':
-        return f'{make_command} -n -f makefile_task3  stop JobName=Stop'
+        return f'{make_command} -f makefile_task3  stop JobName=Stop'
     if jobID == 'Destroy':
-        return f'{make_command} -n -f makefile_task3  destroy JobName=Destroy'
+        return f'{make_command} -f makefile_task3  destroy JobName=Destroy'
 
 
 
@@ -260,8 +260,7 @@ def Init():
 
     return '', 204
 
-alphanumeric_validator = Regexp("^[a-zA-Z0-9\-]*$", message="Only letters and numbers and dash allowed.")
-#alphanumeric_validator = Regexp("^[a-zA-Z0-9]*$", message="Only letters and numbers allowed.")
+alphanumeric_validator = Regexp(r"^[a-zA-Z0-9-]*$", message="Only letters and numbers and dash allowed.")
 class ConfigForm(FlaskForm):
    #currentTEMPERATURE = StringField("currentTEMPERATURE", validators=[InputRequired(message='Temperature Missing')])
     currentTEMPERATURE = IntegerField("currentTEMPERATURE", validators=[
