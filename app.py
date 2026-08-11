@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify
 import flask_apps.shared_state as shared_state
 from flask_wtf.csrf import CSRFProtect
 import sys
+from collections import deque
 
 # app.py
 import logging
