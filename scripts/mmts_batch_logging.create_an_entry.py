@@ -145,10 +145,25 @@ def decode_iteration_to_cyclecount(iterSTR:str) -> int:
         if '-' in iterSTR:
             if iterSTR != '-1':
                 return int(iterSTR.split('-')[-1])
+        nword = len(iterSTR)
+        has_digit = False
+        while nword > 0:
+            nword -= 1
+            if iterSTR[nword].isdigit():
+                has_digit = True
+            else:
+                ## once first non-digit character found, return the digit. If no any digit, go to next session
+                if has_digit:
+                    return int(iterSTR[nword+1:])
+                else:
+                    break
+
+        
     except ValueError as e:
         raise ValueError(f'[FailedDecoding] iteration "{iterSTR}" cannot be corrected decoded')
     if 'test' in iterSTR:
         return -1 ## if test set
+    log.warning(f'[FailedDecoding] iteration "{iterSTR}" cannot be corrected decoded. Return -1')
     return -1 ## if iteration not set
         
 
