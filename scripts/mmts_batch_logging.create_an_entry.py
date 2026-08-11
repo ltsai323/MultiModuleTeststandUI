@@ -23,7 +23,7 @@ ALLOWED_DESCRIPTION = [
     'test',         ### test
     'MMTSenvChecking',   ### monitoring the status of environmental chamber
     'MMTSenvAcquired',   ### MMTS check environment status before every run. Use **status_safety_alarm** for illustrating good or not
-    'MMTSenvWaitNewPLCstat', ### MMTS check environment status before every run. Use **status_safety_alarm** for illustrating good or not
+    'MMTSenvWaitNewPLCStat', ### MMTS check environment status before every run. Use **status_safety_alarm** for illustrating good or not
 
     'MMTSjobRunning',### MMTS is activating job.
     'MMTSjobFinished', ### MMTS finished job
@@ -186,7 +186,8 @@ def Option_Parser(argv):
 
     (options, args) = parser.parse_args(argv)
 
-    if parser.description == '' or parser.description not in ALLOWED_DESCRIPTION:
+    if options.description == '' or options.description not in ALLOWED_DESCRIPTION:
+        log.warning(f'[InvalidDescription] description "{options.description}" is invalid. allowed options: {ALLOWED_DESCRIPTION}')
         parser.print_help()
         exit(0)
 
