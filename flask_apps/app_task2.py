@@ -351,7 +351,7 @@ def Configure():
 
         value = getattr(form, varname).data if hasattr(form, varname) else ''
         current_app.logger.debug(f'[GotValue] Form {varname} got original value "{value}"')
-        clean_val = ignore_special_characters(str(value))
+        clean_val = ignore_special_characters(str(value)) if 'moduleID' in varname else str(value) ### only remove special character in moduleID
         if len(clean_val) > 20:
             current_app.logger.warning(f'[InputTooLong] Input {varname}:{clean_val} too long, resetting.')
             clean_val = ''
