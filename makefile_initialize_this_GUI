@@ -99,7 +99,7 @@ git_pull:
 	git pull
 	@echo [Update external_packages] cd external_packages/HGCal_Module_Production_Toolkit && git pull
 	cd external_packages/HGCal_Module_Production_Toolkit && git pull
-	make -f $(MAKEFILE) task3b_create_mmts_configuration
+	make -f ../../$(MAKEFILE) task3b_create_mmts_configuration
 clean_logs:
 	/bin/rm -f logs/*
 
