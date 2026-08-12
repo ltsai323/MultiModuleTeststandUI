@@ -49,7 +49,8 @@ make -f makefile_initialize_this_GUI flaskc_make_app_as_system_service
 ### Update this GUI
 
 ```
-make -f makefile_initialize_this_GUI git_pull
+make -f makefile_initialize_this_GUI updateGUI
+systemctl restart MMTS.service
 ```
 
 ### Check and clean up the MMTS GUI logs
