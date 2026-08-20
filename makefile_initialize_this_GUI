@@ -88,7 +88,7 @@ flaskb_make_virtual_environment: ## create python virtual envuironment
 	#sudo apt update && sudo apt install firewalld
 
 flaskc_make_app_as_system_service: ## make this MultimoduleTeststandUI as a system service
-	chmod +x ../app.py
+	chmod +x ./app.py
 ### edit path in `data/MMTS.service` and `data/MMTS.service.variables`
 	python3 data/MMTS.service.createscript.py
 	sudo cp data/MMTS.service /etc/systemd/system/
