@@ -88,7 +88,7 @@ flaskb_make_virtual_environment: ## create python virtual envuironment
 	#sudo apt update && sudo apt install firewalld
 
 flaskc_make_app_as_system_service: ## make this MultimoduleTeststandUI as a system service
-	chmod +x ../app.py
+	chmod +x ./app.py
 ### edit path in `data/MMTS.service` and `data/MMTS.service.variables`
 	python3 data/MMTS.service.createscript.py
 	sudo cp data/MMTS.service /etc/systemd/system/
@@ -106,7 +106,7 @@ all: \
 updateGUI:
 	@echo [Update MMTS GUI] git pull
 	git pull
-	make -f $(MAKEFILE) task3b_create_mmts_configuration
+	make -f $(MAKEFILE_LIST) task3b_create_mmts_configuration
 	@echo [Update external_packages] cd external_packages/HGCal_Module_Production_Toolkit && git pull
 	cd external_packages/HGCal_Module_Production_Toolkit && git pull
 
