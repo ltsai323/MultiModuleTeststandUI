@@ -169,6 +169,12 @@ def view_logs():
 
     return render_template("logs.html", lines=lines)
 
+@app.route('/api/get_config', methods=['GET'])
+def get_current_config():
+    """
+    提供一個 API 端點，讓外部的自動化腳本可以取得網頁上設定的模組編號
+    """
+    return jsonify(shared_state.CURRENT_CONFIG), 200
 
 
 if __name__ == "__main__":

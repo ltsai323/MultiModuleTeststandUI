@@ -27,6 +27,21 @@ try:
 except FileNotFoundError as e:
     raise FileNotFoundError(f'\n\n[NoEnvVar] Need to `source ./init_bash_vars.sh` before execute this file') from e
 
+APP_CONFS = [
+        'inspector',
+        'moduleSTATUS',
+        'moduleID1L',
+        'moduleID1C',
+        'moduleID1R',
+
+        'moduleID2L',
+        'moduleID2C',
+        'moduleID2R',
+
+        'moduleID3L',
+        'moduleID3C',
+        'moduleID3R',
+        ]
 CONF_DICT = {
         'inspector': '',
         'moduleSTATUS': '',
@@ -43,7 +58,8 @@ CONF_DICT = {
         'moduleID3R': '',
         }
 
-def ExecCMD(jobID:str, confDICT:dict):
+def ExecCMD(jobID:str):
+    confDICT = shared_state.ReadConfig(APP_CONFS)
     if jobID == 'Init':
         return 'make -f makefile_task1 initialize JobName=Init'
     if jobID == 'Run':
@@ -195,7 +211,7 @@ def Init():
 
         def background_worker():
             try:
-                command = ExecCMD(CMD_ID, CONF_DICT)
+                command = ExecCMD(CMD_ID)
                 run_command(command, CMD_ID)
             finally:
                 shared_state.DAQresult_current_modified = ''
@@ -272,7 +288,7 @@ def Configure():
 
     current_app.logger.debug(f'[LoadFormFromClient] Form "{vars(form)}"')
 
-    for varname in CONF_DICT.keys():
+    for varname in APP_CONFS:
         value = getattr(form, varname).data if hasattr(form, varname) else ''
         current_app.logger.debug(f'[GotValue] Form {varname} got original value "{value}"')
         clean_val = ignore_special_characters(value) if 'moduleID' in varname else str(value)
@@ -280,27 +296,30 @@ def Configure():
             current_app.logger.warning(f'[InputTooLong] Input {varname}:{clean_val} too long, resetting.')
             clean_val = ''
         CONF_DICT[varname] = clean_val
-        current_app.logger.debug(f'[UpdateConfigure] Input {varname}:{CONF_DICT[varname]} updated.')
+        shared_state.SetConfig(varname, clean_val)
+       #current_app.logger.debug(f'[UpdateConfigure] Input {varname}:{CONF_DICT[varname]} updated.')
 
 
-    conf_mesg = lambda d: f'''Configurations\n
+    def conf_mesg():
+        d = shared_state.ReadConfig(APP_CONFS)
+        return f'''Configurations\n
         1L: {d.get('moduleID1L', ''):12s}\n1C: {d.get('moduleID1C', ''):12s}\n1R: {d.get('moduleID1R', ''):12s}\n
         Note: Configuration saved. Please verify the settings.
     '''
 
 
-    is_empty_dict = sum( 1  if v else 0 for _,v in CONF_DICT.items()) == 0
+    is_empty_dict = sum( 1  if v else 0 for _,v in shared_state.ReadConfig(APP_CONFS).items()) == 0
     if is_empty_dict:
         errors = 'Got empty configurations!'
         current_app.logger.warning(f'[Configure] {errors}')
         return jsonify({'status': 'error', 'errors': errors}), 400
 
-    current_app.logger.info(conf_mesg(CONF_DICT))
-    current_app.logger.info(f'[Configure] Current CONF_DICT: {CONF_DICT}')
+    current_app.logger.info(conf_mesg())
+    current_app.logger.info(f'[Configure] Current CONF_DICT: {shared_state.ReadConfig(APP_CONFS)}')
 
     set_server_status('configured')
     # Return JSON with message, status 200 so client JS can alert
-    return jsonify({'status': 'success', 'message': conf_mesg(CONF_DICT)}), 200
+    return jsonify({'status': 'success', 'message': conf_mesg()}), 200
 
 
 
@@ -320,7 +339,7 @@ def Run():
 
         def background_worker():
             try:
-                command = ExecCMD(CMD_ID, CONF_DICT)
+                command = ExecCMD(CMD_ID)
                 run_command(command, CMD_ID)
             finally:
                 set_server_status('idle')
@@ -355,7 +374,7 @@ def Stop():
 
     def background_worker():
         try:
-            command = ExecCMD(CMD_ID, CONF_DICT)
+            command = ExecCMD(CMD_ID)
             run_command(command, CMD_ID)
         finally:
             set_server_status('idle')
@@ -390,7 +409,7 @@ def Destroy():
 
         def background_worker():
             try:
-                command = ExecCMD(CMD_ID, CONF_DICT)
+                command = ExecCMD(CMD_ID)
                 run_command(command, CMD_ID)
             finally:
                 logger.info("Destory ended")

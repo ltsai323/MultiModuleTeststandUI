@@ -44,6 +44,39 @@ except FileNotFoundError as e:
 
 ### intrinsic configuration would be defined in flask server instead of user input
 INTRINSIC_CONF = [ 'batch' ]
+APP_CONFS = [
+        'batch',
+        'currentHUMIDITY',
+        'currentTEMPERATURE',
+        'iteration',
+        'maxVOLTAGE',
+        'moduleID1L',
+        'moduleID1C',
+        'moduleID1R',
+        'moduleID2L',
+        'moduleID2C',
+        'moduleID2R',
+        'moduleID3L',
+        'moduleID3C',
+        'moduleID3R',
+
+        'moduleID4L',
+        'moduleID4C',
+        'moduleID4R',
+        'moduleID5L',
+        'moduleID5C',
+        'moduleID5R',
+        'moduleID6L',
+        'moduleID6C',
+        'moduleID6R',
+
+        'moduleID7L',
+        'moduleID7C',
+        'moduleID7R',
+        'moduleID8L',
+        'moduleID8C',
+        'moduleID8R',
+]
 CONF_DICT = {
         'batch': '',    # YYYYMMDD-HHMMSS
         'currentHUMIDITY': '', # 0~100
@@ -78,9 +111,11 @@ CONF_DICT = {
         'moduleID8R': '',
         }
 
-def ExecCMD(jobID:str, confDICT:dict):
+def ExecCMD(jobID:str):
     make_command = 'make -n' if shared_state.debug_mode else 'make'
-   #make_command = 'make -n'
+    make_command = 'make -n'
+
+    confDICT = shared_state.ReadConfig(APP_CONFS)
     if jobID == 'Init':
         return f'{make_command} -f makefile_task3  initialize JobName=Init'
     if jobID == 'Run':
@@ -242,7 +277,7 @@ def Init():
 
         def background_worker():
             try:
-                command = ExecCMD(CMD_ID, CONF_DICT)
+                command = ExecCMD(CMD_ID)
                 #current_app.logger.debug(f'[bkg CMD Init] {command}')
                 run_command(command, CMD_ID)
             finally:
@@ -346,7 +381,8 @@ def Configure():
 
     current_app.logger.debug(f'[LoadFormFromClient] Form "{vars(form)}"')
 
-    for varname in CONF_DICT.keys():
+   #for varname in CONF_DICT.keys():
+    for varname in APP_CONFS:
         if varname in INTRINSIC_CONF: continue ## pass some variable not from configuration
 
         value = getattr(form, varname).data if hasattr(form, varname) else ''
@@ -355,17 +391,20 @@ def Configure():
         if len(clean_val) > 20:
             current_app.logger.warning(f'[InputTooLong] Input {varname}:{clean_val} too long, resetting.')
             clean_val = ''
-        CONF_DICT[varname] = clean_val
+        CONF_DICT[varname] = clean_val ## OK
+        shared_state.SetConfig(varname, clean_val)
 
         if varname == 'iteration': ## add date as postfix
             now = datetime.now()
-            CONF_DICT['batch'] = now.strftime("%Y%m%d-%H%M%S")
+            CONF_DICT['batch'] = now.strftime("%Y%m%d-%H%M%S") ## OK
+            shared_state.SetConfig('batch', now.strftime("%Y%m%d-%H%M%S"))
 
 
-        current_app.logger.debug(f'[UpdateConfigure] Input {varname}:{CONF_DICT[varname]} updated.')
+       #current_app.logger.debug(f'[UpdateConfigure] Input {varname}:{CONF_DICT[varname]} updated.')
 
 
-    def conf_mesg(d):
+    def conf_mesg():
+        d = shared_state.ReadConfig(APP_CONFS)
         input_modules = [ moduleID for dict_key, moduleID in d.items() if moduleID and 'moduleID' in dict_key ]
         moduleID_set = set()
         duplicates = set(x for x in input_modules if x in moduleID_set or moduleID_set.add(x))
@@ -383,18 +422,18 @@ got {got_n_modules} modules.
 
 
 
-    is_empty_dict = sum( 1  if v else 0 for _,v in CONF_DICT.items()) == 0
+    is_empty_dict = sum( 1  if v else 0 for _,v in shared_state.ReadConfig(APP_CONFS).items()) == 0
     if is_empty_dict:
         errors = 'Got empty configurations!'
         current_app.logger.warning(f'[Configure] {errors}')
         return jsonify({'status': 'error', 'errors': errors}), 400
 
-    current_app.logger.info(conf_mesg(CONF_DICT))
-    current_app.logger.info(f'[Configure] Current CONF_DICT: {CONF_DICT}')
+    current_app.logger.info(conf_mesg())
+    current_app.logger.info(f'[Configure] Current CONF_DICT: {shared_state.ReadConfig(APP_CONFS)}')
 
     set_server_status('configured')
     # Return JSON with message, status 200 so client JS can alert
-    return jsonify({'status': 'success', 'message': conf_mesg(CONF_DICT)}), 200
+    return jsonify({'status': 'success', 'message': conf_mesg()}), 200
 
 
 
@@ -414,7 +453,7 @@ def Run():
 
         def background_worker():
             try:
-                command = ExecCMD(CMD_ID, CONF_DICT)
+                command = ExecCMD(CMD_ID)
                 #current_app.logger.debug(f'[bkg CMD Run] {command}')
                 run_command(command, CMD_ID)
             finally:
@@ -450,7 +489,7 @@ def Stop():
 
     def background_worker():
         try:
-            command = ExecCMD(CMD_ID, CONF_DICT)
+            command = ExecCMD(CMD_ID)
             #current_app.logger.debug(f'[bkg CMD Stop] {command}')
             run_command(command, CMD_ID)
         finally:
@@ -486,7 +525,7 @@ def Destroy():
 
         def background_worker():
             try:
-                command = ExecCMD(CMD_ID, CONF_DICT)
+                command = ExecCMD(CMD_ID)
                 #current_app.logger.debug(f'[bkg CMD Destroy] {command}')
                 run_command(command, CMD_ID)
             finally:
@@ -521,7 +560,7 @@ def main():
     daq_result_dirs = [ subdir for subdir in os.listdir(dirDAQresult) if os.path.isdir(f'{dirDAQresult}/{subdir}') ]
     return render_template('index_task3.html',
                            DAQres=daq_result_dirs,
-                           currentCONF=CONF_DICT,
+                           currentCONF=shared_state.ReadConfig(APP_CONFS),
                            ccc='',
                            IVCurveOnline_URL=external_URL,
                            IVCurveOnline_height=external_URL_height,
