@@ -128,13 +128,25 @@ body {
 
 .env-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 16px;
   align-items: stretch;
 }
 
+.environment-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.environment-header h2 {
+  margin: 0;
+}
+
 /*
-  All four environment blocks use:
+  All five environment blocks use:
   <fieldset class="env-control">
     <legend>...</legend>
     ...
@@ -477,14 +489,40 @@ fieldset.env-control legend {
 
     <form method="POST" id="pymodule_configurations" action="/task3/submit">
       <section class="card">
-        <h2>Environment</h2>
+        <div class="environment-header">
+          <h2>Environment</h2>
+          <button type="button" id="ReadEnvsBtn" class="small-btn">
+            Fill environment variables from HGCDB
+          </button>
+        </div>
       
         <div class="env-grid">
+          <fieldset class="env-control">
+            <legend>Inspector</legend>
+
+            <input
+              type="text"
+              name="inspector"
+              id="inspector"
+              list="inspector-options"
+              class="configuration-input"
+              value="{{ currentCONF.get('inspector', '') | e }}"
+              placeholder="Select or enter an inspector"
+              maxlength="20"
+              required>
+            <datalist id="inspector-options">
+              {% for inspector in inspectors %}
+              <option value="{{ inspector | e }}"></option>
+              {% endfor %}
+            </datalist>
+          </fieldset>
+
           <fieldset class="env-control">
             <legend>Temperature</legend>
 
             <input
-              type="text"
+              type="number"
+              step="any"
               name="currentTEMPERATURE"
               id="currentTEMPERATURE"
               class="configuration-input"
@@ -497,7 +535,8 @@ fieldset.env-control legend {
             <legend>Humidity</legend>
 
             <input
-              type="text"
+              type="number"
+              step="any"
               name="currentHUMIDITY"
               id="currentHUMIDITY"
               class="configuration-input"
@@ -817,6 +856,40 @@ async function execjob(varname) {
   updateStatus();
 }
 
+function setupReadEnvVarsBtn() {
+  const button = document.getElementById("ReadEnvsBtn");
+
+  button.addEventListener("click", async () => {
+    button.disabled = true;
+
+    try {
+      const response = await fetch("/task3/getenvvars");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Unable to access environment variables from HGCDB");
+      }
+
+      document.getElementById("currentTEMPERATURE").value = data.currentTEMPERATURE;
+      document.getElementById("currentHUMIDITY").value = data.currentHUMIDITY;
+
+      const voltage = Array.from(
+        document.querySelectorAll('input[name="maxVOLTAGE"]')
+      ).find((input) => input.value === String(data.maxVOLTAGE));
+      if (voltage) voltage.checked = true;
+
+      const iteration = document.getElementById("iteration");
+      if (Array.from(iteration.options).some((option) => option.value === data.iteration)) {
+        iteration.value = data.iteration;
+      }
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      button.disabled = false;
+    }
+  });
+}
+
 async function initJob() {
   await execjob("init");
 
@@ -1007,6 +1080,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupFormSubmission();
   setupDaqSummaryButton();
   setupInputRestriction();
+  setupReadEnvVarsBtn();
 
   updateStatus();
   setInterval(updateStatus, 1000);
@@ -1018,5 +1092,3 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 </html>
-
-
