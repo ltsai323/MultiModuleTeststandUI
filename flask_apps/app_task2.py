@@ -399,7 +399,7 @@ def Configure():
 
 
     def conf_mesg():
-        d = shared_state.ReadConfig(APP_CONFS)
+        d = shared_state.ReadConfigs(APP_CONFS)
         input_modules = [ moduleID for dict_key, moduleID in d.items() if moduleID and 'moduleID' in dict_key ]
         moduleID_set = set()
         duplicates = set(x for x in input_modules if x in moduleID_set or moduleID_set.add(x))
@@ -417,14 +417,14 @@ got {got_n_modules} modules.
 
 
 
-    is_empty_dict = sum( 1  if v else 0 for _,v in shared_state.ReadConfig(APP_CONFS).items()) == 0
+    is_empty_dict = sum( 1  if v else 0 for _,v in shared_state.ReadConfigs(APP_CONFS).items()) == 0
     if is_empty_dict:
         errors = 'Got empty configurations!'
         current_app.logger.warning(f'[Configure] {errors}')
         return jsonify({'status': 'error', 'errors': errors}), 400
 
     current_app.logger.info(conf_mesg())
-    current_app.logger.info(f'[Configure] Current CONF_DICT: {shared_state.ReadConfig(APP_CONFS)}')
+    current_app.logger.info(f'[Configure] Current CONF_DICT: {shared_state.ReadConfigs(APP_CONFS)}')
 
     set_server_status('configured')
     # Return JSON with message, status 200 so client JS can alert
@@ -555,7 +555,7 @@ def main():
     daq_result_dirs = [ subdir for subdir in os.listdir(dirDAQresult) if os.path.isdir(f'{dirDAQresult}/{subdir}') ]
     return render_template('index_task2.html',
                            DAQres=daq_result_dirs,
-                           currentCONF=shared_state.ReadConfig(APP_CONFS),
+                           currentCONF=shared_state.ReadConfigs(APP_CONFS),
                            ccc='',
                            IVCurveOnline_URL=external_URL,
                            IVCurveOnline_height=external_URL_height,

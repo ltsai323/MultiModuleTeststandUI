@@ -59,7 +59,7 @@ CONF_DICT = {
         }
 
 def ExecCMD(jobID:str):
-    confDICT = shared_state.ReadConfig(APP_CONFS)
+    confDICT = shared_state.ReadConfigs(APP_CONFS)
     if jobID == 'Init':
         return 'make -f makefile_task1 initialize JobName=Init'
     if jobID == 'Run':
@@ -301,21 +301,21 @@ def Configure():
 
 
     def conf_mesg():
-        d = shared_state.ReadConfig(APP_CONFS)
+        d = shared_state.ReadConfigs(APP_CONFS)
         return f'''Configurations\n
         1L: {d.get('moduleID1L', ''):12s}\n1C: {d.get('moduleID1C', ''):12s}\n1R: {d.get('moduleID1R', ''):12s}\n
         Note: Configuration saved. Please verify the settings.
     '''
 
 
-    is_empty_dict = sum( 1  if v else 0 for _,v in shared_state.ReadConfig(APP_CONFS).items()) == 0
+    is_empty_dict = sum( 1  if v else 0 for _,v in shared_state.ReadConfigs(APP_CONFS).items()) == 0
     if is_empty_dict:
         errors = 'Got empty configurations!'
         current_app.logger.warning(f'[Configure] {errors}')
         return jsonify({'status': 'error', 'errors': errors}), 400
 
     current_app.logger.info(conf_mesg())
-    current_app.logger.info(f'[Configure] Current CONF_DICT: {shared_state.ReadConfig(APP_CONFS)}')
+    current_app.logger.info(f'[Configure] Current CONF_DICT: {shared_state.ReadConfigs(APP_CONFS)}')
 
     set_server_status('configured')
     # Return JSON with message, status 200 so client JS can alert
