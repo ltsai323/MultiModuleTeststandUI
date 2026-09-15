@@ -6,7 +6,8 @@ from flask import current_app
 from flask_wtf import FlaskForm
 from flask_wtf.csrf import CSRFProtect
 from wtforms.validators import DataRequired, Regexp, InputRequired, NumberRange, AnyOf
-from wtforms import StringField, SubmitField, RadioField, IntegerField
+from wtforms import StringField, SubmitField, RadioField, FloatField
+import psycopg2
 import flask_apps.shared_state as shared_state
 from PythonTools.server_status import isCommandRunable
 from datetime import datetime
@@ -16,15 +17,95 @@ import os
 
 JOBMODE = 'task2' # IV scan
 
-andrewCONF = f'{os.environ.get("AndrewModuleTestingGUI_BASE")}/configuration.yaml'
 dirDAQresult = ''
-try:
-    with open(andrewCONF, 'r') as fIN:
-        import yaml
-        conf = yaml.safe_load(fIN)
-        dirDAQresult = f"{conf['DataLoc']}/daqplots/"
-except FileNotFoundError as e:
-    raise FileNotFoundError(f'\n\n[NoEnvVar] Need to `source ./init_bash_vars.sh` before execute this file') from e
+DEFAULT_INSPECTORS = []
+
+DBDatabase = None
+DBHostname = None
+DBPassword = None
+DBUsername = None
+
+SQL__CREATE_USED_FUNCTIONS = '''
+CREATE OR REPLACE FUNCTION calculate_relative_humidity(
+    t_c  double precision,
+    td_c double precision
+)
+RETURNS double precision
+LANGUAGE sql
+IMMUTABLE
+STRICT
+AS $$
+    SELECT
+        100.0
+        * exp(17.625 * td_c / (243.04 + td_c))
+        / exp(17.625 * t_c  / (243.04 + t_c));
+$$;
+'''
+def SQLfunc_check(cursor):
+    cursor.execute("""
+        SELECT to_regprocedure(
+            'public.calculate_relative_humidity(double precision,double precision)'
+        )
+    """)
+
+    if cursor.fetchone()[0] is None:
+        cursor.execute(SQL__CREATE_USED_FUNCTIONS)
+        logger.info(f'[CreateUsedSQLfunction] function "{public.calculate_relative_humidity}" decalred in database')
+
+
+SQL__AVGTMP_AVGDEWP_AVGHUM = '''
+-- read temperature and dew point from mmts_sensor_logging then average latest readout then calculate the humidity
+-- return : avg_temp, avg_dewpoint, rel_humidity_in_percent
+
+
+WITH latest_temp_readouts AS (
+    SELECT DISTINCT ON (device_name)
+        device_name,
+        value::double precision AS value
+    FROM public.mmts_sensors_logging
+    WHERE device_name LIKE 'RTD-0%' AND timestamp_utc >= now() - INTERVAL '1 day'
+    ORDER BY device_name, log_no DESC
+),
+latest_dew_point_readouts AS (
+    SELECT DISTINCT ON (device_name)
+        device_name,
+        value::double precision AS value
+    FROM public.mmts_sensors_logging
+    WHERE device_name LIKE 'DMT-0%' AND timestamp_utc >= now() - INTERVAL '1 day'
+    ORDER BY device_name, log_no DESC
+),
+averages AS (
+    SELECT
+        (SELECT AVG(value) FROM latest_temp_readouts) AS avg_temp,
+        (SELECT AVG(value) FROM latest_dew_point_readouts) AS avg_dewpoint
+)
+SELECT
+    COALESCE(avg_temp, 0) AS avg_temp,
+    COALESCE(avg_dewpoint, 0) AS avg_dewpoint,
+        CASE
+        WHEN avg_temp IS NULL OR avg_dewpoint IS NULL THEN 0
+        ELSE calculate_relative_humidity(avg_temp, avg_dewpoint)
+    END AS rel_humidity_in_percent
+FROM averages;
+'''
+
+SQL__NEWBATCHNAME_OLDBATCHNAME_CYCLECOUNT_RELATED_MODULEIDS = '''
+-- prepare 2 kind of batch_name and cycle_count. Then providing RELATED MODULES FOR FURTHER CHECKING
+-- note the returned value provides devs using new_batchname or old_batchname, once new_batchname is decided, you should use cycle_count as 1 or user input instead of using returned cycle_count.
+-- return : new_batchname, old_batchname, cycle_count, module_names
+
+SELECT DISTINCT ON (description)
+  to_char( now(), 'YYYYMMDD-HH24MISS' ) AS new_batchname,
+  batch_name AS old_batchname,
+  cycle_count,
+  module_names
+FROM public.mmts_batch_logging
+WHERE description = 'MMTSjobFinished'
+ORDER BY description, batch_no DESC
+'''
+
+
+
 
 mmtsCONF = 'data/mmts_configurations.yaml'
 external_URL = ''
@@ -38,49 +119,59 @@ try:
         external_URL_height = conf['externalURL']['IVCurveOnline']['height']
         thermalcycle_iterations = conf['thermalcycle_iterations']
 
+        dirDAQresult = f"{conf['DataLoc']}/daqplots/"
+        DEFAULT_INSPECTORS = conf.get('Inspectors', [])
+        DBDatabase = conf.get('DBDatabase', '')
+        DBHostname = conf.get('DBHostname', '')
+        DBPassword = conf.get('DBPassword', '')
+        DBUsername = conf.get('DBUsername', '')
+
 
 except FileNotFoundError as e:
     raise FileNotFoundError(f'\n\n[LackOfMMTSconf] Need to create configuration file "data/mmts_configuration.yaml"') from e
 
 ### intrinsic configuration would be defined in flask server instead of user input
 INTRINSIC_CONF = [ 'batch' ]
-CONF_DICT = {
-        'batch': '',    # YYYYMMDD-HHMMSS
-        'currentHUMIDITY': '', # 0~100
-        'currentTEMPERATURE': '', 
-        'iteration': '', # batch1
-        'maxVOLTAGE': '', # 500 or 850
-        'moduleID1L': '',
-        'moduleID1C': '',
-        'moduleID1R': '',
-        'moduleID2L': '',
-        'moduleID2C': '',
-        'moduleID2R': '',
-        'moduleID3L': '',
-        'moduleID3C': '',
-        'moduleID3R': '',
+APP_CONFS = [
+        'batch',
+        'inspector',
+        'currentHUMIDITY',
+        'currentTEMPERATURE',
+        'iteration',
+        'maxVOLTAGE',
+        'moduleID1L',
+        'moduleID1C',
+        'moduleID1R',
+        'moduleID2L',
+        'moduleID2C',
+        'moduleID2R',
+        'moduleID3L',
+        'moduleID3C',
+        'moduleID3R',
 
-        'moduleID4L': '',
-        'moduleID4C': '',
-        'moduleID4R': '',
-        'moduleID5L': '',
-        'moduleID5C': '',
-        'moduleID5R': '',
-        'moduleID6L': '',
-        'moduleID6C': '',
-        'moduleID6R': '',
+        'moduleID4L',
+        'moduleID4C',
+        'moduleID4R',
+        'moduleID5L',
+        'moduleID5C',
+        'moduleID5R',
+        'moduleID6L',
+        'moduleID6C',
+        'moduleID6R',
 
-        'moduleID7L': '',
-        'moduleID7C': '',
-        'moduleID7R': '',
-        'moduleID8L': '',
-        'moduleID8C': '',
-        'moduleID8R': '',
-        }
+        'moduleID7L',
+        'moduleID7C',
+        'moduleID7R',
+        'moduleID8L',
+        'moduleID8C',
+        'moduleID8R',
+]
 
-def ExecCMD(jobID:str, confDICT:dict):
-    make_command = 'make -n' if shared_state.debug_mode else 'make'
-   #make_command = 'make -n'
+def ExecCMD(jobID:str):
+   #make_command = 'make -n' if shared_state.debug_mode else 'make'
+    make_command = 'make -n'
+
+    confDICT = shared_state.ReadConfigs(APP_CONFS)
     if jobID == 'Init':
         return f'{make_command} -f makefile_task2  initialize JobName=Init'
     if jobID == 'Run':
@@ -242,7 +333,7 @@ def Init():
 
         def background_worker():
             try:
-                command = ExecCMD(CMD_ID, CONF_DICT)
+                command = ExecCMD(CMD_ID)
                 #current_app.logger.debug(f'[bkg CMD Init] {command}')
                 run_command(command, CMD_ID)
             finally:
@@ -262,13 +353,13 @@ def Init():
 
 alphanumeric_validator = Regexp(r"^[a-zA-Z0-9-]*$", message="Only letters and numbers and dash allowed.")
 class ConfigForm(FlaskForm):
-   #currentTEMPERATURE = StringField("currentTEMPERATURE", validators=[InputRequired(message='Temperature Missing')])
-    currentTEMPERATURE = IntegerField("currentTEMPERATURE", validators=[
+    inspector = StringField("inspector", validators=[InputRequired(message='Inspector Missing')])
+    currentTEMPERATURE = FloatField("currentTEMPERATURE", validators=[
         NumberRange(min=-50.,max=50., message='Number from -50 to 50'),
         InputRequired(message='Temperature Missing')]
                                      )
    #moduleSTATUS = RadioField("moduleSTATUS", validators=[InputRequired()])
-    currentHUMIDITY    = IntegerField("currentHUMIDITY"   , validators=[
+    currentHUMIDITY    = FloatField("currentHUMIDITY"   , validators=[
         NumberRange(min=0.,max=100., message='Number from 0 to 100'),
         InputRequired(message='Humidity Missing')]
                                      )
@@ -305,6 +396,111 @@ class ConfigForm(FlaskForm):
     moduleID8R = StringField("moduleID8R", validators=[alphanumeric_validator])
     submit = SubmitField("Configure")
 
+
+def get_default_environment_values():
+    """Return server-provided defaults for the Environment form."""
+    with psycopg2.connect(
+        dbname=DBDatabase,
+        host=DBHostname,
+        user=DBUsername,
+        password=DBPassword,
+    ) as connection:
+        with connection.cursor() as cursor:
+            ### check used function existed or not
+            SQLfunc_check(cursor)
+
+
+            cursor.execute(SQL__AVGTMP_AVGDEWP_AVGHUM)
+            row = cursor.fetchone()
+
+            if not row or row[0] is None or row[2] is None:
+                raise RuntimeError('No temperature/humidity sensor readings are available')
+
+            out_temp = float(row[0])
+            out_humi = float(row[2])
+
+
+            cursor.execute(SQL__NEWBATCHNAME_OLDBATCHNAME_CYCLECOUNT_RELATED_MODULEIDS)
+            row = cursor.fetchone()
+
+            out_new_batchname = str(row[0])
+            out_old_batchname = str(row[1])
+            cycle_count = int(row[2])
+
+            new_cycle_count = cycle_count + 1
+            if new_cycle_count > 4:
+                new_cycle_count = 1
+            out_iteration = f'iteration_{new_cycle_count}'
+            out_max_voltage = 850 if new_cycle_count in [ 3, 4 ] else 500
+
+            previous_related_modules = row[3]
+
+
+    returned_values =  {
+        'currentTEMPERATURE': round(out_temp,1),
+        'currentHUMIDITY': round(out_humi,1),
+        'maxVOLTAGE': out_max_voltage,
+        'iteration': out_iteration,
+
+        'prev_modules': previous_related_modules,
+        'batch_new': out_new_batchname,
+        'batch_old': out_old_batchname,
+        'cycle_count': new_cycle_count,
+    }
+
+
+    current_app.logger.info(f'[ReadEnvVariables] {returned_values}')
+    return returned_values
+
+def judgeBatchName_fromHGCDB_and_userInput():
+    ### read the setting and decide batch_name. Use new one or old one
+    env_values = get_default_environment_values()
+    batch_old = env_values['batch_old']
+    batch_new = env_values['batch_new']
+
+    expected_modules = env_values['prev_modules']
+    expected_iteration = env_values['iteration']
+
+    settings_modules = shared_state.GetAllModuleIDs('list') 
+    settings_iteration = shared_state.ReadConfig('iteration')
+
+    batchname_message = ''
+    batchname = batch_new
+    keep_checking = True
+    ### opt1 : check config *iteration* is the same as expected
+    if keep_checking and ('1' in settings_iteration):
+        keep_checking = False
+        batchname_message = 'Use new batch_name from a new batch'
+    if keep_checking and (settings_iteration != expected_iteration):
+        keep_checking = False
+        batchname_message = 'Use new batch_name due to user assigned iteration'
+        print(f'[check] settings_iteration = "{settings_iteration}" and expected_iteration = "{expected_iteration}"')
+    ### from this block, the expected iteraion is the same as setting iteration
+    if keep_checking and (settings_iteration == expected_iteration and expected_modules != settings_modules):
+        keep_checking = False
+        batchname_message = 'Use new batch_name due to user entered new modules'
+    if keep_checking and (settings_iteration == expected_iteration and expected_modules == settings_modules):
+        keep_checking = False
+        batchname_message = 'Keeps using OLD batch_name'
+        batchname = batch_old
+    if keep_checking:
+        batchname_message = 'Use new batch_name because of unknown reason'
+    ### read the setting and decide batch_name. Use new one or old one ENDED
+    return batchname, batchname_message
+
+
+@app.route('/getenvvars', methods=['GET'])
+def getenvvars():
+    ''' read env vars from HGCDB. Note here would not fill batch_name since user haven't fill the module IDs '''
+    try:
+        return jsonify(get_default_environment_values())
+    except Exception:
+        current_app.logger.exception('Unable to load default Environment values')
+        return jsonify({
+            'status': 'error',
+            'message': 'Unable to load default values from the server.',
+        }), 503
+
 @app.route('/submit', methods=['POST','GET'])
 def Configure():
     CMD_ID = 'Configure'
@@ -317,7 +513,6 @@ def Configure():
 
     json_data = request.get_json()
     
-    print('\n\n\n',json_data,'\n\n\n')
     if not json_data:
         return jsonify({'status': 'error', 'message': 'Missing JSON data'}), 400
 
@@ -346,7 +541,7 @@ def Configure():
 
     current_app.logger.debug(f'[LoadFormFromClient] Form "{vars(form)}"')
 
-    for varname in CONF_DICT.keys():
+    for varname in APP_CONFS:
         if varname in INTRINSIC_CONF: continue ## pass some variable not from configuration
 
         value = getattr(form, varname).data if hasattr(form, varname) else ''
@@ -355,17 +550,20 @@ def Configure():
         if len(clean_val) > 20:
             current_app.logger.warning(f'[InputTooLong] Input {varname}:{clean_val} too long, resetting.')
             clean_val = ''
-        CONF_DICT[varname] = clean_val
+        shared_state.SetConfig(varname, clean_val)
 
-        if varname == 'iteration': ## add date as postfix
-            now = datetime.now()
-            CONF_DICT['batch'] = now.strftime("%Y%m%d-%H%M%S")
-
-
-        current_app.logger.debug(f'[UpdateConfigure] Input {varname}:{CONF_DICT[varname]} updated.')
+    ### fill_batchname
+    batchname, batchname_message = judgeBatchName_fromHGCDB_and_userInput()
+    shared_state.SetConfig('batch', batchname)
+    
 
 
-    def conf_mesg(d):
+
+
+
+
+    def conf_mesg():
+        d = shared_state.ReadConfigs(APP_CONFS)
         input_modules = [ moduleID for dict_key, moduleID in d.items() if moduleID and 'moduleID' in dict_key ]
         moduleID_set = set()
         duplicates = set(x for x in input_modules if x in moduleID_set or moduleID_set.add(x))
@@ -378,23 +576,25 @@ def Configure():
 
         return f'''
 got {got_n_modules} modules.
+{batchname_message}
+
 {check1_mesg}
 '''
 
 
 
-    is_empty_dict = sum( 1  if v else 0 for _,v in CONF_DICT.items()) == 0
+    is_empty_dict = sum( 1  if v else 0 for _,v in shared_state.ReadConfigs(APP_CONFS).items()) == 0
     if is_empty_dict:
         errors = 'Got empty configurations!'
         current_app.logger.warning(f'[Configure] {errors}')
         return jsonify({'status': 'error', 'errors': errors}), 400
 
-    current_app.logger.info(conf_mesg(CONF_DICT))
-    current_app.logger.info(f'[Configure] Current CONF_DICT: {CONF_DICT}')
+    current_app.logger.info(f'[ConfigMessage] "{conf_mesg()}"')
+    current_app.logger.info(f'[Configure] Current CONF_DICT: {shared_state.ReadConfigs(APP_CONFS)}')
 
     set_server_status('configured')
     # Return JSON with message, status 200 so client JS can alert
-    return jsonify({'status': 'success', 'message': conf_mesg(CONF_DICT)}), 200
+    return jsonify({'status': 'success', 'message': conf_mesg()}), 200
 
 
 
@@ -414,7 +614,7 @@ def Run():
 
         def background_worker():
             try:
-                command = ExecCMD(CMD_ID, CONF_DICT)
+                command = ExecCMD(CMD_ID)
                 #current_app.logger.debug(f'[bkg CMD Run] {command}')
                 run_command(command, CMD_ID)
             finally:
@@ -450,7 +650,7 @@ def Stop():
 
     def background_worker():
         try:
-            command = ExecCMD(CMD_ID, CONF_DICT)
+            command = ExecCMD(CMD_ID)
             #current_app.logger.debug(f'[bkg CMD Stop] {command}')
             run_command(command, CMD_ID)
         finally:
@@ -486,7 +686,7 @@ def Destroy():
 
         def background_worker():
             try:
-                command = ExecCMD(CMD_ID, CONF_DICT)
+                command = ExecCMD(CMD_ID)
                 #current_app.logger.debug(f'[bkg CMD Destroy] {command}')
                 run_command(command, CMD_ID)
             finally:
@@ -521,11 +721,12 @@ def main():
     daq_result_dirs = [ subdir for subdir in os.listdir(dirDAQresult) if os.path.isdir(f'{dirDAQresult}/{subdir}') ]
     return render_template('index_task2.html',
                            DAQres=daq_result_dirs,
-                           currentCONF=CONF_DICT,
+                           currentCONF=shared_state.ReadConfigs(APP_CONFS),
                            ccc='',
                            IVCurveOnline_URL=external_URL,
                            IVCurveOnline_height=external_URL_height,
                            thermalCYCLE_iterationDICT = thermalcycle_iterations,
+                           inspectors=DEFAULT_INSPECTORS,
                            )
 
 
@@ -543,3 +744,4 @@ if __name__ == '__main__':
     def index():
         return render_template("index_task2.html")
     app_main.run(debug=True, port=5005)
+

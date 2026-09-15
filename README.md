@@ -79,3 +79,4 @@ then open the link [http://127.0.0.1:5001](http://127.0.0.1:5001)
 
 
 
+Get current configs: [http://127.0.0.1:5001/api/get_config](http://127.0.0.1:5001/api/get_config)
