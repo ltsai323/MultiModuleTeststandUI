@@ -179,8 +179,8 @@ inspector: NTU Lab ### this option would be filled to database "inspector"
 thermalcycle_iterations:
   ### key would be put into hgcapi - mmts_iv_test - iteration
   ### value as a description would be shown on MMTS GUI option.
-  iteration_1: 'iteration_1: room condition, high humidity'
-  iteration_2: 'iteration_2: first low temperature'
-  iteration_3: 'iteration_3: last low temperature'
+  iteration_1: 'iteration_1: Ambient room temperature'
+  iteration_2: 'iteration_2: first dry low temperature'
+  iteration_3: 'iteration_3: last dry low temperature'
   iteration_4: 'iteration_4: final IV, normal temperature'
   test: 'testing here'
