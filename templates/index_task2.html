@@ -491,9 +491,6 @@ fieldset.env-control legend {
       <section class="card">
         <div class="environment-header">
           <h2>Environment</h2>
-          <button type="button" id="ReadEnvsBtn" class="small-btn">
-            Fill environment variables from HGCDB
-          </button>
         </div>
       
         <div class="env-grid">
@@ -516,95 +513,6 @@ fieldset.env-control legend {
               {% endfor %}
             </datalist>
           </fieldset>
-
-          <fieldset class="env-control">
-            <legend>Temperature</legend>
-
-            <input
-              type="number"
-              step="any"
-              name="currentTEMPERATURE"
-              id="currentTEMPERATURE"
-              class="configuration-input"
-              value="{{ currentCONF.get('currentTEMPERATURE', '') | e }}"
-              placeholder="50"
-              required>
-          </fieldset>
-
-          <fieldset class="env-control">
-            <legend>Humidity</legend>
-
-            <input
-              type="number"
-              step="any"
-              name="currentHUMIDITY"
-              id="currentHUMIDITY"
-              class="configuration-input"
-              value="{{ currentCONF.get('currentHUMIDITY', '') | e }}"
-              placeholder="50"
-              required>
-          </fieldset>
-
-          <fieldset class="env-control voltage-field">
-            <legend>Maximum voltage</legend>
-
-            <div class="voltage-options">
-
-              <label class="voltage-option">
-                <input
-                  type="radio"
-                  name="maxVOLTAGE"
-                  value="500"
-                  class="configuration-input"
-                  {% if currentCONF.get('maxVOLTAGE') | string == '500' %}
-                  checked
-                  {% endif %}
-                  required>
-                500 V
-              </label>
-
-              <label class="voltage-option">
-                <input
-                  type="radio"
-                  name="maxVOLTAGE"
-                  value="850"
-                  class="configuration-input"
-                  {% if currentCONF.get('maxVOLTAGE') | string == '850' %}
-                  checked
-                  {% endif %}>
-                850 V
-              </label>
-
-            </div>
-          </fieldset>
-
-          <fieldset class="env-control">
-            <legend>Thermal-cycle iteration</legend>
-
-            {% set selected_iteration = currentCONF.get('iteration', '') %}
-
-            <select
-              name="iteration"
-              id="iteration"
-              class="configuration-input"
-              required>
-
-              <option value="" disabled {% if not selected_iteration %}selected{% endif %}>
-                Select an iteration
-              </option>
-
-              {% for iteration, iteration_desc in thermalCYCLE_iterationDICT.items() %}
-              <option
-                value="{{ iteration | e }}"
-                {% if iteration == selected_iteration %}selected{% endif %}>
-                {{ iteration_desc }}
-              </option>
-              {% endfor %}
-
-            </select>
-          </fieldset>
-
-        </div>
       </section>
 
       <section class="card">
@@ -856,39 +764,6 @@ async function execjob(varname) {
   updateStatus();
 }
 
-function setupReadEnvVarsBtn() {
-  const button = document.getElementById("ReadEnvsBtn");
-
-  button.addEventListener("click", async () => {
-    button.disabled = true;
-
-    try {
-      const response = await fetch("/task2/getenvvars");
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Unable to access environment variables from HGCDB");
-      }
-
-      document.getElementById("currentTEMPERATURE").value = data.currentTEMPERATURE;
-      document.getElementById("currentHUMIDITY").value = data.currentHUMIDITY;
-
-      const voltage = Array.from(
-        document.querySelectorAll('input[name="maxVOLTAGE"]')
-      ).find((input) => input.value === String(data.maxVOLTAGE));
-      if (voltage) voltage.checked = true;
-
-      const iteration = document.getElementById("iteration");
-      if (Array.from(iteration.options).some((option) => option.value === data.iteration)) {
-        iteration.value = data.iteration;
-      }
-    } catch (error) {
-      alert(error.message);
-    } finally {
-      button.disabled = false;
-    }
-  });
-}
 
 async function initJob() {
   await execjob("init");

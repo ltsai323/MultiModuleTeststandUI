@@ -2,54 +2,12 @@
 SHELL := /bin/bash
 BASE_DIR :=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
-MODULE_POSITION := \
-	1L 1C 1R \
-	2L 2C 2R \
-	3L 3C 3R \
-	4L 4C 4R \
-	5L 5C 5R \
-	6L 6C 6R \
-	7L 7C 7R \
-	8L 8C 8R
-argline1 = \n\t\t[moduleID1L][moduleID1C][moduleID1R]
-argline2 = \n\t\t[moduleID2L][moduleID2C][moduleID2R]
-argline3 = \n\t\t[moduleID3L][moduleID3C][moduleID3R]
-argline4 = \n\t\t[moduleID4L][moduleID4C][moduleID4R]
-argline5 = \n\t\t[moduleID5L][moduleID5C][moduleID5R]
-argline6 = \n\t\t[moduleID6L][moduleID6C][moduleID6R]
-argline7 = \n\t\t[moduleID7L][moduleID7C][moduleID7R]
-argline8 = \n\t\t[moduleID8L][moduleID8C][moduleID8R]
 
 
 
-switch_delay ?= 0
-currentTEMPERATURE ?= 20
-currentHUMIDITY    ?= 50
-maxVOLTAGE ?= 500
-batch ?= ""
-iteration ?= "testing"
-IVscan_%:
-	@moduleID="$($(addprefix moduleID,$*))"; if [ "$${moduleID}" == "" ]; then echo [SkipModule] $(addprefix moduleID,$*) received empty, skip; fi
-	@moduleID="$($(addprefix moduleID,$*))"; if [ "$${moduleID}" != "" ]; then \
-			source ./init_bash_vars.sh && cd scripts/ && echo $$moduleID ; \
-			python3 mmts_batch_logging.create_an_entry.py -c ../data/mmts_configurations.yaml --description='IVSCANRun' --batch='$(batch)' --iteration='$(iteration)' --stations_and_modules='$(addprefix moduleID,$*):$($(addprefix moduleID,$*))' ; \
-			echo "$${moduleID}" >> $(tmp_file_for_summary_plot) ; \
-			echo "[maxVOLT] $(maxVOLTAGE)"; \
-			sh IVscan.run.sh "$${moduleID}" "$*" "$(maxVOLTAGE)" "$(currentTEMPERATURE)" "$(currentHUMIDITY)" "$(switch_delay)" "$(iteration)" "$(batch)"; \
-			python3 mmts_batch_logging.create_an_entry.py -c ../data/mmts_configurations.yaml --description='IVSCANEnd' --batch='$(batch)' --iteration='$(iteration)' --stations_and_modules='$(addprefix moduleID,$*):$($(addprefix moduleID,$*))' ; \
-		fi
 
 
-
-all_IVscan: $(addprefix IVscan_,$(MODULE_POSITION)) ## IV scan does not support multithread
-	echo "[FINISHED] all IV scan finished"
-	echo "[IDLE_STATE]"
-
-
-### read DataLoc in AndrewBASE/configuration.yaml
-### read overwritten information in data/mmts_configuration.yaml
-
-initialize: ## initialize
+initialize: ## initialize hardwares. Currently check RS232 connections
 	@( \
 		cd scripts ; \
 		python3 initialize_rs232_devices.py -c ../data/mmts_configurations.yaml MMTS_hardwares/vitek/Resource MMTS_hardwares/keithley/Resource; \
@@ -58,21 +16,13 @@ initialize: ## initialize
 	) \
 	|| (echo "[ERROR_STATE]"; exit 1)
 
-tmp_file_for_summary_plot := $(BASE_DIR)/tmp_files/IVscan_scannedID.txt
-run: ## all IV scan (only single threaded allowed) [currentTEMPERATURE=20][currentHUMIDITY=50][switch_delay=0][maxVOLTAGE=500]
-	python3 scripts/mmts_batch_logging.create_an_entry.py -c data/mmts_configurations.yaml --description='MMTSjobRunning' --batch='$(batch)' --iteration='$(iteration)' --stations_and_modules='moduleID1L:$(moduleID1L),moduleID1C:$(moduleID1C),moduleID1R:$(moduleID1R),moduleID2L:$(moduleID2L),moduleID2C:$(moduleID2C),moduleID2R:$(moduleID2R),moduleID3L:$(moduleID3L),moduleID3C:$(moduleID3C),moduleID3R:$(moduleID3R),moduleID4L:$(moduleID4L),moduleID4C:$(moduleID4C),moduleID4R:$(moduleID4R),moduleID5L:$(moduleID5L),moduleID5C:$(moduleID5C),moduleID5R:$(moduleID5R),moduleID6L:$(moduleID6L),moduleID6C:$(moduleID6C),moduleID6R:$(moduleID6R),moduleID7L:$(moduleID7L),moduleID7C:$(moduleID7C),moduleID7R:$(moduleID7R),moduleID8L:$(moduleID8L),moduleID8C:$(moduleID8C),moduleID8R:$(moduleID8R)'
-	/bin/rm -rf tmp_files/out/* ## clean up
-	/bin/rm -f $(tmp_file_for_summary_plot)
-	$(MAKE) -f $(MAKEFILE_LIST) -j1 all_IVscan
-	$(MAKE) -f $(MAKEFILE_LIST) stop
-	python3 scripts/mmts_batch_logging.create_an_entry.py -c data/mmts_configurations.yaml --description='MMTSjobFinished' --batch='$(batch)' --iteration='$(iteration)' --stations_and_modules='moduleID1L:$(moduleID1L),moduleID1C:$(moduleID1C),moduleID1R:$(moduleID1R),moduleID2L:$(moduleID2L),moduleID2C:$(moduleID2C),moduleID2R:$(moduleID2R),moduleID3L:$(moduleID3L),moduleID3C:$(moduleID3C),moduleID3R:$(moduleID3R),moduleID4L:$(moduleID4L),moduleID4C:$(moduleID4C),moduleID4R:$(moduleID4R),moduleID5L:$(moduleID5L),moduleID5C:$(moduleID5C),moduleID5R:$(moduleID5R),moduleID6L:$(moduleID6L),moduleID6C:$(moduleID6C),moduleID6R:$(moduleID6R),moduleID7L:$(moduleID7L),moduleID7C:$(moduleID7C),moduleID7R:$(moduleID7R),moduleID8L:$(moduleID8L),moduleID8C:$(moduleID8C),moduleID8R:$(moduleID8R)'
-	echo "FINISHED"
-stop: ## stop pedestal run
-	source ./init_bash_vars.sh && cd scripts && \
-		sh IVscan.stop.sh
+run: ## run thermal cycling plan and IV curves. Since python script will read arguments from server. No need to pass any argument here.
+	cd external_packages/mmts-mqtt-bridge ; uv run closed_loop_test.py
+stop: ## stop whole thermal cycling
+	sleep 5 ## waiting for 5 second for stopping jobs
 
 destroy: ## remove all running jobs and disable board power
-	$(MAKE) -f $(MAKEFILE_LIST) stop
+	source ./init_bash_vars.sh && cd scripts && sh IVscan.stop.sh && sleep 5
 
 
 
@@ -81,7 +31,7 @@ test:
 	make -f $(MAKEFILE_LIST) all_IVscan moduleID1L="320XHT4CPM00019"
 
 
-IN_ARGS =  $(argline1)$(argline2)$(argline3)$(argline4)$(argline5)$(argline6)$(argline7)$(argline8)
+IN_ARGS =  
 
 help:  ## Display this help
 	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make \033[32m<command>\033[0m $(IN_ARGS)\n\nCommands:\n\033[36m\033[0m\n"} /^[0-9a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)

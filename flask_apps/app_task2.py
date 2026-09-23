@@ -131,14 +131,9 @@ except FileNotFoundError as e:
     raise FileNotFoundError(f'\n\n[LackOfMMTSconf] Need to create configuration file "data/mmts_configuration.yaml"') from e
 
 ### intrinsic configuration would be defined in flask server instead of user input
-INTRINSIC_CONF = [ 'batch' ]
+INTRINSIC_CONF = [ ]
 APP_CONFS = [
-        'batch',
         'inspector',
-        'currentHUMIDITY',
-        'currentTEMPERATURE',
-        'iteration',
-        'maxVOLTAGE',
         'moduleID1L',
         'moduleID1C',
         'moduleID1R',
