@@ -133,6 +133,40 @@ body {
   align-items: stretch;
 }
 
+.environment-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(0, 3fr);
+  gap: 20px;
+  align-items: stretch;
+}
+
+.environment-layout > .card {
+  min-width: 0;
+}
+
+.environment-layout .env-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.log-output {
+  min-height: 5.5em;
+  margin: 0;
+  padding: 12px;
+  overflow-x: auto;
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #334155;
+  font: 14px/1.5 monospace;
+  white-space: pre;
+}
+
+.log-status {
+  margin: 10px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
 .environment-header {
   display: flex;
   align-items: center;
@@ -424,6 +458,11 @@ fieldset.env-control legend {
 }
 
 @media (max-width: 650px) {
+  .environment-layout {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
   .page {
     width: min(100% - 24px, 1400px);
     padding: 12px 0;
@@ -467,7 +506,7 @@ fieldset.env-control legend {
 <body>
   <main class="page">
     <header class="page-header">
-      <h1>IV Scanning</h1>
+      <h1>Thermal Cycling with 4 IV scan jobs</h1>
     </header>
 
     <section class="card">
@@ -488,6 +527,7 @@ fieldset.env-control legend {
     </section>
 
     <form method="POST" id="pymodule_configurations" action="/task2/submit">
+      <div class="environment-layout">
       <section class="card">
         <div class="environment-header">
           <h2>Environment</h2>
@@ -513,7 +553,15 @@ fieldset.env-control legend {
               {% endfor %}
             </datalist>
           </fieldset>
+        </div>
       </section>
+
+      <section class="card" aria-labelledby="logsHeading">
+        <h2 id="logsHeading">Latest logs</h2>
+        <pre id="logOutput" class="log-output" aria-live="polite" aria-atomic="true">Waiting for output...</pre>
+        <p id="logStatus" class="log-status" role="status">Latest 3 lines · Refreshes every second</p>
+      </section>
+      </div>
 
       <section class="card">
         <h2>Module IDs</h2>
@@ -719,6 +767,44 @@ function updateDaqOptions(daqResults) {
       }
     }
   });
+}
+
+// Matches the task2 Blueprint prefix used by the other requests below.
+async function updateLogs() {
+  const output = document.getElementById("logOutput");
+  const status = document.getElementById("logStatus");
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+
+  try {
+    const response = await fetch("/task2/logs", {
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      throw new Error(response.status === 404
+        ? "Logs are not available yet."
+        : `Could not load logs (HTTP ${response.status}).`);
+    }
+
+    const data = await response.json();
+    if (!Array.isArray(data.lines) || !data.lines.every(line => typeof line === "string")) {
+      throw new Error("Could not read the log response.");
+    }
+
+    const text = data.lines.slice(-3).join("\n");
+    const display = data.lines.length ? text : "Waiting for output...";
+    if (output.textContent !== display) output.textContent = display;
+    status.textContent = "Latest 3 lines · Refreshes every second";
+  } catch (error) {
+    // Preserve the last successfully received lines while retrying.
+    status.textContent = error.name === "AbortError"
+      ? "Log request timed out. Retrying..."
+      : `${error.message} Retrying...`;
+  } finally {
+    clearTimeout(timeout);
+    setTimeout(updateLogs, 1000);
+  }
 }
 
 async function updateStatus() {
@@ -957,6 +1043,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupInputRestriction();
 
   updateStatus();
+  updateLogs();
   setInterval(updateStatus, 1000);
 });
 

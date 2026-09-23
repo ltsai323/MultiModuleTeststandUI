@@ -13,6 +13,10 @@ from PythonTools.server_status import isCommandRunable
 from datetime import datetime
 import re
 import os
+from collections import deque
+
+latest_running_logs = deque(maxlen=5)
+logs_lock = threading.Lock()
 ### HTTP status codes https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status
 
 JOBMODE = 'task2' # IV scan
@@ -282,7 +286,11 @@ def run_command(cmd: str, jobID):
 
     try:
         for line in process.stdout:
-            logger.info(f'[{jobID}{line.strip()}')
+            logger.info(f'[{jobID}]{line.strip()}')
+            if jobID == 'Run': ## only record run job logs. These messages would be put on webpage
+                with logs_lock:
+                    latest_running_logs.append(line.strip().rstrip("\r\n"))
+                
 
             if job_stop_flags[jobID].is_set():
                 logger.info(f"[{jobID}][Stop - Terminate]run_command() Stop signal received. Terminating command.")
@@ -457,7 +465,6 @@ def Configure():
 
         return f'''
 got {got_n_modules} modules.
-{batchname_message}
 
 {check1_mesg}
 '''
@@ -609,6 +616,15 @@ def main():
                            thermalCYCLE_iterationDICT = thermalcycle_iterations,
                            inspectors=DEFAULT_INSPECTORS,
                            )
+
+@app.route("/logs")
+def get_logs():
+    with logs_lock:
+        lines = list(latest_logs)
+
+    response = jsonify(lines=lines)
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 if __name__ == '__main__':
