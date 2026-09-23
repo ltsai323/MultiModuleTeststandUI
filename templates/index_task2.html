@@ -148,6 +148,11 @@ body {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.full-logs-link {
+  text-decoration: none;
+  white-space: nowrap;
+}
+
 .log-output {
   min-height: 5.5em;
   margin: 0;
@@ -557,7 +562,10 @@ fieldset.env-control legend {
       </section>
 
       <section class="card" aria-labelledby="logsHeading">
-        <h2 id="logsHeading">Thermal Cycling logs</h2>
+        <div class="environment-header">
+          <h2 id="logsHeading">Thermal Cycling logs</h2>
+          <a class="small-btn full-logs-link" href="/logs">Full Logs</a>
+        </div>
         <pre id="logOutput" class="log-output" aria-live="polite" aria-atomic="true">Waiting for output...</pre>
         <p id="logStatus" class="log-status" role="status">Latest 3 lines · Refreshes every second</p>
       </section>
