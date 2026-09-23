@@ -305,8 +305,11 @@ def run_command(cmd: str, jobID):
             set_server_status('idle')
             logger.info(f'[{jobID}][finally] run_command() sets system to idle')
         else:
-            set_server_status('error')
-            logger.info(f'[{jobID}][error] run_command() sets system to error. Please destroy and initialize it')
+            if not job_stop_flags[jobID].is_set():
+                set_server_status('error')
+                logger.info(f'[{jobID}][error] run_command() sets system to error. Please destroy and initialize it')
+            else:
+                logger.info(f'[{jobID}][stopped] run_command() jobs killed. so ignore the error message')
 
 
 
