@@ -7,6 +7,7 @@ currentHUMIDITY="$5"
 switchDELAY="$6"
 iteration="$7"
 batch="$8"
+inspector="$9"
 
 
 set -x -o pipefail
@@ -20,7 +21,8 @@ python3 scripts/getIV.py \
 	--max_voltage="$maxVOLTAGE" \
 	--station="MMTS_${mmtsPOSITION}" \
   --batch="$batch" \
-  --iteration="$iteration"
+  --iteration="$iteration" \
+  --inspector="$inspector"
 cd -
 
 ### reset switch after IV curve scanning
