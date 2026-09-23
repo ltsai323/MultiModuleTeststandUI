@@ -163,8 +163,8 @@ APP_CONFS = [
 ]
 
 def ExecCMD(jobID:str):
-   #make_command = 'make -n' if shared_state.debug_mode else 'make'
-    make_command = 'make -n'
+    make_command = 'make -n' if shared_state.debug_mode else 'make'
+   #make_command = 'make -n'
 
     confDICT = shared_state.ReadConfigs(APP_CONFS)
     if jobID == 'Init':
