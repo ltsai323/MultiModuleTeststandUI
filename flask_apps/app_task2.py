@@ -620,7 +620,7 @@ def main():
 @app.route("/logs")
 def get_logs():
     with logs_lock:
-        lines = list(latest_logs)
+        lines = list(latest_running_logs)
 
     response = jsonify(lines=lines)
     response.headers["Cache-Control"] = "no-store"
