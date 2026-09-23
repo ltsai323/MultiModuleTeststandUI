@@ -13,6 +13,10 @@ from PythonTools.server_status import isCommandRunable
 from datetime import datetime
 import re
 import os
+from collections import deque
+
+latest_running_logs = deque(maxlen=5)
+logs_lock = threading.Lock()
 ### HTTP status codes https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status
 
 JOBMODE = 'task2' # IV scan
@@ -131,14 +135,9 @@ except FileNotFoundError as e:
     raise FileNotFoundError(f'\n\n[LackOfMMTSconf] Need to create configuration file "data/mmts_configuration.yaml"') from e
 
 ### intrinsic configuration would be defined in flask server instead of user input
-INTRINSIC_CONF = [ 'batch' ]
+INTRINSIC_CONF = [ ]
 APP_CONFS = [
-        'batch',
         'inspector',
-        'currentHUMIDITY',
-        'currentTEMPERATURE',
-        'iteration',
-        'maxVOLTAGE',
         'moduleID1L',
         'moduleID1C',
         'moduleID1R',
@@ -168,8 +167,8 @@ APP_CONFS = [
 ]
 
 def ExecCMD(jobID:str):
-   #make_command = 'make -n' if shared_state.debug_mode else 'make'
-    make_command = 'make -n'
+    make_command = 'make -n' if shared_state.debug_mode else 'make'
+   #make_command = 'make -n'
 
     confDICT = shared_state.ReadConfigs(APP_CONFS)
     if jobID == 'Init':
@@ -287,7 +286,11 @@ def run_command(cmd: str, jobID):
 
     try:
         for line in process.stdout:
-            logger.info(f'[{jobID}{line.strip()}')
+            logger.info(f'[{jobID}]{line.strip()}')
+            if jobID == 'Run': ## only record run job logs. These messages would be put on webpage
+                with logs_lock:
+                    latest_running_logs.append(line.strip().rstrip("\r\n"))
+                
 
             if job_stop_flags[jobID].is_set():
                 logger.info(f"[{jobID}][Stop - Terminate]run_command() Stop signal received. Terminating command.")
@@ -310,8 +313,11 @@ def run_command(cmd: str, jobID):
             set_server_status('idle')
             logger.info(f'[{jobID}][finally] run_command() sets system to idle')
         else:
-            set_server_status('error')
-            logger.info(f'[{jobID}][error] run_command() sets system to error. Please destroy and initialize it')
+            if not job_stop_flags[jobID].is_set():
+                set_server_status('error')
+                logger.info(f'[{jobID}][error] run_command() sets system to error. Please destroy and initialize it')
+            else:
+                logger.info(f'[{jobID}][stopped] run_command() jobs killed. so ignore the error message')
 
 
 
@@ -354,19 +360,6 @@ def Init():
 alphanumeric_validator = Regexp(r"^[a-zA-Z0-9-]*$", message="Only letters and numbers and dash allowed.")
 class ConfigForm(FlaskForm):
     inspector = StringField("inspector", validators=[InputRequired(message='Inspector Missing')])
-    currentTEMPERATURE = FloatField("currentTEMPERATURE", validators=[
-        NumberRange(min=-50.,max=50., message='Number from -50 to 50'),
-        InputRequired(message='Temperature Missing')]
-                                     )
-   #moduleSTATUS = RadioField("moduleSTATUS", validators=[InputRequired()])
-    currentHUMIDITY    = FloatField("currentHUMIDITY"   , validators=[
-        NumberRange(min=0.,max=100., message='Number from 0 to 100'),
-        InputRequired(message='Humidity Missing')]
-                                     )
-    maxVOLTAGE = StringField("maxVOLTAGE", validators=[InputRequired(message='Max Voltage Missing')])
-    iteration  = StringField("iteration"   , validators=[InputRequired(message='select an iteration'),
-                                                       AnyOf(values=thermalcycle_iterations.keys(), message=f"Invalid choice, available choices '{thermalcycle_iterations.keys()}'")
-                                                      ])
 
     moduleID1L = StringField("moduleID1L", validators=[alphanumeric_validator])
     moduleID1C = StringField("moduleID1C", validators=[alphanumeric_validator])
@@ -397,109 +390,9 @@ class ConfigForm(FlaskForm):
     submit = SubmitField("Configure")
 
 
-def get_default_environment_values():
-    """Return server-provided defaults for the Environment form."""
-    with psycopg2.connect(
-        dbname=DBDatabase,
-        host=DBHostname,
-        user=DBUsername,
-        password=DBPassword,
-    ) as connection:
-        with connection.cursor() as cursor:
-            ### check used function existed or not
-            SQLfunc_check(cursor)
 
 
-            cursor.execute(SQL__AVGTMP_AVGDEWP_AVGHUM)
-            row = cursor.fetchone()
 
-            if not row or row[0] is None or row[2] is None:
-                raise RuntimeError('No temperature/humidity sensor readings are available')
-
-            out_temp = float(row[0])
-            out_humi = float(row[2])
-
-
-            cursor.execute(SQL__NEWBATCHNAME_OLDBATCHNAME_CYCLECOUNT_RELATED_MODULEIDS)
-            row = cursor.fetchone()
-
-            out_new_batchname = str(row[0])
-            out_old_batchname = str(row[1])
-            cycle_count = int(row[2])
-
-            new_cycle_count = cycle_count + 1
-            if new_cycle_count > 4:
-                new_cycle_count = 1
-            out_iteration = f'iteration_{new_cycle_count}'
-            out_max_voltage = 850 if new_cycle_count in [ 3, 4 ] else 500
-
-            previous_related_modules = row[3]
-
-
-    returned_values =  {
-        'currentTEMPERATURE': round(out_temp,1),
-        'currentHUMIDITY': round(out_humi,1),
-        'maxVOLTAGE': out_max_voltage,
-        'iteration': out_iteration,
-
-        'prev_modules': previous_related_modules,
-        'batch_new': out_new_batchname,
-        'batch_old': out_old_batchname,
-        'cycle_count': new_cycle_count,
-    }
-
-
-    current_app.logger.info(f'[ReadEnvVariables] {returned_values}')
-    return returned_values
-
-def judgeBatchName_fromHGCDB_and_userInput():
-    ### read the setting and decide batch_name. Use new one or old one
-    env_values = get_default_environment_values()
-    batch_old = env_values['batch_old']
-    batch_new = env_values['batch_new']
-
-    expected_modules = env_values['prev_modules']
-    expected_iteration = env_values['iteration']
-
-    settings_modules = shared_state.GetAllModuleIDs('list') 
-    settings_iteration = shared_state.ReadConfig('iteration')
-
-    batchname_message = ''
-    batchname = batch_new
-    keep_checking = True
-    ### opt1 : check config *iteration* is the same as expected
-    if keep_checking and ('1' in settings_iteration):
-        keep_checking = False
-        batchname_message = 'Use new batch_name from a new batch'
-    if keep_checking and (settings_iteration != expected_iteration):
-        keep_checking = False
-        batchname_message = 'Use new batch_name due to user assigned iteration'
-        print(f'[check] settings_iteration = "{settings_iteration}" and expected_iteration = "{expected_iteration}"')
-    ### from this block, the expected iteraion is the same as setting iteration
-    if keep_checking and (settings_iteration == expected_iteration and expected_modules != settings_modules):
-        keep_checking = False
-        batchname_message = 'Use new batch_name due to user entered new modules'
-    if keep_checking and (settings_iteration == expected_iteration and expected_modules == settings_modules):
-        keep_checking = False
-        batchname_message = 'Keeps using OLD batch_name'
-        batchname = batch_old
-    if keep_checking:
-        batchname_message = 'Use new batch_name because of unknown reason'
-    ### read the setting and decide batch_name. Use new one or old one ENDED
-    return batchname, batchname_message
-
-
-@app.route('/getenvvars', methods=['GET'])
-def getenvvars():
-    ''' read env vars from HGCDB. Note here would not fill batch_name since user haven't fill the module IDs '''
-    try:
-        return jsonify(get_default_environment_values())
-    except Exception:
-        current_app.logger.exception('Unable to load default Environment values')
-        return jsonify({
-            'status': 'error',
-            'message': 'Unable to load default values from the server.',
-        }), 503
 
 @app.route('/submit', methods=['POST','GET'])
 def Configure():
@@ -552,10 +445,6 @@ def Configure():
             clean_val = ''
         shared_state.SetConfig(varname, clean_val)
 
-    ### fill_batchname
-    batchname, batchname_message = judgeBatchName_fromHGCDB_and_userInput()
-    shared_state.SetConfig('batch', batchname)
-    
 
 
 
@@ -576,7 +465,6 @@ def Configure():
 
         return f'''
 got {got_n_modules} modules.
-{batchname_message}
 
 {check1_mesg}
 '''
@@ -728,6 +616,15 @@ def main():
                            thermalCYCLE_iterationDICT = thermalcycle_iterations,
                            inspectors=DEFAULT_INSPECTORS,
                            )
+
+@app.route("/logs")
+def get_logs():
+    with logs_lock:
+        lines = list(latest_running_logs)
+
+    response = jsonify(lines=lines)
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 if __name__ == '__main__':
