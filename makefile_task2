@@ -17,7 +17,7 @@ initialize: ## initialize hardwares. Currently check RS232 connections
 	|| (echo "[ERROR_STATE]"; exit 1)
 
 run: ## run thermal cycling plan and IV curves. Since python script will read arguments from server. No need to pass any argument here.
-	cd external_packages/mmts-mqtt-bridge ; uv run closed_loop_test.py
+	cd external_packages/mmts-mqtt-bridge ; uv run closed_loop_test.py -p "$(BASE_DIR)"
 stop: ## stop whole thermal cycling
 	sleep 5 ## waiting for 5 second for stopping jobs
 
