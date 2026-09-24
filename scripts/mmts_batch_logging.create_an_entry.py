@@ -96,10 +96,10 @@ class insert_entry:
             if argname not in self.column_names:
                 raise IOError(f'[InvalidArugment] argument "{argname}" is not allowed')
 
-            ### only accept pre-defined description
-            if argname == 'description':
-                if argval not in ALLOWED_DESCRIPTION:
-                    raise IOError(f'[InvalidDesc] description "{argval}" is invalid. Available descs: {ALLOWED_DESCRIPTION}')
+           #### only accept pre-defined description
+           #if argname == 'description':
+           #    if argval not in ALLOWED_DESCRIPTION:
+           #        raise IOError(f'[InvalidDesc] description "{argval}" is invalid. Available descs: {ALLOWED_DESCRIPTION}')
 
             self.column_names[argname] = SQLvarConv(argval)
         self.entry_availability_check()
