@@ -42,7 +42,7 @@ ALLOWED_DESCRIPTION = [
 
 def SQLvar_tuple(inINST:tuple) -> str:
     if isinstance(inINST,tuple) or isinstance(inINST,list):
-        return 'ARRAY'+str(inINST) if len(inINST) != 0 else 'NULL'
+        return 'ARRAY'+str(inINST) if len(inINST) != 0 else "'{}'"
     raise IOError(f'[InvalidType] inst has invalid type "{type(inINST)}"')
 def SQLvar_str(inINST:str) -> str:
     ### add quote to string
