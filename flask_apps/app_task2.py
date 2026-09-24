@@ -6,7 +6,7 @@ from flask import current_app
 from flask_wtf import FlaskForm
 from flask_wtf.csrf import CSRFProtect
 from wtforms.validators import DataRequired, Regexp, InputRequired, NumberRange, AnyOf
-from wtforms import StringField, SubmitField, RadioField, FloatField
+from wtforms import StringField, SubmitField, RadioField, FloatField, IntegerField
 import psycopg2
 import flask_apps.shared_state as shared_state
 from PythonTools.server_status import isCommandRunable
