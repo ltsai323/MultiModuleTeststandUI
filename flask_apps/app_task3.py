@@ -478,7 +478,7 @@ def judgeBatchName_fromHGCDB_and_userInput():
         batchname_message = 'Use new batch_name for a new batch'
     if keep_checking and ( settings_iteration[-1].isdigit() is False ):
         keep_checking = False
-        batchname_message = 'Use new batch_name because of previous test run.')
+        batchname_message = 'Use new batch_name because of previous test run.'
     if keep_checking and (settings_iteration != expected_iteration):
         keep_checking = False
         batchname_message = 'Use new batch_name due to user assigned iteration'
