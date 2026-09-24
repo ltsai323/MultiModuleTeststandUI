@@ -185,6 +185,10 @@ def Option_Parser(argv):
             type='str', dest='iteration', default='test',
             help='iteration of thermal cycling. ex: stage_1, stage_2, stage_3, testing'
     )
+    parser.add_option('-C', '--cycle_count',
+            type='str', dest='cycle_count', default='0',
+            help='desired number of the thermal cycle.'
+    )
     parser.add_option('-S', '--stations_and_modules',
             type='str', dest='stations_and_modules', default='',
                       help='station name and module ID pair list, they are separated as comma. Ex: MMTS_1L:moduleID1,MMTS_1C:moduleID2,MMTS_1R:, The empty module ID would be ignored.'
@@ -219,7 +223,7 @@ def Option_Parser(argv):
     options.module_IDs = module_IDs
 
     ### decode cycle count from iterations
-    options.cycle_count = decode_iteration_to_cyclecount(options.iteration)
+    options.cycle_count = options.cycle_count
     return options
 
 

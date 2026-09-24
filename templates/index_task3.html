@@ -518,6 +518,19 @@ fieldset.env-control legend {
           </fieldset>
 
           <fieldset class="env-control">
+            <legend>Cycle Count</legend>
+
+            <input
+              type="number"
+              step="any"
+              name="cycleCOUNT"
+              id="cycleCOUNT"
+              class="configuration-input"
+              value="{{ currentCONF.get('cycleCOUNT', '') | e }}"
+              placeholder="Enter the desired number of thermal cycles"
+              required>
+          </fieldset>
+          <fieldset class="env-control">
             <legend>Temperature</legend>
 
             <input
@@ -872,6 +885,7 @@ function setupReadEnvVarsBtn() {
 
       document.getElementById("currentTEMPERATURE").value = data.currentTEMPERATURE;
       document.getElementById("currentHUMIDITY").value = data.currentHUMIDITY;
+      document.getElementById("cycleCOUNT").value = data.cycleCOUNT;
 
       const voltage = Array.from(
         document.querySelectorAll('input[name="maxVOLTAGE"]')

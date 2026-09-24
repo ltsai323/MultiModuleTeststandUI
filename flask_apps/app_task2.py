@@ -176,7 +176,7 @@ def ExecCMD(jobID:str):
     if jobID == 'Run':
         shared_state.runidx+=1
         runTAG = f'run{shared_state.runidx}'
-        dictOPTs = ' '.join([ f'{key}={val}' for key,val in confDICT.items() if val != '' ])
+        dictOPTs = ' '.join([ f"{key}='{val}'" for key,val in confDICT.items() if val != '' ])
 
         ### a patch END
         return f'{make_command} -f makefile_task2  run ' + dictOPTs
