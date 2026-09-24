@@ -813,7 +813,7 @@ async function updateLogs() {
       throw new Error("Could not read the log response.");
     }
 
-    const text = data.lines.slice(-5).join("\n");
+    const text = data.lines.slice(-8).join("\n");
     const display = data.lines.length ? text : "Waiting for output...";
     if (output.textContent !== display) output.textContent = display;
     status.textContent = "";

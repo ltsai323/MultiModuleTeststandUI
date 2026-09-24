@@ -16,7 +16,7 @@ import os
 from collections import deque
 
 latest_running_batchNO = 0
-latest_running_logs = deque(maxlen=5)
+latest_running_logs = deque(maxlen=8)
 logs_lock = threading.Lock()
 ### HTTP status codes https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status
 
@@ -636,7 +636,7 @@ def get_logs():
 WITH latest_logs AS (
 SELECT batch_no, description FROM public.mmts_batch_logging
 WHERE batch_no > {latest_running_batchNO}
-ORDER BY batch_no DESC LIMIT 5
+ORDER BY batch_no DESC LIMIT 8
 ) SELECT batch_no, description FROM latest_logs ORDER BY batch_no ASC
             ''' )
             rows = cursor.fetchall()
