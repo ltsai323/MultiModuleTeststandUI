@@ -15,6 +15,7 @@ import re
 import os
 from collections import deque
 
+latest_running_batchNO = 0
 latest_running_logs = deque(maxlen=5)
 logs_lock = threading.Lock()
 ### HTTP status codes https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status
@@ -288,9 +289,9 @@ def run_command(cmd: str, jobID):
     try:
         for line in process.stdout:
             logger.info(f'[{jobID}]{line.strip()}')
-            if jobID == 'Run': ## only record run job logs. These messages would be put on webpage
-                with logs_lock:
-                    latest_running_logs.append(line.strip().rstrip("\r\n"))
+           #if jobID == 'Run': ## only record run job logs. These messages would be put on webpage
+           #    with logs_lock:
+           #        latest_running_logs.append(line.strip().rstrip("\r\n"))
                 
 
             if job_stop_flags[jobID].is_set():
@@ -622,6 +623,28 @@ def main():
 
 @app.route("/logs")
 def get_logs():
+    """Return server-provided defaults for the Environment form."""
+    with psycopg2.connect(
+        dbname=DBDatabase,
+        host=DBHostname,
+        user=DBUsername,
+        password=DBPassword,
+    ) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(f'''
+WITH latest_logs AS (
+SELECT batch_no, description FROM public.mmts_batch_logging
+WHERE batch_no > {latest_running_batchNO}
+ORDER BY batch_no DSEC LIMIT 5
+) SELECT batch_no, description FROM latest_logs ORDER BY batch_no ASC
+            ''' )
+            rows = cursor.fetchall()
+
+            if len(rows) > 0:
+                for _, mesg in rows:
+                    if mesg:
+                        latest_running_logs.append(mesg)
+                latest_running_batchNO = int(rows[-1][0])
     with logs_lock:
         lines = list(latest_running_logs)
 
