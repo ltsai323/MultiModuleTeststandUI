@@ -567,7 +567,7 @@ fieldset.env-control legend {
               name="cycleCOUNT"
               id="cycleCOUNT"
               class="configuration-input"
-              value="{{ currentCONF.get('cycleCOUNT', '') | e }}"
+              value="{{ currentCONF.get('cycleCOUNT', 5) | e }}"
               placeholder="currently invalid option"
               required>
           </fieldset>

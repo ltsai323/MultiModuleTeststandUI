@@ -1,4 +1,5 @@
 import subprocess
+import signal
 import threading
 import logging
 from flask import Flask, render_template, request, jsonify, Blueprint
@@ -16,6 +17,7 @@ import os
 from collections import deque
 
 latest_running_batchNO = 0
+latest_batch_name = '99999999-999999' ## by default, show nothing before Configure()
 latest_running_logs = deque(maxlen=8)
 logs_lock = threading.Lock()
 ### HTTP status codes https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status
@@ -25,12 +27,69 @@ JOBMODE = 'task2' # IV scan
 dirDAQresult = ''
 DEFAULT_INSPECTORS = []
 
-DBDatabase = None
-DBHostname = None
-DBPassword = None
-DBUsername = None
+
+class HGCDB_access:
+    DBDatabase = None
+    DBHostname = None
+    DBPassword = None
+    DBUsername = None
+    
+    @classmethod
+    def get_connect_args(cls):
+        return {'dbname': cls.DBDatabase, 'host': cls.DBHostname, 'user': cls.DBUsername, 'password': cls.DBPassword }
+    @classmethod
+    def is_invalid(cls):
+        return cls.DBDatabase == None
 
 
+
+class AccessRunningLog:
+    latest_running_batchNO = 0
+    latest_batch_name = None
+    
+    @classmethod
+    def FetchLatestLogs(cls):
+        output_mesg = []
+        if HGCDB_access.is_invalid() or cls.latest_batch_name is None:
+            return output_mesg
+
+        with psycopg2.connect(
+                **HGCDB_access.get_connect_args()
+        ) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(f'''
+WITH latest_logs AS (
+SELECT batch_no, description FROM public.mmts_batch_logging
+WHERE batch_no > {cls.latest_running_batchNO} AND batch_name > '{cls.latest_batch_name}'
+ORDER BY batch_no DESC LIMIT 8
+) SELECT batch_no, description FROM latest_logs ORDER BY batch_no ASC
+                ''' )
+                rows = cursor.fetchall()
+
+                if len(rows) > 0:
+                    AccessRunningLog.latest_running_batchNO = int(rows[-1][0])
+                    output_mesg = [ mesg for _, mesg in rows ]
+        return output_mesg
+    @classmethod
+    def UpdatePreviousBatchName(cls):
+        if HGCDB_access.is_invalid():
+            return output_mesg
+
+        with psycopg2.connect(
+                **HGCDB_access.get_connect_args()
+        ) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(f'''
+SELECT batch_name FROM public.mmts_batch_logging
+ORDER BY batch_no DESC LIMIT 1
+                ''' )
+                row = cursor.fetchone()
+
+                AccessRunningLog.latest_batch_name = row[0]
+    @classmethod
+    def ClearLogs(cls):
+        cls.latest_batch_name = '99999999-9999'
+        latest_running_logs.clear()
 
 
 
@@ -49,10 +108,11 @@ try:
 
         dirDAQresult = f"{conf['DataLoc']}/daqplots/"
         DEFAULT_INSPECTORS = conf.get('Inspectors', [])
-        DBDatabase = conf.get('DBDatabase', '')
-        DBHostname = conf.get('DBHostname', '')
-        DBPassword = conf.get('DBPassword', '')
-        DBUsername = conf.get('DBUsername', '')
+
+        HGCDB_access.DBDatabase = conf.get('DBDatabase', '')
+        HGCDB_access.DBHostname = conf.get('DBHostname', '')
+        HGCDB_access.DBPassword = conf.get('DBPassword', '')
+        HGCDB_access.DBUsername = conf.get('DBUsername', '')
 
 
 except FileNotFoundError as e:
@@ -93,7 +153,7 @@ APP_CONFS = [
 
 def ExecCMD(jobID:str):
     make_command = 'make -n' if shared_state.debug_mode else 'make'
-   #make_command = 'make -n'
+    make_command = 'make '
 
     confDICT = shared_state.ReadConfigs(APP_CONFS)
     if jobID == 'Init':
@@ -165,6 +225,8 @@ def set_server_status(newSTAT):
         if newSTAT not in [ 'destroying', ]:
             return
 
+    if newSTAT == 'idle' and shared_state.server_status == 'destroying':
+        return
     shared_state.server_status = newSTAT
 
 def server_status_is(checkSTAT):
@@ -203,36 +265,58 @@ def run_command(cmd: str, jobID):
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
-        bufsize=1
+        bufsize=1,
+        start_new_session=True,
+        env={**os.environ, "PYTHONUNBUFFERED": "1"},
     )
 
+    logger.info("[%s] Started pid=%s pgid=%s", jobID, process.pid, process.pid)
+    finished = threading.Event()
+    signal_lock = threading.Lock()
+    interrupted = False
+
+    def interrupt_job():
+        nonlocal interrupted
+        with signal_lock:
+            if interrupted:
+                return
+            interrupted = True
+            try:
+                # Popen created a dedicated session; its PID is the job PGID.
+                os.killpg(process.pid, signal.SIGINT)
+                logger.info("[%s] Sent SIGINT to job pgid=%s", jobID, process.pid)
+            except ProcessLookupError:
+                logger.info("[%s] Job process group has already exited", jobID)
+
+    def watch_stop():
+        # Never depend on output arriving before processing a stop request.
+        while not finished.wait(0.1):
+            if job_stop_flags[jobID].is_set():
+                interrupt_job()
+                return
+
+    stop_watcher = threading.Thread(target=watch_stop, daemon=True)
+    stop_watcher.start()
     try:
-        terminated = False
         for line in process.stdout:
             logger.info(f'[{jobID}]{line.strip()}')
-           #if jobID == 'Run': ## only record run job logs. These messages would be put on webpage
-           #    with logs_lock:
-           #        latest_running_logs.append(line.strip().rstrip("\r\n"))
-                
-
-            if job_stop_flags[jobID].is_set() and not terminated:
-                logger.info(f"[{jobID}][Stop - Terminate]run_command() Stop signal received. Terminating command.")
-                process.terminate()
-                logger.info(f"[{jobID}][Stop - Terminate]run_command() process terminate sent.")
-                terminated = True
-               #break
+        # Continue draining the pipe through cleanup, even after SIGINT.
         if not job_stop_flags[jobID].is_set():
             logger.info(f'[{jobID}][Run - StatusChangeIdle]run_command() Command "{cmd}" finished')
     except Exception as e:
         logger.error(f'[{jobID}][Error - StatusChangeError]run_command() Error while running command: "{cmd}"')
 
-        process.terminate()
+        interrupt_job()
         if server_status_is('stopping'):
             logger.info(f'[{jobID}][Error - StatusChangeError]run_command() error generated sinces "Stop" button clicked')
         else:
             logger.error(f'[{jobID}][Error - ErrorMessage     ] run_command() "{e}"')
     finally:
         process.wait()
+        finished.set()
+        stop_watcher.join()
+        process.stdout.close()
+        logger.info("[%s] Child pid=%s exited with code=%s", jobID, process.pid, process.returncode)
         if process.returncode == 0:
             set_server_status('idle')
             logger.info(f'[{jobID}][finally] run_command() sets system to idle')
@@ -406,6 +490,9 @@ got {got_n_modules} modules.
     current_app.logger.info(f'[ConfigMessage] "{conf_mesg()}"')
     current_app.logger.info(f'[Configure] Current CONF_DICT: {shared_state.ReadConfigs(APP_CONFS)}')
 
+
+    AccessRunningLog.UpdatePreviousBatchName()
+
     set_server_status('configured')
     # Return JSON with message, status 200 so client JS can alert
     return jsonify({'status': 'success', 'message': conf_mesg()}), 200
@@ -421,8 +508,8 @@ def Run():
     if not check_jobmode(): return '', 204
     current_app.logger.debug(f'[ServerAction][{CMD_ID}] Got an {CMD_ID} command executing')
 
-    job_stop_flags[CMD_ID].clear()
     if isCommandRunable(shared_state.server_status,CMD_ID):
+        job_stop_flags[CMD_ID].clear()
         set_server_status('running')
         current_app.logger.debug(f'[ServerAction][{CMD_ID}] the server status is idle, activate {CMD_ID} command')
 
@@ -455,7 +542,6 @@ def Stop():
     job_stop_flags['Run'].set()
     current_app.logger.debug(f'[ServerAction][Stop] set job_stop_flags as True')
 
-    os.system('pkill make 2>/dev/null') ## force kill all jobs from make commands
     if job_thread['Run'] and job_thread['Run'].is_alive():
         job_thread['Run'].join()
 
@@ -483,12 +569,12 @@ def Stop():
 def Destroy():
     if not check_jobmode(): return '', 204
     CMD_ID = 'Destroy'
+    AccessRunningLog.ClearLogs()
 
     if isCommandRunable(shared_state.server_status,CMD_ID):
         set_server_status('destroying')
         for name, flag in job_stop_flags.items(): flag.set()
         current_app.logger.debug(f'[ServerAction][{CMD_ID}] set ALL job_stop_flags as True')
-        os.system('pkill make 2>/dev/null') ## force kill all jobs from make commands
 
         for name, t in job_thread.items():
             if t and t.is_alive():
@@ -536,38 +622,21 @@ def main():
     return render_template('index_task2.html',
                            DAQres=daq_result_dirs,
                            currentCONF=shared_state.ReadConfigs(APP_CONFS),
-                           ccc='',
                            IVCurveOnline_URL=external_URL,
                            IVCurveOnline_height=external_URL_height,
-                           thermalCYCLE_iterationDICT = thermalcycle_iterations,
                            inspectors=DEFAULT_INSPECTORS,
                            )
+
+
+
 
 @app.route("/logs")
 def get_logs():
     """Return server-provided defaults for the Environment form."""
-    global latest_running_batchNO
-    with psycopg2.connect(
-        dbname=DBDatabase,
-        host=DBHostname,
-        user=DBUsername,
-        password=DBPassword,
-    ) as connection:
-        with connection.cursor() as cursor:
-            cursor.execute(f'''
-WITH latest_logs AS (
-SELECT batch_no, description FROM public.mmts_batch_logging
-WHERE batch_no > {latest_running_batchNO}
-ORDER BY batch_no DESC LIMIT 8
-) SELECT batch_no, description FROM latest_logs ORDER BY batch_no ASC
-            ''' )
-            rows = cursor.fetchall()
+    new_logs = AccessRunningLog.FetchLatestLogs()
+    for log in new_logs:
+        latest_running_logs.append(log)
 
-            if len(rows) > 0:
-                for _, mesg in rows:
-                    if mesg:
-                        latest_running_logs.append(mesg)
-                latest_running_batchNO = int(rows[-1][0])
     with logs_lock:
         lines = list(latest_running_logs)
 
