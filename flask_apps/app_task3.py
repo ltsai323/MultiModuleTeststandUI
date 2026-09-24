@@ -475,7 +475,10 @@ def judgeBatchName_fromHGCDB_and_userInput():
     ### opt1 : check config *iteration* is the same as expected
     if keep_checking and ('1' in settings_iteration):
         keep_checking = False
-        batchname_message = 'Use new batch_name from a new batch'
+        batchname_message = 'Use new batch_name for a new batch'
+    if keep_checking and ( settings_iteration[-1].isdigit() is False ):
+        keep_checking = False
+        batchname_message = 'Use new batch_name because of previous test run.')
     if keep_checking and (settings_iteration != expected_iteration):
         keep_checking = False
         batchname_message = 'Use new batch_name due to user assigned iteration'
@@ -483,10 +486,10 @@ def judgeBatchName_fromHGCDB_and_userInput():
     ### from this block, the expected iteraion is the same as setting iteration
     if keep_checking and (settings_iteration == expected_iteration and expected_modules != settings_modules):
         keep_checking = False
-        batchname_message = 'Use new batch_name due to user entered new modules'
+        batchname_message = 'Use new batch_name due to user put new modules'
     if keep_checking and (settings_iteration == expected_iteration and expected_modules == settings_modules):
         keep_checking = False
-        batchname_message = 'Keeps using OLD batch_name'
+        batchname_message = 'Keeps using previous batch_name because all criteria matched'
         batchname = batch_old
     if keep_checking:
         batchname_message = 'Use new batch_name because of unknown reason'
