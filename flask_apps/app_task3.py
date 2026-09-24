@@ -6,7 +6,7 @@ from flask import current_app
 from flask_wtf import FlaskForm
 from flask_wtf.csrf import CSRFProtect
 from wtforms.validators import DataRequired, Regexp, InputRequired, NumberRange, AnyOf
-from wtforms import StringField, SubmitField, RadioField, FloatField
+from wtforms import StringField, SubmitField, RadioField, FloatField, IntegerField
 import psycopg2
 import flask_apps.shared_state as shared_state
 from PythonTools.server_status import isCommandRunable
@@ -138,6 +138,7 @@ APP_CONFS = [
         'currentHUMIDITY',
         'currentTEMPERATURE',
         'iteration',
+        'cycleCOUNT',
         'maxVOLTAGE',
         'moduleID1L',
         'moduleID1C',
@@ -367,6 +368,7 @@ class ConfigForm(FlaskForm):
         InputRequired(message='Humidity Missing')]
                                      )
     maxVOLTAGE = StringField("maxVOLTAGE", validators=[InputRequired(message='Max Voltage Missing')])
+    cycleCOUNT = IntegerField("cycleCOUNT", validators=[InputRequired(message='Fill number of cycles'), NumberRange(min=0,max=1000, message='range from 0 to 1000')])
     iteration  = StringField("iteration"   , validators=[InputRequired(message='select an iteration'),
                                                        AnyOf(values=thermalcycle_iterations.keys(), message=f"Invalid choice, available choices '{thermalcycle_iterations.keys()}'")
                                                       ])
