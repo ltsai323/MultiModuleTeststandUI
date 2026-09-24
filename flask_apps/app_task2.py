@@ -624,6 +624,7 @@ def main():
 @app.route("/logs")
 def get_logs():
     """Return server-provided defaults for the Environment form."""
+    global latest_running_batchNO
     with psycopg2.connect(
         dbname=DBDatabase,
         host=DBHostname,
@@ -635,7 +636,7 @@ def get_logs():
 WITH latest_logs AS (
 SELECT batch_no, description FROM public.mmts_batch_logging
 WHERE batch_no > {latest_running_batchNO}
-ORDER BY batch_no DSEC LIMIT 5
+ORDER BY batch_no DESC LIMIT 5
 ) SELECT batch_no, description FROM latest_logs ORDER BY batch_no ASC
             ''' )
             rows = cursor.fetchall()
