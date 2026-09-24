@@ -179,7 +179,8 @@ def Option_Parser(argv):
 
     parser.add_option('-D', '--description',
             type='str', dest='description', default='',
-            help=f'description for this entry, only "{ALLOWED_DESCRIPTION}" allowed'
+           #help=f'description for this entry, only "{ALLOWED_DESCRIPTION}" allowed'
+            help=f'description for this entry'
     )
     parser.add_option('-I', '--iteration',
             type='str', dest='iteration', default='test',
@@ -205,10 +206,10 @@ def Option_Parser(argv):
 
     (options, args) = parser.parse_args(argv)
 
-    if options.description == '' or options.description not in ALLOWED_DESCRIPTION:
-        log.warning(f'[InvalidDescription] description "{options.description}" is invalid. allowed options: {ALLOWED_DESCRIPTION}')
-        parser.print_help()
-        exit(0)
+   #if options.description == '' or options.description not in ALLOWED_DESCRIPTION:
+   #    log.warning(f'[InvalidDescription] description "{options.description}" is invalid. allowed options: {ALLOWED_DESCRIPTION}')
+   #    parser.print_help()
+   #    exit(0)
 
     ### decode stations_and_modules
     module_IDs = []
