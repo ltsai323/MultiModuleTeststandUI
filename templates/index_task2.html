@@ -558,6 +558,19 @@ fieldset.env-control legend {
               {% endfor %}
             </datalist>
           </fieldset>
+          <fieldset class="env-control">
+            <legend>Cycle Count</legend>
+
+            <input
+              type="number"
+              step="any"
+              name="cycleCOUNT"
+              id="cycleCOUNT"
+              class="configuration-input"
+              value="{{ currentCONF.get('cycleCOUNT', '') | e }}"
+              placeholder="currently invalid option"
+              required>
+          </fieldset>
         </div>
       </section>
 
