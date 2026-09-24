@@ -549,6 +549,7 @@ def Configure():
 
     current_app.logger.debug(f'[LoadFormFromClient] Form "{vars(form)}"')
 
+    shared_state.ClearConfig()
     for varname in APP_CONFS:
         if varname in INTRINSIC_CONF: continue ## pass some variable not from configuration
 

@@ -138,6 +138,7 @@ except FileNotFoundError as e:
 INTRINSIC_CONF = [ ]
 APP_CONFS = [
         'inspector',
+        'cycleCOUNT',
         'moduleID1L',
         'moduleID1C',
         'moduleID1R',
@@ -360,6 +361,7 @@ def Init():
 alphanumeric_validator = Regexp(r"^[a-zA-Z0-9-]*$", message="Only letters and numbers and dash allowed.")
 class ConfigForm(FlaskForm):
     inspector = StringField("inspector", validators=[InputRequired(message='Inspector Missing')])
+    cycleCOUNT = IntegerField("cycleCOUNT", validators=[InputRequired(message='Fill number of cycles'), NumberRange(min=0,max=1000, message='range from 0 to 1000')])
 
     moduleID1L = StringField("moduleID1L", validators=[alphanumeric_validator])
     moduleID1C = StringField("moduleID1C", validators=[alphanumeric_validator])
@@ -434,6 +436,7 @@ def Configure():
 
     current_app.logger.debug(f'[LoadFormFromClient] Form "{vars(form)}"')
 
+    shared_state.ClearConfig()
     for varname in APP_CONFS:
         if varname in INTRINSIC_CONF: continue ## pass some variable not from configuration
 
