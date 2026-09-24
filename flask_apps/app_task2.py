@@ -112,7 +112,6 @@ def ExecCMD(jobID:str):
 
 
 
-#logger = logging.getLogger('flask.app')
 logger = logging.getLogger('werkzeug')
 
 
@@ -126,8 +125,6 @@ job_stop_flags = {
         'Destroy': threading.Event(),
         }
 
-def bb(val):
-    logger.warn(f'checking point {val}')
 def check_jobmode() -> bool:
     logger.info(f'[CheckJobMode] coming jobmode {JOBMODE} and current status is {shared_state.jobmode}')
     if not shared_state.jobmode:
@@ -210,6 +207,7 @@ def run_command(cmd: str, jobID):
     )
 
     try:
+        terminated = False
         for line in process.stdout:
             logger.info(f'[{jobID}]{line.strip()}')
            #if jobID == 'Run': ## only record run job logs. These messages would be put on webpage
@@ -217,11 +215,12 @@ def run_command(cmd: str, jobID):
            #        latest_running_logs.append(line.strip().rstrip("\r\n"))
                 
 
-            if job_stop_flags[jobID].is_set():
+            if job_stop_flags[jobID].is_set() and not terminated:
                 logger.info(f"[{jobID}][Stop - Terminate]run_command() Stop signal received. Terminating command.")
                 process.terminate()
                 logger.info(f"[{jobID}][Stop - Terminate]run_command() process terminate sent.")
-                break
+                terminated = True
+               #break
         if not job_stop_flags[jobID].is_set():
             logger.info(f'[{jobID}][Run - StatusChangeIdle]run_command() Command "{cmd}" finished')
     except Exception as e:
