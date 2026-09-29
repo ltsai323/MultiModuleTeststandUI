@@ -472,7 +472,6 @@ def get_default_environment_values():
         'prev_modules': previous_related_modules,
         'batch_new': out_new_batchname,
         'batch_old': out_old_batchname,
-        'cycle_count': new_cycle_count,
     }
 
 
