@@ -89,19 +89,31 @@ SELECT
 FROM averages;
 '''
 
-SQL__NEWBATCHNAME_OLDBATCHNAME_CYCLECOUNT_RELATED_MODULEIDS = '''
--- prepare 2 kind of batch_name and cycle_count. Then providing RELATED MODULES FOR FURTHER CHECKING
--- note the returned value provides devs using new_batchname or old_batchname, once new_batchname is decided, you should use cycle_count as 1 or user input instead of using returned cycle_count.
--- return : new_batchname, old_batchname, cycle_count, module_names
+SQL__NEWBATCHNAME_OLDBATCHNAME_RELATED_MODULEIDS_OLDITERATION = '''
+-- prepare 2 kind of batch_name and iteration. Then providing RELATED MODULES FOR FURTHER CHECKING
+-- note the returned value provides devs using new_batchname or old_batchname, once new_batchname is decided, you should use iteration as iteration_1 or user input instead of using returned old_iteration + 1.
+-- return : new_batchname, old_batchname, module_names, old_iteration
 
+WITH iinfo AS (
 SELECT DISTINCT ON (description)
-  to_char( now(), 'YYYYMMDD-HH24MISS' ) AS new_batchname,
+  to_char( now(), 'YYMMDD-HH24MISS' ) AS new_batchname,
   batch_name AS old_batchname,
-  cycle_count,
   module_names
 FROM public.mmts_batch_logging
 WHERE description = 'MMTSjobFinished'
 ORDER BY description, batch_no DESC
+), cc AS (
+SELECT DISTINCT ON (mod_ivtest_no) batch_name, iteration
+FROM public.module_iv_test
+ORDER BY mod_ivtest_no DESC
+LIMIT 1
+)
+SELECT
+ new_batchname,
+ old_batchname,
+ module_names,
+ cc.iteration AS old_iteration
+FROM iinfo LEFT JOIN cc ON iinfo.old_batchname = cc.batch_name
 '''
 
 
@@ -425,32 +437,41 @@ def get_default_environment_values():
             out_humi = float(row[2])
 
 
-            cursor.execute(SQL__NEWBATCHNAME_OLDBATCHNAME_CYCLECOUNT_RELATED_MODULEIDS)
+            cursor.execute(SQL__NEWBATCHNAME_OLDBATCHNAME_RELATED_MODULEIDS_OLDITERATION)
             row = cursor.fetchone()
 
             out_new_batchname = str(row[0])
             out_old_batchname = str(row[1])
-            cycle_count = int(row[2])
+            previous_related_modules = row[2]
+            old_iteration = str(row[3])
+            
 
-            new_cycle_count = cycle_count + 1
-            if new_cycle_count > 4:
-                new_cycle_count = 1
-            out_iteration = f'iteration_{new_cycle_count}'
-            out_max_voltage = 850 if new_cycle_count in [ 3, 4 ] else 500
+            new_iteration = 'iteration_1'
+            new_digit = 1
+            try:
+                if old_iteration:
+                    last_char = old_iteration[-1]
+                    if last_char.isdigit():
+                        new_digit = int(last_char) + 1
+                        if new_digit > 4:
+                            new_digit = 1
+                        new_iteration = f'iteration_{new_digit}'
+            except Exception:
+                logger.warning(f'[DecodeFailure] unable to get last digit from old_iteration "{old_iteration}". Use default iteration.')
+                
+            out_max_voltage = 850 if new_digit in [ 3, 4 ] else 500
 
-            previous_related_modules = row[3]
 
 
     returned_values =  {
         'currentTEMPERATURE': round(out_temp,1),
         'currentHUMIDITY': round(out_humi,1),
         'maxVOLTAGE': out_max_voltage,
-        'iteration': out_iteration,
+        'iteration': new_iteration,
 
         'prev_modules': previous_related_modules,
         'batch_new': out_new_batchname,
         'batch_old': out_old_batchname,
-        'cycle_count': new_cycle_count,
     }
 
 
@@ -471,27 +492,21 @@ def judgeBatchName_fromHGCDB_and_userInput():
 
     batchname_message = ''
     batchname = batch_new
-    keep_checking = True
     ### opt1 : check config *iteration* is the same as expected
-    if keep_checking and ('1' in settings_iteration):
-        keep_checking = False
+    if   ('1' in settings_iteration):
         batchname_message = 'Use new batch_name for a new batch'
-    if keep_checking and ( settings_iteration[-1].isdigit() is False ):
-        keep_checking = False
+    elif ( settings_iteration[-1].isdigit() is False ):
         batchname_message = 'Use new batch_name because of previous test run.'
-    if keep_checking and (settings_iteration != expected_iteration):
-        keep_checking = False
+    elif (settings_iteration != expected_iteration):
         batchname_message = 'Use new batch_name due to user assigned iteration'
         print(f'[check] settings_iteration = "{settings_iteration}" and expected_iteration = "{expected_iteration}"')
     ### from this block, the expected iteraion is the same as setting iteration
-    if keep_checking and (settings_iteration == expected_iteration and expected_modules != settings_modules):
-        keep_checking = False
+    elif (settings_iteration == expected_iteration and expected_modules != settings_modules):
         batchname_message = 'Use new batch_name due to user put new modules'
-    if keep_checking and (settings_iteration == expected_iteration and expected_modules == settings_modules):
-        keep_checking = False
+    elif (settings_iteration == expected_iteration and expected_modules == settings_modules):
         batchname_message = 'Keeps using previous batch_name because all criteria matched'
         batchname = batch_old
-    if keep_checking:
+    else:
         batchname_message = 'Use new batch_name because of unknown reason'
     ### read the setting and decide batch_name. Use new one or old one ENDED
     return batchname, batchname_message
@@ -549,6 +564,7 @@ def Configure():
 
     current_app.logger.debug(f'[LoadFormFromClient] Form "{vars(form)}"')
 
+    shared_state.ClearConfig()
     for varname in APP_CONFS:
         if varname in INTRINSIC_CONF: continue ## pass some variable not from configuration
 

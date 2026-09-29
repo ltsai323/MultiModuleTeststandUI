@@ -558,6 +558,19 @@ fieldset.env-control legend {
               {% endfor %}
             </datalist>
           </fieldset>
+          <fieldset class="env-control">
+            <legend>Number of Cycles</legend>
+
+            <input
+              type="number"
+              step="any"
+              name="cycleCOUNT"
+              id="cycleCOUNT"
+              class="configuration-input"
+              value="{{ currentCONF.get('cycleCOUNT', 5) | e }}"
+              placeholder="currently invalid option"
+              required>
+          </fieldset>
         </div>
       </section>
 
@@ -800,7 +813,7 @@ async function updateLogs() {
       throw new Error("Could not read the log response.");
     }
 
-    const text = data.lines.slice(-5).join("\n");
+    const text = data.lines.slice(-8).join("\n");
     const display = data.lines.length ? text : "Waiting for output...";
     if (output.textContent !== display) output.textContent = display;
     status.textContent = "";

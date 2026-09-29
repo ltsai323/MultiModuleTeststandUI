@@ -42,7 +42,7 @@ ALLOWED_DESCRIPTION = [
 
 def SQLvar_tuple(inINST:tuple) -> str:
     if isinstance(inINST,tuple) or isinstance(inINST,list):
-        return 'ARRAY'+str(inINST)
+        return 'ARRAY'+str(inINST) if len(inINST) != 0 else "'{}'"
     raise IOError(f'[InvalidType] inst has invalid type "{type(inINST)}"')
 def SQLvar_str(inINST:str) -> str:
     ### add quote to string
@@ -96,10 +96,10 @@ class insert_entry:
             if argname not in self.column_names:
                 raise IOError(f'[InvalidArugment] argument "{argname}" is not allowed')
 
-            ### only accept pre-defined description
-            if argname == 'description':
-                if argval not in ALLOWED_DESCRIPTION:
-                    raise IOError(f'[InvalidDesc] description "{argval}" is invalid. Available descs: {ALLOWED_DESCRIPTION}')
+           #### only accept pre-defined description
+           #if argname == 'description':
+           #    if argval not in ALLOWED_DESCRIPTION:
+           #        raise IOError(f'[InvalidDesc] description "{argval}" is invalid. Available descs: {ALLOWED_DESCRIPTION}')
 
             self.column_names[argname] = SQLvarConv(argval)
         self.entry_availability_check()
@@ -179,7 +179,8 @@ def Option_Parser(argv):
 
     parser.add_option('-D', '--description',
             type='str', dest='description', default='',
-            help=f'description for this entry, only "{ALLOWED_DESCRIPTION}" allowed'
+           #help=f'description for this entry, only "{ALLOWED_DESCRIPTION}" allowed'
+            help=f'description for this entry'
     )
     parser.add_option('-I', '--iteration',
             type='str', dest='iteration', default='test',
@@ -205,10 +206,10 @@ def Option_Parser(argv):
 
     (options, args) = parser.parse_args(argv)
 
-    if options.description == '' or options.description not in ALLOWED_DESCRIPTION:
-        log.warning(f'[InvalidDescription] description "{options.description}" is invalid. allowed options: {ALLOWED_DESCRIPTION}')
-        parser.print_help()
-        exit(0)
+   #if options.description == '' or options.description not in ALLOWED_DESCRIPTION:
+   #    log.warning(f'[InvalidDescription] description "{options.description}" is invalid. allowed options: {ALLOWED_DESCRIPTION}')
+   #    parser.print_help()
+   #    exit(0)
 
     ### decode stations_and_modules
     module_IDs = []

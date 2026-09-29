@@ -1,4 +1,5 @@
 import subprocess
+import signal
 import threading
 import logging
 from flask import Flask, render_template, request, jsonify, Blueprint
@@ -6,7 +7,7 @@ from flask import current_app
 from flask_wtf import FlaskForm
 from flask_wtf.csrf import CSRFProtect
 from wtforms.validators import DataRequired, Regexp, InputRequired, NumberRange, AnyOf
-from wtforms import StringField, SubmitField, RadioField, FloatField
+from wtforms import StringField, SubmitField, RadioField, FloatField, IntegerField
 import psycopg2
 import flask_apps.shared_state as shared_state
 from PythonTools.server_status import isCommandRunable
@@ -15,7 +16,9 @@ import re
 import os
 from collections import deque
 
-latest_running_logs = deque(maxlen=5)
+latest_running_batchNO = 0
+latest_batch_name = '99999999-999999' ## by default, show nothing before Configure()
+latest_running_logs = deque(maxlen=8)
 logs_lock = threading.Lock()
 ### HTTP status codes https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status
 
@@ -24,89 +27,69 @@ JOBMODE = 'task2' # IV scan
 dirDAQresult = ''
 DEFAULT_INSPECTORS = []
 
-DBDatabase = None
-DBHostname = None
-DBPassword = None
-DBUsername = None
 
-SQL__CREATE_USED_FUNCTIONS = '''
-CREATE OR REPLACE FUNCTION calculate_relative_humidity(
-    t_c  double precision,
-    td_c double precision
-)
-RETURNS double precision
-LANGUAGE sql
-IMMUTABLE
-STRICT
-AS $$
-    SELECT
-        100.0
-        * exp(17.625 * td_c / (243.04 + td_c))
-        / exp(17.625 * t_c  / (243.04 + t_c));
-$$;
-'''
-def SQLfunc_check(cursor):
-    cursor.execute("""
-        SELECT to_regprocedure(
-            'public.calculate_relative_humidity(double precision,double precision)'
-        )
-    """)
-
-    if cursor.fetchone()[0] is None:
-        cursor.execute(SQL__CREATE_USED_FUNCTIONS)
-        logger.info(f'[CreateUsedSQLfunction] function "{public.calculate_relative_humidity}" decalred in database')
+class HGCDB_access:
+    DBDatabase = None
+    DBHostname = None
+    DBPassword = None
+    DBUsername = None
+    
+    @classmethod
+    def get_connect_args(cls):
+        return {'dbname': cls.DBDatabase, 'host': cls.DBHostname, 'user': cls.DBUsername, 'password': cls.DBPassword }
+    @classmethod
+    def is_invalid(cls):
+        return cls.DBDatabase == None
 
 
-SQL__AVGTMP_AVGDEWP_AVGHUM = '''
--- read temperature and dew point from mmts_sensor_logging then average latest readout then calculate the humidity
--- return : avg_temp, avg_dewpoint, rel_humidity_in_percent
 
+class AccessRunningLog:
+    latest_running_batchNO = 0
+    latest_batch_name = None
+    
+    @classmethod
+    def FetchLatestLogs(cls):
+        output_mesg = []
+        if HGCDB_access.is_invalid() or cls.latest_batch_name is None:
+            return output_mesg
 
-WITH latest_temp_readouts AS (
-    SELECT DISTINCT ON (device_name)
-        device_name,
-        value::double precision AS value
-    FROM public.mmts_sensors_logging
-    WHERE device_name LIKE 'RTD-0%' AND timestamp_utc >= now() - INTERVAL '1 day'
-    ORDER BY device_name, log_no DESC
-),
-latest_dew_point_readouts AS (
-    SELECT DISTINCT ON (device_name)
-        device_name,
-        value::double precision AS value
-    FROM public.mmts_sensors_logging
-    WHERE device_name LIKE 'DMT-0%' AND timestamp_utc >= now() - INTERVAL '1 day'
-    ORDER BY device_name, log_no DESC
-),
-averages AS (
-    SELECT
-        (SELECT AVG(value) FROM latest_temp_readouts) AS avg_temp,
-        (SELECT AVG(value) FROM latest_dew_point_readouts) AS avg_dewpoint
-)
-SELECT
-    COALESCE(avg_temp, 0) AS avg_temp,
-    COALESCE(avg_dewpoint, 0) AS avg_dewpoint,
-        CASE
-        WHEN avg_temp IS NULL OR avg_dewpoint IS NULL THEN 0
-        ELSE calculate_relative_humidity(avg_temp, avg_dewpoint)
-    END AS rel_humidity_in_percent
-FROM averages;
-'''
+        with psycopg2.connect(
+                **HGCDB_access.get_connect_args()
+        ) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(f'''
+WITH latest_logs AS (
+SELECT batch_no, description FROM public.mmts_batch_logging
+WHERE batch_no > {cls.latest_running_batchNO} AND batch_name > '{cls.latest_batch_name}'
+ORDER BY batch_no DESC LIMIT 8
+) SELECT batch_no, description FROM latest_logs ORDER BY batch_no ASC
+                ''' )
+                rows = cursor.fetchall()
 
-SQL__NEWBATCHNAME_OLDBATCHNAME_CYCLECOUNT_RELATED_MODULEIDS = '''
--- prepare 2 kind of batch_name and cycle_count. Then providing RELATED MODULES FOR FURTHER CHECKING
--- note the returned value provides devs using new_batchname or old_batchname, once new_batchname is decided, you should use cycle_count as 1 or user input instead of using returned cycle_count.
--- return : new_batchname, old_batchname, cycle_count, module_names
+                if len(rows) > 0:
+                    AccessRunningLog.latest_running_batchNO = int(rows[-1][0])
+                    output_mesg = [ mesg for _, mesg in rows ]
+        return output_mesg
+    @classmethod
+    def UpdatePreviousBatchName(cls):
+        if HGCDB_access.is_invalid():
+            return output_mesg
 
-SELECT DISTINCT ON (description)
-  to_char( now(), 'YYYYMMDD-HH24MISS' ) AS new_batchname,
-  batch_name AS old_batchname,
-  cycle_count,
-  module_names
-FROM public.mmts_batch_logging
-WHERE description = 'MMTSjobFinished'
-ORDER BY description, batch_no DESC
-'''
+        with psycopg2.connect(
+                **HGCDB_access.get_connect_args()
+        ) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(f'''
+SELECT batch_name FROM public.mmts_batch_logging
+ORDER BY batch_no DESC LIMIT 1
+                ''' )
+                row = cursor.fetchone()
+
+                AccessRunningLog.latest_batch_name = row[0]
+    @classmethod
+    def ClearLogs(cls):
+        cls.latest_batch_name = '99999999-9999'
+        latest_running_logs.clear()
 
 
 
@@ -125,10 +108,11 @@ try:
 
         dirDAQresult = f"{conf['DataLoc']}/daqplots/"
         DEFAULT_INSPECTORS = conf.get('Inspectors', [])
-        DBDatabase = conf.get('DBDatabase', '')
-        DBHostname = conf.get('DBHostname', '')
-        DBPassword = conf.get('DBPassword', '')
-        DBUsername = conf.get('DBUsername', '')
+
+        HGCDB_access.DBDatabase = conf.get('DBDatabase', '')
+        HGCDB_access.DBHostname = conf.get('DBHostname', '')
+        HGCDB_access.DBPassword = conf.get('DBPassword', '')
+        HGCDB_access.DBUsername = conf.get('DBUsername', '')
 
 
 except FileNotFoundError as e:
@@ -138,6 +122,7 @@ except FileNotFoundError as e:
 INTRINSIC_CONF = [ ]
 APP_CONFS = [
         'inspector',
+        'cycleCOUNT',
         'moduleID1L',
         'moduleID1C',
         'moduleID1R',
@@ -168,7 +153,7 @@ APP_CONFS = [
 
 def ExecCMD(jobID:str):
     make_command = 'make -n' if shared_state.debug_mode else 'make'
-   #make_command = 'make -n'
+    make_command = 'make '
 
     confDICT = shared_state.ReadConfigs(APP_CONFS)
     if jobID == 'Init':
@@ -187,7 +172,6 @@ def ExecCMD(jobID:str):
 
 
 
-#logger = logging.getLogger('flask.app')
 logger = logging.getLogger('werkzeug')
 
 
@@ -201,8 +185,6 @@ job_stop_flags = {
         'Destroy': threading.Event(),
         }
 
-def bb(val):
-    logger.warn(f'checking point {val}')
 def check_jobmode() -> bool:
     logger.info(f'[CheckJobMode] coming jobmode {JOBMODE} and current status is {shared_state.jobmode}')
     if not shared_state.jobmode:
@@ -243,6 +225,8 @@ def set_server_status(newSTAT):
         if newSTAT not in [ 'destroying', ]:
             return
 
+    if newSTAT == 'idle' and shared_state.server_status == 'destroying':
+        return
     shared_state.server_status = newSTAT
 
 def server_status_is(checkSTAT):
@@ -281,34 +265,58 @@ def run_command(cmd: str, jobID):
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
-        bufsize=1
+        bufsize=1,
+        start_new_session=True,
+        env={**os.environ, "PYTHONUNBUFFERED": "1"},
     )
 
+    logger.info("[%s] Started pid=%s pgid=%s", jobID, process.pid, process.pid)
+    finished = threading.Event()
+    signal_lock = threading.Lock()
+    interrupted = False
+
+    def interrupt_job():
+        nonlocal interrupted
+        with signal_lock:
+            if interrupted:
+                return
+            interrupted = True
+            try:
+                # Popen created a dedicated session; its PID is the job PGID.
+                os.killpg(process.pid, signal.SIGINT)
+                logger.info("[%s] Sent SIGINT to job pgid=%s", jobID, process.pid)
+            except ProcessLookupError:
+                logger.info("[%s] Job process group has already exited", jobID)
+
+    def watch_stop():
+        # Never depend on output arriving before processing a stop request.
+        while not finished.wait(0.1):
+            if job_stop_flags[jobID].is_set():
+                interrupt_job()
+                return
+
+    stop_watcher = threading.Thread(target=watch_stop, daemon=True)
+    stop_watcher.start()
     try:
         for line in process.stdout:
             logger.info(f'[{jobID}]{line.strip()}')
-            if jobID == 'Run': ## only record run job logs. These messages would be put on webpage
-                with logs_lock:
-                    latest_running_logs.append(line.strip().rstrip("\r\n"))
-                
-
-            if job_stop_flags[jobID].is_set():
-                logger.info(f"[{jobID}][Stop - Terminate]run_command() Stop signal received. Terminating command.")
-                process.terminate()
-                logger.info(f"[{jobID}][Stop - Terminate]run_command() process terminate sent.")
-                break
+        # Continue draining the pipe through cleanup, even after SIGINT.
         if not job_stop_flags[jobID].is_set():
             logger.info(f'[{jobID}][Run - StatusChangeIdle]run_command() Command "{cmd}" finished')
     except Exception as e:
         logger.error(f'[{jobID}][Error - StatusChangeError]run_command() Error while running command: "{cmd}"')
 
-        process.terminate()
+        interrupt_job()
         if server_status_is('stopping'):
             logger.info(f'[{jobID}][Error - StatusChangeError]run_command() error generated sinces "Stop" button clicked')
         else:
             logger.error(f'[{jobID}][Error - ErrorMessage     ] run_command() "{e}"')
     finally:
         process.wait()
+        finished.set()
+        stop_watcher.join()
+        process.stdout.close()
+        logger.info("[%s] Child pid=%s exited with code=%s", jobID, process.pid, process.returncode)
         if process.returncode == 0:
             set_server_status('idle')
             logger.info(f'[{jobID}][finally] run_command() sets system to idle')
@@ -360,6 +368,7 @@ def Init():
 alphanumeric_validator = Regexp(r"^[a-zA-Z0-9-]*$", message="Only letters and numbers and dash allowed.")
 class ConfigForm(FlaskForm):
     inspector = StringField("inspector", validators=[InputRequired(message='Inspector Missing')])
+    cycleCOUNT = IntegerField("cycleCOUNT", validators=[InputRequired(message='Fill number of cycles'), NumberRange(min=0,max=1000, message='range from 0 to 1000')])
 
     moduleID1L = StringField("moduleID1L", validators=[alphanumeric_validator])
     moduleID1C = StringField("moduleID1C", validators=[alphanumeric_validator])
@@ -434,6 +443,7 @@ def Configure():
 
     current_app.logger.debug(f'[LoadFormFromClient] Form "{vars(form)}"')
 
+    shared_state.ClearConfig()
     for varname in APP_CONFS:
         if varname in INTRINSIC_CONF: continue ## pass some variable not from configuration
 
@@ -480,6 +490,9 @@ got {got_n_modules} modules.
     current_app.logger.info(f'[ConfigMessage] "{conf_mesg()}"')
     current_app.logger.info(f'[Configure] Current CONF_DICT: {shared_state.ReadConfigs(APP_CONFS)}')
 
+
+    AccessRunningLog.UpdatePreviousBatchName()
+
     set_server_status('configured')
     # Return JSON with message, status 200 so client JS can alert
     return jsonify({'status': 'success', 'message': conf_mesg()}), 200
@@ -495,8 +508,8 @@ def Run():
     if not check_jobmode(): return '', 204
     current_app.logger.debug(f'[ServerAction][{CMD_ID}] Got an {CMD_ID} command executing')
 
-    job_stop_flags[CMD_ID].clear()
     if isCommandRunable(shared_state.server_status,CMD_ID):
+        job_stop_flags[CMD_ID].clear()
         set_server_status('running')
         current_app.logger.debug(f'[ServerAction][{CMD_ID}] the server status is idle, activate {CMD_ID} command')
 
@@ -529,7 +542,6 @@ def Stop():
     job_stop_flags['Run'].set()
     current_app.logger.debug(f'[ServerAction][Stop] set job_stop_flags as True')
 
-    os.system('pkill make 2>/dev/null') ## force kill all jobs from make commands
     if job_thread['Run'] and job_thread['Run'].is_alive():
         job_thread['Run'].join()
 
@@ -557,12 +569,12 @@ def Stop():
 def Destroy():
     if not check_jobmode(): return '', 204
     CMD_ID = 'Destroy'
+    AccessRunningLog.ClearLogs()
 
     if isCommandRunable(shared_state.server_status,CMD_ID):
         set_server_status('destroying')
         for name, flag in job_stop_flags.items(): flag.set()
         current_app.logger.debug(f'[ServerAction][{CMD_ID}] set ALL job_stop_flags as True')
-        os.system('pkill make 2>/dev/null') ## force kill all jobs from make commands
 
         for name, t in job_thread.items():
             if t and t.is_alive():
@@ -610,15 +622,21 @@ def main():
     return render_template('index_task2.html',
                            DAQres=daq_result_dirs,
                            currentCONF=shared_state.ReadConfigs(APP_CONFS),
-                           ccc='',
                            IVCurveOnline_URL=external_URL,
                            IVCurveOnline_height=external_URL_height,
-                           thermalCYCLE_iterationDICT = thermalcycle_iterations,
                            inspectors=DEFAULT_INSPECTORS,
                            )
 
+
+
+
 @app.route("/logs")
 def get_logs():
+    """Return server-provided defaults for the Environment form."""
+    new_logs = AccessRunningLog.FetchLatestLogs()
+    for log in new_logs:
+        latest_running_logs.append(log)
+
     with logs_lock:
         lines = list(latest_running_logs)
 

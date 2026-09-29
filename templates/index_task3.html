@@ -491,7 +491,7 @@ fieldset.env-control legend {
       <section class="card">
         <div class="environment-header">
           <h2>Environment</h2>
-          <button type="button" id="ReadEnvsBtn" class="small-btn">
+          <button type="button" id="ReadEnvsBtn" class="small-btn" title="Fetch latest DB entry for filling the running condition. Notice that the batch_name would be determined if user keeps the module ID as the same and entered iteration continuously increasing as expected.">
             Fill environment variables from HGCDB
           </button>
         </div>
@@ -885,7 +885,6 @@ function setupReadEnvVarsBtn() {
 
       document.getElementById("currentTEMPERATURE").value = data.currentTEMPERATURE;
       document.getElementById("currentHUMIDITY").value = data.currentHUMIDITY;
-      document.getElementById("cycleCOUNT").value = data.cycleCOUNT;
 
       const voltage = Array.from(
         document.querySelectorAll('input[name="maxVOLTAGE"]')
