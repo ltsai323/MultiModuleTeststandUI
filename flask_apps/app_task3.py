@@ -89,19 +89,31 @@ SELECT
 FROM averages;
 '''
 
-SQL__NEWBATCHNAME_OLDBATCHNAME_CYCLECOUNT_RELATED_MODULEIDS = '''
--- prepare 2 kind of batch_name and cycle_count. Then providing RELATED MODULES FOR FURTHER CHECKING
--- note the returned value provides devs using new_batchname or old_batchname, once new_batchname is decided, you should use cycle_count as 1 or user input instead of using returned cycle_count.
--- return : new_batchname, old_batchname, cycle_count, module_names
+SQL__NEWBATCHNAME_OLDBATCHNAME_RELATED_MODULEIDS_OLDITERATION = '''
+-- prepare 2 kind of batch_name and iteration. Then providing RELATED MODULES FOR FURTHER CHECKING
+-- note the returned value provides devs using new_batchname or old_batchname, once new_batchname is decided, you should use iteration as iteration_1 or user input instead of using returned old_iteration + 1.
+-- return : new_batchname, old_batchname, module_names, old_iteration
 
+WITH iinfo AS (
 SELECT DISTINCT ON (description)
-  to_char( now(), 'YYYYMMDD-HH24MISS' ) AS new_batchname,
+  to_char( now(), 'YYMMDD-HH24MISS' ) AS new_batchname,
   batch_name AS old_batchname,
-  cycle_count,
   module_names
 FROM public.mmts_batch_logging
 WHERE description = 'MMTSjobFinished'
 ORDER BY description, batch_no DESC
+), cc AS (
+SELECT DISTINCT ON (mod_ivtest_no) batch_name, iteration
+FROM public.module_iv_test
+ORDER BY mod_ivtest_no DESC
+LIMIT 1
+)
+SELECT
+ new_batchname,
+ old_batchname,
+ module_names,
+ cc.iteration AS old_iteration
+FROM iinfo LEFT JOIN cc ON iinfo.old_batchname = cc.batch_name
 '''
 
 
@@ -425,27 +437,37 @@ def get_default_environment_values():
             out_humi = float(row[2])
 
 
-            cursor.execute(SQL__NEWBATCHNAME_OLDBATCHNAME_CYCLECOUNT_RELATED_MODULEIDS)
+            cursor.execute(SQL__NEWBATCHNAME_OLDBATCHNAME_RELATED_MODULEIDS_OLDITERATION)
             row = cursor.fetchone()
 
             out_new_batchname = str(row[0])
             out_old_batchname = str(row[1])
-            cycle_count = int(row[2])
+            previous_related_modules = row[2]
+            old_iteration = str(row[3])
+            
 
-            new_cycle_count = cycle_count + 1
-            if new_cycle_count > 4:
-                new_cycle_count = 1
-            out_iteration = f'iteration_{new_cycle_count}'
-            out_max_voltage = 850 if new_cycle_count in [ 3, 4 ] else 500
+            new_iteration = 'iteration_1'
+            new_digit = 1
+            try:
+                if old_iteration:
+                    last_char = old_iteration[-1]
+                    if last_char.isdigit():
+                        new_digit = int(last_char) + 1
+                        if new_digit > 4:
+                            new_digit = 1
+                        new_iteration = f'iteration_{new_digit}'
+            except Exception:
+                logger.warning(f'[DecodeFailure] unable to get last digit from old_iteration "{old_iteration}". Use default iteration.')
+                
+            out_max_voltage = 850 if new_digit in [ 3, 4 ] else 500
 
-            previous_related_modules = row[3]
 
 
     returned_values =  {
         'currentTEMPERATURE': round(out_temp,1),
         'currentHUMIDITY': round(out_humi,1),
         'maxVOLTAGE': out_max_voltage,
-        'iteration': out_iteration,
+        'iteration': new_iteration,
 
         'prev_modules': previous_related_modules,
         'batch_new': out_new_batchname,
