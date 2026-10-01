@@ -54,46 +54,46 @@ This section illustrates the configs used in `data/mmts_configurations.yaml`
 
 ## Global settings (Required)
 
-==[Inspectors](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L24-L29)== provides default options on GUI. It is not a necessary option because you can enter other text in GUI for more flexibility.
+[Inspectors](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L24-L29) provides default options on GUI. It is not a necessary option because you can enter other text in GUI for more flexibility.
 
-==[DB info](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L2-L5)== are required settings for accessing [HGCDB](https://github.com/cmu-hgc-mac/HGC_DB_postgres/tree/main). Please following Sindhu's instruction for building this database and fill the connection information here.
+[DB info](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L2-L5) are required settings for accessing [HGCDB](https://github.com/cmu-hgc-mac/HGC_DB_postgres/tree/main). Please following Sindhu's instruction for building this database and fill the connection information here.
 
 ## Andrew's single module electrics testing GUI
 
-==[DataLoc](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L6)== are used to identify the output location of electric test.
+[DataLoc](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L6) are used to identify the output location of electric test.
 
-==[OtherSettings](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L1-L33)== follows [Andrew's instructions](https://gitlab.cern.ch/acrobert/hgcal-module-testing-gui). Only used in pedestal run.
+[OtherSettings](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L1-L33) follows [Andrew's instructions](https://gitlab.cern.ch/acrobert/hgcal-module-testing-gui). Only used in pedestal run.
 
 ## MMTS channel config
 
-==[Positional config](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L35-L156)== are not suggested for modifications.
+[Positional config](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L35-L156) are not suggested for modifications.
 
-==[dictionary key like **1L**, **1C**](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L37)== maps to moduleIDs position on webpage.
+[dictionary key like **1L**, **1C**](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L37) maps to moduleIDs position on webpage.
 
-==[HVchannel](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L38)== maps to the channel number on Vitek 964i.
+[HVchannel](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L38) maps to the channel number on Vitek 964i.
 
-==[Kria IP, puller port and type](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L39-L41)== were used for multiple pedestal run. Currently it is disabled. No need to modify this.
+[Kria IP, puller port and type](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L39-L41) were used for multiple pedestal run. Currently it is disabled. No need to modify this.
 
 ## MMTS package path
 
-==[These paths](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L157-L159)== could be modified if you installed requried package in computer. By default, you don't need to modify it when you follow the installation instructions.
+[These paths](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L157-L159) could be modified if you installed requried package in computer. By default, you don't need to modify it when you follow the installation instructions.
 
 ## MMTS hardwares (Required)
 
-==[These RS232 configs](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L161-L169)== sets the RS232 address of keithley and vitek 964i. The configs follows [Andrew's instructions](https://gitlab.cern.ch/acrobert/hgcal-module-testing-gui/-/blob/master/README.md?plain=1#L35-46).
+[These RS232 configs](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L161-L169) sets the RS232 address of keithley and vitek 964i. The configs follows [Andrew's instructions](https://gitlab.cern.ch/acrobert/hgcal-module-testing-gui/-/blob/master/README.md?plain=1#L35-46).
 
 ## external URL (Required)
 
-==[These URL](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L170-L176)== should be addressed to a grafana dashboard, these dashboard would be linked to MMTS GUI for environmental monitoring. If you didn't build any of grafana dashboard, here is the [suggested example](https://github.com/ltsai323/MultiModuleTeststandUI-dashboards).
+[These URL](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L170-L176) should be addressed to a grafana dashboard, these dashboard would be linked to MMTS GUI for environmental monitoring. If you didn't build any of grafana dashboard, here is the [suggested example](https://github.com/ltsai323/MultiModuleTeststandUI-dashboards).
 
 
 ## deprecated options
 
-==[inspector](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L177)== is deprecated. it will be removed in furture.
+[inspector](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L177) is deprecated. it will be removed in furture.
 
 ## thermalcycle iterations
 
-==[These illustrations](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L179-L186)== are displayed on drop down menu in Single IV test panel. This config shows the filled iteration (key) in hgcdb and displayed text (value) on MMTS GUI. I suggest you to modify the illustration for better understanding.
+[These illustrations](https://github.com/ltsai323/MultiModuleTeststandUI/blob/main/data/mmts_configurations.yaml.default#L179-L186) are displayed on drop down menu in Single IV test panel. This config shows the filled iteration (key) in hgcdb and displayed text (value) on MMTS GUI. I suggest you to modify the illustration for better understanding.
 
 
 
