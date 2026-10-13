@@ -6,9 +6,24 @@ check_defined = \
 __check_defined = \
     $(if $(value $1),, \
     $(error Undefined $1$(if $2, ($2))))
+BASE_DIR :=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 
 
+_create_file_or_update_file:
+	$(call check_defined,newFILE)
+	$(call check_defined,templateFILE)
+	@if [ ! -f "$(newFILE)" ]; then \
+		printf '%s' "[CreateNewConfigs] You need to edit '$(newFILE)'. (Press Enter to continue...)"; \
+		read dummy; \
+		cp $(templateFILE) $(newFILE); \
+		vim $(newFILE); \
+	fi
+	@if [ "$$(stat -c %Y `realpath $(newFILE)`)" -lt "$$(stat -c %Y `realpath $(templateFILE)`)" ]; then \
+		printf '%s' "[GotNewConfigsVersion] You need to check difference of '$(templateFILE)' for new version. (Press Enter to continue...)"; \
+		read dummy; \
+		vimdiff $(templateFILE) $(newFILE); \
+	fi
 
 
 ### task1 pedestal run
@@ -23,21 +38,50 @@ task1a_setup_andrewGUI: ## clone Andrew's GUI and edit configuration. If you ins
 
 
 task1b_create_daqclient_service: ## edit daq-client.service for using port 6002~6025. And put them into ~/.config/systemd/user/. Use `systemctl --user restart daq-client-port6001.service` to active service
-	echo "creating daq-client-port*.service in ~/.config/systemd/user/"
-	sh scripts/setup.create_daqclients.sh
+	if [ ! -f "~/.config/systemd/user/daq-client-port6001.service" ]; then \
+	  echo "[DAQClientServiceExisted] Skip this."; \
+	else \
+		echo "creating daq-client-port*.service in ~/.config/systemd/user/"; \
+		sh scripts/setup.create_daqclients.sh; \
+	fi
 
 
 task1c_create_output_folder: ## make directory from hgcal-module-testing-gui/configuration.yaml
 	echo "mkdir directory conf['DataLoc']/daqplots/ according to $${$(andrewGUI_default_path)/configuration.yaml}"; \
 	data_loc=`python3 scripts/access_yaml_var.py $(andrewGUI_default_path)/configuration.yaml DataLoc`; echo "Loaded DataLoc = $${data_loc}"; \
-	read -p "create sub directory "$${data_loc}" from conf['DataLoc'] in $(andrewGUI_default_path)/configuration.yaml. (Press Enter to continue...)"; \
-	mkdir -p $${data_loc}/daqplots ; cp $(nodataPLOT) $${data_loc}/
+	if [ ! -d "$${data_loc}/daqplots" ]; then \
+		read -p "create sub directory "$${data_loc}" from conf['DataLoc'] in $(andrewGUI_default_path)/configuration.yaml. (Press Enter to continue...)"; \
+		mkdir -p $${data_loc}/daqplots ; cp $(nodataPLOT) $${data_loc}/ ; \
+	fi
+
+
+mmts_thermal_auto_path = external_packages/mmts-thermal-auto
+task2a_clone_mmts_thermal_auto: ## clone mmts-thermal-auto
+	if [ -d "$(mmts_thermal_auto_path)" ]; then \
+		echo "[ExistedPackage] mmts-thermal-auto found"; \
+	else \
+		echo "[Install mmts-thermal-auto] initialize 'mmts-thermal-auto' from github "; \
+		git clone https://github.com/Xingfu23/mmts-thermal-auto.git $(mmts_thermal_auto_path); \
+	fi
+
+task2b_install_uv_virtualenv: ## install uv
+	which uv || (curl -LsSf https://astral.sh/uv/install.sh | sh)
+
+task2c_uvenv_mmts_thermal_auto:
+	cd $(mmts_thermal_auto_path)/almalinux_core/mmts-mqtt-bridge/ && uv sync
+
+task2d_edit_config:
+	$(MAKE) -f $(MAKEFILE_LIST) _create_file_or_update_file newFILE=$(mmts_thermal_auto_path)/almalinux_core/mmts-mqtt-bridge/gateway_setting.yml templateFILE=$(mmts_thermal_auto_path)/almalinux_core/mmts-mqtt-bridge/gateway_setting_example.yml
+
+
+
+
 
 
 ### task3 IV scan setup
 youyingSCRIPT_default_path = external_packages/HGCal_Module_Production_Toolkit
 task3a_clone_IVscan_codes: ## clone IV scan packages
-	if [ -d "external_packages/HGCal_Module_Production_Toolkit" ]; then \
+	if [ -d "$(youyingSCRIPT_default_path)" ]; then \
 		echo "[ExistedPackage] youying's package (IV scan) found"; \
 	else \
 		echo "[Install youying's package (IV scan)] initialize 'HGCal_Module_Production_Toolkit' from youying "; \
@@ -47,18 +91,10 @@ task3a_clone_IVscan_codes: ## clone IV scan packages
 nodataPLOT := data/daqplots.nodata.png
 
 
+
+
 task3b_create_mmts_configuration: ## create mmts_configuration
-	if [ ! -f "data/mmts_configurations.yaml" ]; then \
-		printf '%s' "[CreateNewConfigs] You need to edit 'data/mmts_configurations.yaml'. (Press Enter to continue...)"; \
-		read dummy; \
-		cp data/mmts_configurations.yaml.default data/mmts_configurations.yaml; \
-		vim data/mmts_configurations.yaml; \
-	fi
-	@if [ "$$(stat -c %Y data/mmts_configurations.yaml)" -lt "$$(stat -c %Y data/mmts_configurations.yaml.default)" ]; then \
-		printf '%s' "[GotNewConfigsVersion] You need to edit 'data/mmts_configurations.yaml' for new version. (Press Enter to continue...)"; \
-		read dummy; \
-		vimdiff data/mmts_configurations.yaml.default data/mmts_configurations.yaml; \
-	fi
+	$(MAKE) -f $(MAKEFILE_LIST) _create_file_or_update_file newFILE=data/mmts_configurations.yaml templateFILE=data/mmts_configurations.yaml.default
 	@if [ ! -f "$(andrewGUI_default_path)/configuration.yaml" ]; then \
 		ln -s "$$PWD/data/mmts_configurations.yaml" "$(andrewGUI_default_path)/configuration.yaml"; \
 	fi
@@ -73,35 +109,41 @@ task3b_create_mmts_configuration: ## create mmts_configuration
 
 ### flask related setup
 flaska_open_firewall_port5001: ## open firewall port 5001 such you can access server http://127.0.0.1:5001 
-	echo requesting permission for opening firewall port 5001
-	sudo sh scripts/open_firewall.sh
+	echo '[OpenPort5001] requesting permission for opening firewall port 5001'
+	sh scripts/open_firewall.sh
 
 
 ### use python virtual environment to activate this app
 flaskb_make_virtual_environment: ## create python virtual envuironment
-	python3 -m venv .venv ; \
-	source .venv/bin/activate ; \
-	pip3 install   flask   flask-socketio   requests   sphinx   paramiko   pyvisa   pyvisa-py   pyyaml   flask-wtf   myst-parser   flask-cors   pymeasure   psycopg psycopg2-binary ; \
-	sudo yum install firewalld
+	if [ -d ".venv" ]; then \
+		echo "[FlaskVenvExisted] Skip creating flask virtual environment"; \
+	else \
+		python3 -m venv .venv ; \
+		source .venv/bin/activate ; \
+		pip3 install   flask   flask-socketio   requests   sphinx   paramiko   pyvisa   pyvisa-py   pyyaml   flask-wtf   myst-parser   flask-cors   pymeasure   psycopg psycopg2-binary ; \
+		sudo yum install firewalld; \
+	fi
 	#sudo apt update
 	#sudo apt install python3-psycopg python3-psycopg-c
 	#sudo apt update && sudo apt install firewalld
 
 flaskc_make_app_as_system_service: ## make this MultimoduleTeststandUI as a system service
-	chmod +x ./app.py
-### edit path in `data/MMTS.service` and `data/MMTS.service.variables`
-	python3 data/MMTS.service.createscript.py
-	sudo cp data/MMTS.service /etc/systemd/system/
-	sudo systemctl daemon-reload
-	sudo systemctl start MMTS.service ### activate service
-	sudo systemctl enable MMTS.service ### activate service
-#sudo systemctl stop  MMTS.service ### stop service
-#journalctl -u MMTS.service  ### check error messages
+	if [ -f "/etc/systemd/system/MMTS.service" ]; then \
+		echo "[MMTSserviceExisted] Skip creating MMTS.service"; \
+	else \
+		chmod +x ./app.py ; \
+		python3 data/MMTS.service.createscript.py; \
+		sudo cp data/MMTS.service /etc/systemd/system/; \
+		sudo systemctl daemon-reload; \
+		sudo systemctl start MMTS.service; \
+		sudo systemctl enable MMTS.service; \
+	fi
 
 all: \
 	task1a_setup_andrewGUI task1b_create_daqclient_service task1c_create_output_folder \
 	task3a_clone_IVscan_codes task3b_create_mmts_configuration \
-	flaska_modify_teststand_IP_address flaskb_open_firewall_port5001 flaskc_make_virtual_environment flaskd_make_app_as_system_service
+	task2a_clone_mmts_thermal_auto task2b_install_uv_virtualenv task2c_uvenv_mmts_thermal_auto \
+	flaska_open_firewall_port5001 flaskb_make_virtual_environment flaskc_make_app_as_system_service
 
 updateGUI:
 	@echo [Update MMTS GUI] git pull

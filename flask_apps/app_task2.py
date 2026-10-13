@@ -368,7 +368,7 @@ def Init():
 alphanumeric_validator = Regexp(r"^[a-zA-Z0-9-]*$", message="Only letters and numbers and dash allowed.")
 class ConfigForm(FlaskForm):
     inspector = StringField("inspector", validators=[InputRequired(message='Inspector Missing')])
-    cycleCOUNT = IntegerField("cycleCOUNT", validators=[InputRequired(message='Fill number of cycles'), NumberRange(min=0,max=1000, message='range from 0 to 1000')])
+    cycleCOUNT = IntegerField("cycleCOUNT", validators=[InputRequired(message='Fill number of cycles'), NumberRange(min=2,max=1000, message='range from 2 to 1000')])
 
     moduleID1L = StringField("moduleID1L", validators=[alphanumeric_validator])
     moduleID1C = StringField("moduleID1C", validators=[alphanumeric_validator])

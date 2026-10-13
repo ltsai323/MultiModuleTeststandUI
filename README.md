@@ -35,15 +35,8 @@ make -f makefile_initialize_this_GUI help
 
 ```
 ### all initialize actions
-make -f makefile_initialize_this_GUI task1a_setup_andrewGUI  andrewGUI_install_path=/some/path/to/hgcal-module-testing-gui
-make -f makefile_initialize_this_GUI task1b_create_daqclient_service
-make -f makefile_initialize_this_GUI task1c_create_output_folder
-make -f makefile_initialize_this_GUI task3a_clone_IVscan_codes
-make -f makefile_initialize_this_GUI task3b_create_mmts_configuration
-### Need to modify **data/mmts_configurations.yaml**, this yaml config file will be used in flask DAQ and `external_packages/HGCal_Module_Production_Toolkit` for Andrew's GUI.
-make -f makefile_initialize_this_GUI flaska_open_firewall_port5001
-make -f makefile_initialize_this_GUI flaskb_make_virtual_environment
-make -f makefile_initialize_this_GUI flaskc_make_app_as_system_service
+make -f makefile_initialize_this_GUI updateGUI
+make -f makefile_initialize_this_GUI all ## initial through all options
 ```
 
 
@@ -103,6 +96,7 @@ This section illustrates the configs used in `data/mmts_configurations.yaml`
 
 ```
 make -f makefile_initialize_this_GUI updateGUI
+make -f makefile_initialize_this_GUI all
 systemctl restart MMTS.service
 ```
 
