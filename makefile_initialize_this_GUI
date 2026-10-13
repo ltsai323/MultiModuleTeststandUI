@@ -142,7 +142,7 @@ flaskc_make_app_as_system_service: ## make this MultimoduleTeststandUI as a syst
 all: \
 	task1a_setup_andrewGUI task1b_create_daqclient_service task1c_create_output_folder \
 	task3a_clone_IVscan_codes task3b_create_mmts_configuration \
-	task2a_clone_mmts_thermal_auto task2b_install_uv_virtualenv task2c_uvenv_mmts_thermal_auto \
+	task2a_clone_mmts_thermal_auto task2b_install_uv_virtualenv task2c_uvenv_mmts_thermal_auto task2d_edit_config \
 	flaska_open_firewall_port5001 flaskb_make_virtual_environment flaskc_make_app_as_system_service
 
 updateGUI:
