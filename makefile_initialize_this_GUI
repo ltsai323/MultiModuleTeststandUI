@@ -151,6 +151,10 @@ updateGUI:
 	make -f $(MAKEFILE_LIST) task3b_create_mmts_configuration
 	@echo [Update external_packages] cd external_packages/HGCal_Module_Production_Toolkit && git pull
 	cd external_packages/HGCal_Module_Production_Toolkit && git pull
+	@echo [Update external_packages] cd external_packages/HGCal_Module_Production_Toolkit && git pull
+	cd external_packages/HGCal_Module_Production_Toolkit && git pull
+	@echo [Update external_packages] cd external_packages/mmts_thermal_auto_path && git pull
+	cd $(mmts_thermal_auto_path)/ && git pull && cd almalinux_core/mmts-mqtt-bridge/ && uv sync
 
 clean_logs:
 	/bin/rm -f logs/*
