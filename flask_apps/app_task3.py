@@ -63,7 +63,9 @@ WITH latest_temp_readouts AS (
         device_name,
         value::double precision AS value
     FROM public.mmts_sensors_logging
-    WHERE device_name LIKE 'RTD-0%' AND timestamp_utc >= now() - INTERVAL '1 day'
+    WHERE device_name LIKE 'RTD-0%'
+      AND device_name NOT IN ('RTD-08')   -- faulty: tracks temperature but with a large offset 
+      AND timestamp_utc >= now() - INTERVAL '1 day'
     ORDER BY device_name, log_no DESC
 ),
 latest_dew_point_readouts AS (
@@ -71,22 +73,34 @@ latest_dew_point_readouts AS (
         device_name,
         value::double precision AS value
     FROM public.mmts_sensors_logging
-    WHERE device_name LIKE 'DMT-0%' AND timestamp_utc >= now() - INTERVAL '1 day'
+    WHERE device_name LIKE 'DMT-0%' 
+      AND device_name NOT IN ('DMT-01')   -- faulty: reads a non-physical ~+38C
+      AND timestamp_utc >= now() - INTERVAL '1 day'
     ORDER BY device_name, log_no DESC
 ),
 averages AS (
     SELECT
-        (SELECT AVG(value) FROM latest_temp_readouts) AS avg_temp,
-        (SELECT AVG(value) FROM latest_dew_point_readouts) AS avg_dewpoint
+        (SELECT AVG(value) FROM latest_temp_readouts
+         WHERE value <> 0 AND value > -50)        AS avg_temp,
+        (SELECT AVG(value) FROM latest_dew_point_readouts
+         WHERE value > -100 AND value < 30)       AS avg_dewpoint,
+        (SELECT count(*) FROM latest_temp_readouts
+         WHERE value <> 0 AND value > -50)        AS n_temp,
+        (SELECT count(*) FROM latest_dew_point_readouts
+         WHERE value > -100 AND value < 30)       AS n_dew
 )
 SELECT
-    COALESCE(avg_temp, 0) AS avg_temp,
-    COALESCE(avg_dewpoint, 0) AS avg_dewpoint,
+    avg_temp,
+    avg_dewpoint,
         CASE
-        WHEN avg_temp IS NULL OR avg_dewpoint IS NULL THEN 0
-        ELSE calculate_relative_humidity(avg_temp, avg_dewpoint)
-    END AS rel_humidity_in_percent
-FROM averages;
+        WHEN avg_temp IS NULL OR avg_dewpoint IS NULL THEN NULL
+        ELSE 100.0                                                                
+             * exp(17.625 * avg_dewpoint / (243.04 + avg_dewpoint))
+             / exp(17.625 * avg_temp     / (243.04 + avg_temp))
+    END AS rel_humidity_in_percent,
+    n_temp,                                                                       
+    n_dew
+FROM averages;  
 '''
 
 SQL__NEWBATCHNAME_OLDBATCHNAME_RELATED_MODULEIDS_OLDITERATION = '''
@@ -94,26 +108,32 @@ SQL__NEWBATCHNAME_OLDBATCHNAME_RELATED_MODULEIDS_OLDITERATION = '''
 -- note the returned value provides devs using new_batchname or old_batchname, once new_batchname is decided, you should use iteration as iteration_1 or user input instead of using returned old_iteration + 1.
 -- return : new_batchname, old_batchname, module_names, old_iteration
 
-WITH iinfo AS (
-SELECT DISTINCT ON (description)
-  to_char( now(), 'YYMMDD-HH24MISS' ) AS new_batchname,
-  batch_name AS old_batchname,
-  module_names
-FROM public.mmts_batch_logging
-WHERE description = 'MMTSjobFinished'
-ORDER BY description, batch_no DESC
-), cc AS (
-SELECT DISTINCT ON (mod_ivtest_no) batch_name, iteration
+WITH latest AS (
+SELECT batch_name
 FROM public.module_iv_test
+WHERE batch_name IS NOT NULL
 ORDER BY mod_ivtest_no DESC
 LIMIT 1
+), latest_iter AS (
+SELECT m.batch_name, m.iteration
+FROM public.module_iv_test m
+JOIN latest l on m.batch_name = l.batch_name
+WHERE m.iteration IS NOT NULL
+ORDER BY m.mod_ivtest_no DESC
+LIMIT 1
+), mods AS (
+SELECT m.batch_name, array_agg(DISTINCT m.module_name) as module_names
+FROM public.module_iv_test m
+JOIN latest_iter li
+  ON m.batch_name = li.batch_name AND m.iteration = li.iteration
+GROUP BY m.batch_name
 )
 SELECT
- new_batchname,
- old_batchname,
- module_names,
- cc.iteration AS old_iteration
-FROM iinfo LEFT JOIN cc ON iinfo.old_batchname = cc.batch_name
+  to_char( now(), 'YYYYMMDD-HH24MISS' ) AS new_batchname,
+  li.batch_name AS old_batchname,
+  mods.module_names,
+  li.iteration AS old_iteration
+FROM latest_iter li LEFT JOIN mods ON mods.batch_name = li.batch_name
 '''
 
 
@@ -380,6 +400,7 @@ class ConfigForm(FlaskForm):
         InputRequired(message='Humidity Missing')]
                                      )
     maxVOLTAGE = StringField("maxVOLTAGE", validators=[InputRequired(message='Max Voltage Missing')])
+    forcedBATCH = StringField("forcedBATCH")
     cycleCOUNT = IntegerField("cycleCOUNT", validators=[InputRequired(message='Fill number of cycles'), NumberRange(min=0,max=1000, message='range from 0 to 1000')])
     iteration  = StringField("iteration"   , validators=[InputRequired(message='select an iteration'),
                                                        AnyOf(values=thermalcycle_iterations.keys(), message=f"Invalid choice, available choices '{thermalcycle_iterations.keys()}'")
@@ -424,7 +445,7 @@ def get_default_environment_values():
     ) as connection:
         with connection.cursor() as cursor:
             ### check used function existed or not
-            SQLfunc_check(cursor)
+            # SQLfunc_check(cursor)
 
 
             cursor.execute(SQL__AVGTMP_AVGDEWP_AVGHUM)
@@ -440,10 +461,17 @@ def get_default_environment_values():
             cursor.execute(SQL__NEWBATCHNAME_OLDBATCHNAME_RELATED_MODULEIDS_OLDITERATION)
             row = cursor.fetchone()
 
-            out_new_batchname = str(row[0])
-            out_old_batchname = str(row[1])
-            previous_related_modules = row[2]
-            old_iteration = str(row[3])
+            if not row:
+                cursor.execute("SELECT to_char( now(), 'YYYYMMDD-HH24MISS' )")
+                out_new_batchname = str(cursor.fetchone()[0])
+                out_old_batchname = ''
+                previous_related_modules = []
+                old_iteration =  ''
+            else:
+                out_new_batchname = str(row[0])
+                out_old_batchname = str(row[1]) if row[1] else ''
+                previous_related_modules = row[2] or []
+                old_iteration = str(row[3]) if row[3] else ''
             
 
             new_iteration = 'iteration_1'
@@ -459,7 +487,7 @@ def get_default_environment_values():
             except Exception:
                 logger.warning(f'[DecodeFailure] unable to get last digit from old_iteration "{old_iteration}". Use default iteration.')
                 
-            out_max_voltage = 850 if new_digit in [ 3, 4 ] else 500
+            out_max_voltage = 850 if new_digit == 3 else 500
 
 
 
@@ -478,7 +506,28 @@ def get_default_environment_values():
     current_app.logger.info(f'[ReadEnvVariables] {returned_values}')
     return returned_values
 
-def judgeBatchName_fromHGCDB_and_userInput():
+def batchname_exists_in_hgcdb(batchname: str) -> bool:
+    with psycopg2.connect(dbname=DBDatabase, host=DBHostname, user=DBUsername, password=DBPassword) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute('Select 1 from public.module_iv_test WHERE batch_name = %s LIMIT 1', (batchname,))
+            return cursor.fetchone() is not None
+
+def judgeBatchName_fromHGCDB_and_userInput(forced_batchname: str = ''):
+    forced_batchname = (forced_batchname or '').strip()
+    if forced_batchname:
+        try:
+            known = batchname_exists_in_hgcdb(forced_batchname)
+        except Exception:
+            logger.warning('[ForcedBatch] could not verify batch_name against hgcdb')
+            known = None
+        if known is True:
+            note = 'matches an existing batch, scans will be appended to it'
+        elif known is False:
+            note = 'Warning: no scan exists under this batch_name yet -- check for a typo'
+        else:
+            note = 'could not be verified against the database'
+        return forced_batchname, f'Forced batch_name "{forced_batchname}" ({note}).'
+
     ### read the setting and decide batch_name. Use new one or old one
     env_values = get_default_environment_values()
     batch_old = env_values['batch_old']
@@ -489,21 +538,23 @@ def judgeBatchName_fromHGCDB_and_userInput():
 
     settings_modules = shared_state.GetAllModuleIDs('list') 
     settings_iteration = shared_state.ReadConfig('iteration')
+    expected_module_set = set(m for m in (expected_modules or []) if m)
+    settings_module_set = set(m for m in (settings_modules or []) if m)
 
     batchname_message = ''
     batchname = batch_new
     ### opt1 : check config *iteration* is the same as expected
     if   ('1' in settings_iteration):
         batchname_message = 'Use new batch_name for a new batch'
-    elif ( settings_iteration[-1].isdigit() is False ):
+    elif ( not settings_iteration or settings_iteration[-1].isdigit() is False ):
         batchname_message = 'Use new batch_name because of previous test run.'
     elif (settings_iteration != expected_iteration):
         batchname_message = 'Use new batch_name due to user assigned iteration'
         print(f'[check] settings_iteration = "{settings_iteration}" and expected_iteration = "{expected_iteration}"')
     ### from this block, the expected iteraion is the same as setting iteration
-    elif (settings_iteration == expected_iteration and expected_modules != settings_modules):
+    elif (settings_iteration == expected_iteration and expected_module_set != settings_module_set):
         batchname_message = 'Use new batch_name due to user put new modules'
-    elif (settings_iteration == expected_iteration and expected_modules == settings_modules):
+    elif (settings_iteration == expected_iteration and expected_module_set == settings_module_set):
         batchname_message = 'Keeps using previous batch_name because all criteria matched'
         batchname = batch_old
     else:
@@ -511,6 +562,10 @@ def judgeBatchName_fromHGCDB_and_userInput():
     ### read the setting and decide batch_name. Use new one or old one ENDED
     return batchname, batchname_message
 
+@app.route('/api/get_config', methods=['GET'])
+def get_config_api():
+    '''Read-only: current module ID -> serial mapping, for external automation (e.g. the chiller script).'''
+    return jsonify(shared_state.GetAllModuleIDs('dict'))
 
 @app.route('/getenvvars', methods=['GET'])
 def getenvvars():
@@ -577,7 +632,8 @@ def Configure():
         shared_state.SetConfig(varname, clean_val)
 
     ### fill_batchname
-    batchname, batchname_message = judgeBatchName_fromHGCDB_and_userInput()
+    batchname, batchname_message = judgeBatchName_fromHGCDB_and_userInput(
+            forced_batchname=form.forcedBATCH.data)
     shared_state.SetConfig('batch', batchname)
     
 

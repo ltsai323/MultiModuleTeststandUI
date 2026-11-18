@@ -326,8 +326,45 @@ def mainfunc():
         port     = 5432
     ) as connection:
         with connection.cursor() as cursor:
-            insert_query = sql_entry.sql_query()
-            cursor.execute(insert_query)
+            ### CMU: one row per batch. Find the batch's FIRST row and update it in
+            ### place, deliberately NOT touching log_timestamp / timestamp_utc --
+            ### Grafana plots them, and the module_info trigger derives
+            ### thermal_cycle_date from the first row's log_timestamp.
+            cursor.execute(
+                'SELECT batch_no, module_names, station_names FROM public.mmts_batch_logging '
+                'WHERE batch_name = %s ORDER BY batch_no ASC LIMIT 1',
+                (options.batch,))
+            row = cursor.fetchone()
+
+            if row is None:
+                cursor.execute(sql_entry.sql_query())
+            else:
+                batch_no, existing_modules, existing_stations = row
+                cc = str(options.cycle_count).strip()
+                cycle_count = int(cc) if cc.isdigit() else None
+                modules  = [m for m in (options.module_IDs    or []) if m]
+                stations = [s for s in (options.station_names or []) if s]
+
+                existing_pairs = list(zip(existing_modules or [], existing_stations or []))
+                new_pairs = list(zip(modules, stations))
+
+                seen = set()
+                merged_modules, merged_stations = [], []
+                for module, station in existing_pairs + new_pairs:
+                    if (module, station) in seen:
+                        continue
+                    seen.add((module, station))
+                    merged_modules.append(module)
+                    merged_stations.append(station)
+
+                cursor.execute(
+                    'UPDATE public.mmts_batch_logging SET '
+                    '  description   = %s, '
+                    '  cycle_count   = COALESCE(%s, cycle_count), '
+                    "  module_names  = %s, "
+                    "  station_names = %s "
+                    'WHERE batch_no = %s',
+                    (options.description, cycle_count, merged_modules, merged_stations, batch_no))
             connection.commit()
 
 
