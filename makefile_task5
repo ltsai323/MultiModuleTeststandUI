@@ -1,0 +1,127 @@
+##### Pedestal run, HV optional: the Multi Pedestal Run at several bias voltages
+##### per slot (useHV=1), one slot at a time. useHV=0 never touches the Keithley.
+##### In a GUI lane (MMTS_LANE set) Stop and Destroy reach only that lane. See README.task5.md.
+SHELL := /bin/bash
+BASE_DIR :=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+T4 := scripts/task4_mmts_pedestal
+T5 := scripts/task5_hv
+
+### the form's inputs; every one of them has a working default
+runTAG      ?= testrun
+nRUNS       ?= 5
+label       ?= ped
+skipPROBE   ?= 1
+bringupTRIES ?= 4
+moduleIDA   ?=
+moduleIDB   ?=
+moduleIDC   ?=
+powerBoardA ?= auto
+powerBoardB ?= auto
+powerBoardC ?= auto
+### task5's own: the bias points, how the HV reaches a slot, and the leakage gate
+biasVOLTS   ?= 1,10,50,100,300,300,500
+hvSwitch    ?= none
+maxLEAK     ?= 1000
+### pedestal trimming at 300 V before the bias list
+trimPEDS    ?= 1
+### 0 = no leakage check (serial and parallel); only the compliance protects
+leakCHECK   ?= 1
+useHV       ?= 1
+### room conditions, saved with the archived hexmaps
+temperature ?=
+humidity    ?=
+### kept for parity with task1 and a later database upload; the bench ignores them
+moduleSTATUS ?= Bolted
+inspector    ?=
+
+argline1 = \n\t\t[moduleIDA][moduleIDB][moduleIDC]
+argline2 = \n\t\t[nRUNS=5][label=ped][skipPROBE=1][runTAG=run1][bringupTRIES=4]
+argline3 = \n\t\t[powerBoardA=auto|fitted|none][powerBoardB=..][powerBoardC=..]
+argline4 = \n\t\t[biasVOLTS=1,10,50,100,300,300,500][hvSwitch=none|vitrek][maxLEAK=1000][useHV=1|0][trimPEDS=1|0][leakCHECK=1|0]
+
+RUN_ENV = \
+	moduleIDA='$(moduleIDA)'     moduleIDB='$(moduleIDB)'     moduleIDC='$(moduleIDC)' \
+	powerBoardA='$(powerBoardA)' powerBoardB='$(powerBoardB)' powerBoardC='$(powerBoardC)' \
+	nRUNS='$(nRUNS)' label='$(label)' skipPROBE='$(skipPROBE)' runTAG='$(runTAG)' \
+	bringupTRIES='$(bringupTRIES)' \
+	biasVOLTS='$(biasVOLTS)' hvSwitch='$(hvSwitch)' maxLEAK='$(maxLEAK)' useHV='$(useHV)' trimPEDS='$(trimPEDS)' leakCHECK='$(leakCHECK)' \
+	temperature='$(temperature)' humidity='$(humidity)'
+
+### HV_OFF: ramp to 0, output off, through the client host like every HV call.
+### With useHV=0 never open the Keithley: the single-module stand may be using it.
+ifeq ($(useHV),0)
+HV_OFF   = @echo "[HV off for this run: the Keithley is not touched]"
+HV_CLEAR = @true
+HV_STATE = HV was off.
+PREFLIGHT = bash $(T4)/preflight.sh
+else
+### hv_guard.sh: off (and every Vitrek relay open) only when no OTHER lane holds
+### the Keithley, so one lane's Stop never discharges another lane's module.
+HV_OFF   = hvSwitch='$(hvSwitch)' bash $(T5)/hv_guard.sh
+HV_CLEAR = @true
+HV_STATE = The Keithley is at 0 V, output off, unless another lane holds it.
+PREFLIGHT = bash $(T5)/preflight_hv.sh
+endif
+
+### What Stop kills on the client: a lane ends only its own session (recorded by
+### on_client.sh) and the python aimed at its Kria; no lane uses by-name patterns.
+ifeq ($(MMTS_LANE),)
+CLIENT_KILL = 'pkill -f "[r]un_slots_hv.sh"; pkill -f "[r]un_slot.sh"; \
+	pkill -f "[p]ed_run.sh"; pkill -f "[d]elay_scan.sh"; \
+	pkill -f "[p]edestal_run.py.*$$KRIA_IP"; pkill -f "[d]elay_scan.py.*$$KRIA_IP"; \
+	pkill -f "[u]p_verified.sh"; true'
+else
+CLIENT_KILL = 'f="$$MMTS_ROOT/gui_lanes/$$MMTS_LANE.sid"; s=$$(cat "$$f" 2>/dev/null); \
+	case "$$s" in ""|*[!0-9]*|0|1) echo "lane $$MMTS_LANE: no session running on the client";; \
+	*) pkill -s "$$s"; echo "lane $$MMTS_LANE: ended client session $$s";; esac; rm -f "$$f"; \
+	pkill -f "[p]edestal_run.py.*$$KRIA_IP"; pkill -f "[d]elay_scan.py.*$$KRIA_IP"; true'
+endif
+
+initialize: ## read-only bench checks, plus the Keithley answers when useHV=1
+	$(PREFLIGHT)
+
+run: ## every filled slot, one at a time, at every bias point [moduleIDA=..][biasVOLTS=..]
+	$(RUN_ENV) bash $(T5)/run_slots_hv.sh
+
+### HV comes down FIRST (never leave 500 V on a cable someone may move); payload
+### power LAST (a GPIO, works with the I2C master wedged). Brackets keep pkill -f
+### off its own command. pedestal_run.py/delay_scan.py are shared with the SINGLE-module
+### stand: match WITH $KRIA_IP. Never daq-client: there it is the other stand's service.
+stop: ## ramp the HV down, then stop the run on the GUI host, the client host and the Kria
+	-$(HV_OFF)
+	-$(HV_CLEAR)
+	-bash $(T4)/on_client.sh $(CLIENT_KILL)
+	-bash $(T4)/on_client.sh 'ssh -o BatchMode=yes -o ConnectTimeout=10 "$${KRIA_USER:-daq}@$$KRIA_IP" \
+		"pkill -f \"[u]p_verified.sh\"; pkill -f \"[m]mts_bringup.sh\"; sudo kconn_pwr off; true"'
+	-$(HV_OFF)
+	@echo "[STOPPED] payload power is off, so the module is unloaded. $(HV_STATE)"
+	@echo "          A failed or interrupted run needs daq-server and the puller"
+	@echo "          restarted; the next bring-up does both."
+
+destroy: stop ## stop everything, drop the HV and drop payload power on the Kria
+	-bash $(T4)/on_client.sh 'ssh -o BatchMode=yes -o ConnectTimeout=10 "$${KRIA_USER:-daq}@$$KRIA_IP" \
+		"pkill -f \"[z]mq_server\"; sudo kconn_pwr off; true"'
+	@### a lane's own puller goes too; 6001 is left alone, it may be the other stand's
+	-[ -z "$(MMTS_LANE)" ] || bash $(T4)/on_client.sh 'p=$${PULLER_PORT:-6001}; \
+		[ "$$p" = 6001 ] || pkill -f "[d]aq-client -p $$p\$$"; true'
+	-$(HV_OFF)
+
+### The default pause directory, the same one hv_switch.py and app_task5.py use.
+### Set MMTS_PAUSE_DIR for both of them, or neither.
+continue: ## release the "move the HV cable" pause
+	mkdir -p "$${MMTS_PAUSE_DIR:-logs}" && touch "$${MMTS_PAUSE_DIR:-logs}/hv_continue"
+
+hvoff: ## ramp the Keithley to 0 and turn the output off, nothing else (no lock check)
+	bash $(T5)/hv.sh off
+
+test: ## one HD Full in slot A, one pedestal, 0 V and 300 V
+	$(MAKE) -f $(MAKEFILE_LIST) run moduleIDA=320MHF2TDSB0193 nRUNS=1 \
+		biasVOLTS=0,300 runTAG=testrun
+
+IN_ARGS = $(argline1)$(argline2)$(argline3)$(argline4)
+
+help:  ## Display this help
+	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make \033[32m<command>\033[0m $(IN_ARGS)\n\nCommands:\n\033[36m\033[0m\n"} /^[0-9a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+.DEFAULT_GOAL := help
+.PHONY: initialize run stop destroy continue hvoff test help

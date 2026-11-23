@@ -57,6 +57,24 @@
           <span>Single IVscan</span>
         </label>
 
+        <label class="job-option">
+          <input
+            type="radio"
+            name="option"
+            value="task4"
+            {% if selected_option == 'task4' %}checked{% endif %}>
+          <span>Multi Pedestal Run (one Kria, old page)</span>
+        </label>
+
+        <label class="job-option">
+          <input
+            type="radio"
+            name="option"
+            value="task5"
+            {% if selected_option == 'task5' %}checked{% endif %}>
+          <span>Pedestal Run, up to 8 Krias, HV optional</span>
+        </label>
+
         <button type="button" class="primary-btn" onclick="confirmSelection()">
           Confirm
         </button>
@@ -69,7 +87,7 @@
         id="myIframe"
         class="task-frame"
         onload="adjustIframeHeight()"
-        src="{% if selected_option == 'task1' %}{{ url_for('app_task1.main') }}{% elif selected_option == 'task2' %}{{ url_for('app_task2.main') }}{% elif selected_option == 'task3' %}{{ url_for('app_task3.main') }}{% endif %}">
+        src="{% if selected_option == 'task1' %}{{ url_for('app_task1.main') }}{% elif selected_option == 'task2' %}{{ url_for('app_task2.main') }}{% elif selected_option == 'task3' %}{{ url_for('app_task3.main') }}{% elif selected_option == 'task4' %}{{ url_for('app_task4.main') }}{% elif selected_option == 'task5' %}{{ url_for('app_task5.main') }}{% endif %}">
       </iframe>
     </section>
   </main>
@@ -78,7 +96,9 @@
     const TASK_URLS = {
       task1: "{{ url_for('app_task1.main') }}",
       task2: "{{ url_for('app_task2.main') }}",
-      task3: "{{ url_for('app_task3.main') }}"
+      task3: "{{ url_for('app_task3.main') }}",
+      task4: "{{ url_for('app_task4.main') }}",
+      task5: "{{ url_for('app_task5.main') }}"
     };
 
     function getCsrfToken() {

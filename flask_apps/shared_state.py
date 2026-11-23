@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import threading
+from collections import deque
 
 
 jobmode = ''
@@ -71,3 +72,13 @@ def GetAllModuleIDs(dictORlist:str):
         return [ moduleIDs[pos] for pos in modulepos if moduleIDs[pos] ]
     raise NotImplementedError(f'[InvalidOption] option dictORlist "{dictORlist}" is invalid.')
 
+### task4 (Multi Pedestal Run): per-slot progress from run_slot.sh banners, and the log tail.
+task4_slots = {} ## {'A': {'state':..,'led':..,'stage':..}, ...}
+task4_log = deque(maxlen=300)
+
+### task5 (HV Pedestal Scan): the same plus bias point and leakage; kept separate from task4.
+task5_slots = {} ## {'A': {'state':..,'led':..,'stage':..,'bv':..,'leak_uA':..}, ...}
+task5_log = deque(maxlen=300)
+
+### the Kria task4/task5 drive; '' = the client host's own KRIA_IP. Set at Initialize.
+kria_ip = ''

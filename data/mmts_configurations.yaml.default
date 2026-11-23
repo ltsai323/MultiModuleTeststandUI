@@ -154,6 +154,51 @@ MMTS_channel_config:
     IP: Kria IP Address like 192.168.50.172
     pullerPORT: 6025
     type: Kria
+  ### The three multiplexer-board slots (task4, task5).
+  ### HVchannel is read only when MMTS_bench.hv.switch is vitrek.
+  A:
+    HVchannel: 25
+    IP: Kria IP Address like 192.168.50.172
+    pullerPORT: 6001
+    type: Kria
+  B:
+    HVchannel: 26
+    IP: Kria IP Address like 192.168.50.172
+    pullerPORT: 6001
+    type: Kria
+  C:
+    HVchannel: 27
+    IP: Kria IP Address like 192.168.50.172
+    pullerPORT: 6001
+    type: Kria
+### Multi Pedestal Run (task4): client_host runs daq-client, unpack, ROOT and the $MM scripts.
+### Leave it empty when the GUI host is the client host, else set user@host for ssh.
+MMTS_bench:
+  client_host: ''
+  client_shell: 'bash -lc'   ### login shell, so the client's ~/.bashrc exports apply
+  ### Kria dropdown on the task4/task5 pages; the first is preselected.
+  ### The page also takes a typed address. Empty list = the client host's own KRIA_IP.
+  krias: []
+  slots: [A, B, C]
+  default_nruns: 5
+  default_label: ped
+  skip_probe: 1              ### 1 = use the shipped link map; a 12+12 probe costs a bring-up
+  bringup_tries: 4
+
+  ### HV pedestal scan (task5). The instrument itself is under MMTS_hardwares.
+  hv:
+    ### none = one HV cable, moved by hand when the job pauses and asks.
+    ### vitrek = three cables into a Vitrek 964i, relay per slot.
+    switch: none
+    settle_s: 5                            ### after reaching a voltage, before reading
+    leak_check_volts: [0, 1, 10, 100, 300] ### the single-module stand's own list
+    ### A short detector, not a sensor-quality check: the open bench draws uA at 0 V.
+    leak_abort_uA: 1000                    ### above this below 500 V, skip the slot
+    pause_timeout_s: 3600                  ### how long "move the cable" waits for Continue
+    ### Where the client host finds the single-module stand GUI, whose driver hv.py imports.
+    gui_dir: /home/hep/hgcal-module-testing-gui
+    python: python3
+
 MMTS_package_path:
   HGCal_Module_Production_Toolkit: external_packages/HGCal_Module_Production_Toolkit
   hgcal_module_testing_gui: external_packages/hgcal-module-testing-gui
@@ -163,6 +208,9 @@ MMTS_hardwares:
     Resource: 'ASRL/dev/serial/by-id/usb-FTDI_USB_Serial_Converter_FT9GC67T-if00-port0::INSTR' ## or 'ASRL/dev/ttyUSB1::INSTR'
     Terminal: Rear ## available options: "Front" or "Rear"
     WiresPolarization: Forward ## available options: "Forward" or "Reverse"
+    ### Do not lower: the 2410 rejects a measure range above the compliance range.
+    CurrentLimit: 5.25e-3   ### compliance in A; must stay ABOVE leak_abort_uA
+    MaxVoltage: 800         ### instrument ceiling; board_params caps LD at 600
     BaudRate: 9600 ## this should be matched with keithley
   vitek:
     DiscoveryMode: by-id

@@ -100,6 +100,8 @@ logging.config.dictConfig(LOGGING_CONFIG)
 import flask_apps.app_task1    as app_task1
 import flask_apps.app_task2    as app_task2
 import flask_apps.app_task3    as app_task3
+import flask_apps.app_task4    as app_task4
+import flask_apps.app_task5    as app_task5
 import flask_apps.app_daqsummary as app_daqsummary
 
 app = Flask(__name__)
@@ -108,6 +110,8 @@ csrf = CSRFProtect(app)
 app.register_blueprint(app_task1.app, url_prefix='/task1')
 app.register_blueprint(app_task2.app, url_prefix='/task2')
 app.register_blueprint(app_task3.app, url_prefix='/task3')
+app.register_blueprint(app_task4.app, url_prefix='/task4')
+app.register_blueprint(app_task5.app, url_prefix='/task5')
 #app.register_blueprint(app_plot3.app)
 
 app.register_blueprint(app_daqsummary.app)
@@ -191,5 +195,6 @@ if __name__ == "__main__":
         app.run(debug=True, port=5005, host='0.0.0.0') ### for test product only use http://127.0.0.1:5005 access this port. http://192.168.o.x:5005 cannot access this port
     else:
         shared_state.debug_mode = False
-        app.run(debug=True, port=5001, host='0.0.0.0') ### for stable product so you can use http://192.16..o.x:5001 access it
+        ### MMTS_PORT lets a second instance run beside the production one on 5001
+        app.run(debug=True, port=int(os.environ.get('MMTS_PORT', 5001)), host='0.0.0.0') ### for stable product so you can use http://192.16..o.x:5001 access it
 

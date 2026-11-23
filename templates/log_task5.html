@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ lane.label }} log</title>
+  <style>
+    body { margin: 0; background: #0b1020; color: #e7ecff; font-family: Helvetica, sans-serif; }
+    header { position: sticky; top: 0; background: #121a33; padding: 8px 14px; display: flex;
+             gap: 14px; align-items: center; flex-wrap: wrap; border-bottom: 1px solid #2a3a7a; }
+    header b { font-size: 1.15em; }
+    select, input, button { font-size: 0.95em; }
+    .path { font-family: ui-monospace, Menlo, monospace; font-size: 0.85em; color: #9fb0ff; }
+    #state { margin-left: auto; color: #9fb0ff; font-size: 0.9em; }
+    pre { margin: 0; padding: 12px 14px; font-family: ui-monospace, Menlo, monospace; font-size: 12px;
+          white-space: pre-wrap; word-break: break-all; }
+    mark { background: #d29800; color: #000; }
+  </style>
+</head>
+<body>
+  <header>
+    <b>{{ lane.label }}</b> <span>{{ lane.kria }}</span>
+    <select id="pick" onchange="location.search='?f='+encodeURIComponent(this.value)">
+      {% for f in files %}<option value="{{f}}" {% if f == pick %}selected{% endif %}>{{f}}</option>{% endfor %}
+    </select>
+    <input id="find" placeholder="highlight text" size="18"/>
+    <label><input type="checkbox" id="follow" checked/> follow</label>
+    <a href="log.txt?f={{ pick|urlencode }}" target="_blank" style="color:#9fb0ff">raw</a>
+    <span class="path">{{ path }}</span>
+    <span id="state"></span>
+  </header>
+  <pre id="body">{% if not pick %}No log for {{ lane.label }} yet.{% endif %}</pre>
+  <script>
+    const PICK = {{ pick|tojson }};
+    let last = '';
+    const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    function paint() {
+      const q = document.getElementById('find').value;
+      let h = esc(last);
+      if (q) h = h.split(esc(q)).join('<mark>' + esc(q) + '</mark>');
+      document.getElementById('body').innerHTML = h;
+    }
+    async function load() {
+      if (!PICK) return;
+      let r;
+      try { r = await fetch('log.txt?f=' + encodeURIComponent(PICK)); } catch (e) { return; }
+      if (!r.ok) return;
+      const text = await r.text();
+      const busy = r.headers.get('X-Lane-Busy') === '1';
+      document.getElementById('state').innerText = text.split('\n').length + ' lines'
+        + (busy ? ' · lane busy, refreshing' : '');
+      if (text !== last) {
+        last = text; paint();
+        if (document.getElementById('follow').checked) window.scrollTo(0, document.body.scrollHeight);
+      }
+      if (busy) setTimeout(load, 2000);
+    }
+    document.getElementById('find').addEventListener('input', paint);
+    load();
+  </script>
+</body>
+</html>

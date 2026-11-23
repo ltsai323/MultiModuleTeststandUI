@@ -1,0 +1,149 @@
+### MMTS configuration for UCSB, mirrored from klong's data/mmts_configurations.yaml.
+### For a dev instance, not klong itself; differences from klong are marked [DEV].
+
+
+### the same as Andrew's module testing GUI
+DBDatabase: hgcdb
+DBHostname: 'gut.physics.ucsb.edu'
+DBPassword: 'hgcdb password'
+DBUsername: teststand_user
+### [DEV] klong uses /home/hep/MMTSdata/; the app writes daqplots/ and run results here.
+DataLoc: /Users/blackmac/Docs/1Research/MMTS/MultiModuleTeststandUI/DAQresults/
+DebugMode: true
+DefaultFontSize: '15'
+DefaultMaxVoltage: 500
+FPGAHostname:
+### [DEV] klong has the typo 'kria4.physcis.ucsb.edu', which does not resolve.
+- kria4.physics.ucsb.edu
+FPGAType:
+- Kria
+HVDiscoveryMode: by-resource
+#HVResource: ASRL/dev/ttyUSB1::INSTR  ### commented out on klong too
+HVTerminal: Rear
+HVWiresPolarization: Reverse
+HasHVSwitch: true
+HasLocalDB: true
+HasRHSensor: false
+HexactrlSWBranch: ROCv3
+### klong's Andrew config spells this cgreico, and that spelling reaches the database.
+Inspectors:
+- cgrieco
+MACSerial: SB
+PCKeyLoc: /home/hgcal/.ssh/id_rsa   ### klong only has /home/hep/.ssh/id_rsa
+Station: Multi-Module Test Stand
+TestingPCOpSys: Alma9
+
+
+### MMTS specified options
+### 24 tray positions, 8 rows x (L,C,R), loaded top to bottom.
+### IP is empty, as on klong, so a stray Run reaches no hardware.
+MMTS_channel_config:
+  1L: {HVchannel:  1, IP: '', pullerPORT: 6002, type: Kria}
+  1C: {HVchannel:  2, IP: '', pullerPORT: 6003, type: Kria}
+  1R: {HVchannel:  3, IP: '', pullerPORT: 6004, type: Kria}
+  2L: {HVchannel:  4, IP: '', pullerPORT: 6005, type: Kria}
+  2C: {HVchannel:  5, IP: '', pullerPORT: 6006, type: Kria}
+  2R: {HVchannel:  6, IP: '', pullerPORT: 6007, type: Kria}
+  3L: {HVchannel:  7, IP: '', pullerPORT: 6008, type: Kria}
+  3C: {HVchannel:  8, IP: '', pullerPORT: 6009, type: Kria}
+  3R: {HVchannel:  9, IP: '', pullerPORT: 6010, type: Kria}
+  4L: {HVchannel: 10, IP: '', pullerPORT: 6011, type: Kria}
+  4C: {HVchannel: 11, IP: '', pullerPORT: 6012, type: Kria}
+  4R: {HVchannel: 12, IP: '', pullerPORT: 6013, type: Kria}
+  5L: {HVchannel: 13, IP: '', pullerPORT: 6014, type: Kria}
+  5C: {HVchannel: 14, IP: '', pullerPORT: 6015, type: Kria}
+  5R: {HVchannel: 15, IP: '', pullerPORT: 6016, type: Kria}
+  6L: {HVchannel: 16, IP: '', pullerPORT: 6017, type: Kria}
+  6C: {HVchannel: 17, IP: '', pullerPORT: 6018, type: Kria}
+  6R: {HVchannel: 18, IP: '', pullerPORT: 6019, type: Kria}
+  7L: {HVchannel: 19, IP: '', pullerPORT: 6020, type: Kria}
+  7C: {HVchannel: 20, IP: '', pullerPORT: 6021, type: Kria}
+  7R: {HVchannel: 21, IP: '', pullerPORT: 6022, type: Kria}
+  8L: {HVchannel: 22, IP: '', pullerPORT: 6023, type: Kria}
+  8C: {HVchannel: 23, IP: '', pullerPORT: 6024, type: Kria}
+  8R: {HVchannel: 24, IP: '', pullerPORT: 6025, type: Kria}
+  ### The three multiplexer-board slots (task4, task5).
+  ### HVchannel is read only when MMTS_bench.hv.switch is vitrek.
+  A: {HVchannel: 25, IP: '', pullerPORT: 6001, type: Kria}
+  B: {HVchannel: 26, IP: '', pullerPORT: 6001, type: Kria}
+  C: {HVchannel: 27, IP: '', pullerPORT: 6001, type: Kria}
+
+### Multi Pedestal Run (task4): client_host runs daq-client, unpack, ROOT and the $MM scripts.
+### [DEV] the client host is klong; on klong itself set client_host: '' and keep client_shell.
+MMTS_bench:
+  client_host: 'hep@klong.physics.ucsb.edu'
+  client_shell: '/data/hep/mmts/bin/mmts_shell'   ### loads /data/hep/mmts/env.sh, not ~/.bashrc
+  ### Kria dropdown on the task4/task5 pages; the first is preselected.
+  krias:
+    - kria11.physics.ucsb.edu
+  slots: [A, B, C]
+  default_nruns: 5
+  default_label: ped
+  skip_probe: 1              ### 1 = use the shipped link map; a 12+12 probe costs a bring-up
+  bringup_tries: 4
+
+  ### HV pedestal scan (task5). The instrument itself is under MMTS_hardwares.
+  hv:
+    ### none = one HV cable, moved by hand when the job pauses and asks.
+    ### vitrek = three cables into a Vitrek 964i, relay per slot.
+    switch: none
+    settle_s: 5                            ### after reaching a voltage, before reading
+    leak_check_volts: [0, 1, 10, 100, 300] ### the single-module stand's own list
+    ### A short detector, not a sensor-quality check: the open bench draws uA at 0 V.
+    leak_abort_uA: 1000                    ### above this below 500 V, skip the slot
+    pause_timeout_s: 3600                  ### how long "move the cable" waits for Continue
+    ### Where the client host finds the single-module stand GUI, whose driver hv.py imports.
+    gui_dir: /home/hep/hgcal-module-testing-gui
+    python: python3
+
+MMTS_package_path:
+  HGCal_Module_Production_Toolkit: external_packages/HGCal_Module_Production_Toolkit
+  hgcal_module_testing_gui: external_packages/hgcal-module-testing-gui
+
+MMTS_hardwares:
+  keithley:
+    DiscoveryMode: by-resource
+    Resource: 'ASRL/dev/ttyUSB0::INSTR'
+    Terminal: Front
+    WiresPolarization: Reverse   ### the same as the single-module stand: +BV
+    ### Do not lower: the 2410 rejects a measure range above the compliance range.
+    CurrentLimit: 5.25e-3   ### compliance in A; must stay ABOVE leak_abort_uA
+    MaxVoltage: 800         ### instrument ceiling; board_params caps LD at 600
+  vitek:
+    DiscoveryMode: by-resource
+    Resource: 'ASRL/dev/ttyUSB1::INSTR'
+    BaudRate: 9600
+    ReadTermination: "\n"
+    WriteTermination: "\n"
+
+### [DEV] klong uses 127.0.0.1:3000; the hostname lets the panels load anywhere at UCSB.
+externalURL:
+  EnvMonitor:
+    URL: "http://klong.physics.ucsb.edu:3000/d/adqczw2/thermal-box-environment-for-mmts?orgId=1&from=now-15m&to=now&timezone=browser&refresh=1m"
+    height: 350px
+  IVCurveOnline:
+    URL: 'http://klong.physics.ucsb.edu:3000/d/iv_curve-plot-forMMTS/iv-curve-plot-for-mmts?orgId=1&theme=light&from=now-24h&to=now&timezone=browser&var-N_MODULE_SHOW=24&var-bp_material=$__all&var-resolution=$__all&var-roc_version=$__all&var-geometry=$__all&var-sen_thickness=$__all&var-iv_grade=$__all&kiosk'
+    height: 650px
+
+inspector: UCSB MMTS
+
+path_HGCal_Module_Production_Toolkit: external_packages/HGCal_Module_Production_Toolkit
+path_hgcal_module_testing_gui: external_packages/hgcal-module-testing-gui
+
+thermalcycle_stagenames:
+  ### key would be put into database. (with postfix date). The recorded value would be "stage1-20260308' YYYYMMDD
+  ### and value would be shown on MMTS GUI option. Feel free to modify the descriptions.
+  stage1: 'stage1: room condition, high humidity'
+  stage2: 'stage2: first low temperature'
+  stage3: 'stage3: last low temperature'
+  stage4: 'stage4: final IV, normal temperature'
+  test: 'testing here'
+
+thermalcycle_iterations:
+  ### key would be put into hgcapi - mmts_iv_test - iteration
+  ### value as a description would be shown on MMTS GUI option.
+  iteration_1: 'iteration_1: room condition, high humidity'
+  iteration_2: 'iteration_2: first low temperature'
+  iteration_3: 'iteration_3: last low temperature'
+  iteration_4: 'iteration_4: final IV, normal temperature'
+  test: 'testing here'

@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Pedestal Run</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+  <meta name="csrf_token" content="{{ csrf_token() }}"/>
+</head>
+<body>
+  <section class="flex-sect">
+    <div class="container-width">
+      <div class="flex-title">Pedestal run</div>
+      <div class="subtitle">Up to {{ lanes|length }} Krias in parallel; slots A, B, C one at a time inside each Kria. HV is optional{% if parallel %}: the same slot on every Kria is biased together{% endif %}.</div>
+
+      <!-- Shared by every Kria; read at each Kria's Configure. -->
+      <form id="shared" onsubmit="return false">
+        <div class="cards">
+          <div class="gjs-row">
+            <label>inspector
+              <input list="inspectors" name="inspector" id="inspectorInput">
+            </label>
+            <datalist id="inspectors">
+              {% for inspector in inspectors %}<option value="{{inspector}}">{% endfor %}
+            </datalist>
+          </div>
+          <!-- every module on this bench is bolted -->
+          <input type="hidden" name="moduleSTATUS" value="Bolted"/>
+        </div>
+
+        <div class="gjs-row optrow">
+          <label>pedestals per slot (per bias point with HV)
+            <input type="number" name="nRUNS" id="nRUNS" min="1" max="20" value="{{ defaults.nRUNS }}"/>
+          </label>
+          <label>bring-up tries
+            <input type="number" name="bringupTRIES" id="bringupTRIES" min="1" max="40" value="{{ defaults.bringupTRIES }}"/>
+          </label>
+          <label>label
+            <input type="text" name="label" id="label" value="{{ defaults.label }}"/>
+          </label>
+          <label title="A 12+12 probe poisons the bring-up it runs in, and it rewrites the link map every Kria reads, so it runs with no other Kria running.">
+            <input type="checkbox" id="skipPROBE" {% if defaults.skipPROBE == '1' %}checked{% endif %}/>
+            skip the 12+12 probe
+          </label>
+          <!-- Saved with every run (run record, hexmaps/conditions.jsonl) and kept across reloads. -->
+          <label title="Room or box temperature at the start of the run">temperature (&deg;C)
+            <input type="number" name="temperature" id="temperature" min="-40" max="80" step="0.1" value="{{ defaults.temperature }}"/>
+          </label>
+          <label title="Relative humidity at the start of the run">humidity (%RH)
+            <input type="number" name="humidity" id="humidity" min="0" max="100" step="0.1" value="{{ defaults.humidity }}"/>
+          </label>
+          {% if cond_at %}<span class="condat" title="when these values were last entered">entered {{ cond_at }}</span>{% endif %}
+        </div>
+
+        <!-- Used only by the Kria whose "HV" box is ticked. -->
+        <div class="gjs-row optrow" id="hvrow">
+          <span class="hvtag">HV settings</span>
+          <label title="Volts, comma separated. Each one gets its own run directory and its own gallery entry.">bias points (V)
+            <input type="text" name="biasVOLTS" id="biasVOLTS" value="{{ defaults.biasVOLTS }}"/>
+          </label>
+          <label title="The Keithley is the single-module stand's. Never run HV on both stands at once.">HV routing
+            <select name="hvSwitch" id="hvSwitch">
+              <option value="none" {% if defaults.hvSwitch == 'none' %}selected{% endif %}>cable (pauses)</option>
+              <option value="vitrek" {% if defaults.hvSwitch == 'vitrek' %}selected{% endif %}>Vitrek relay</option>
+            </select>
+          </label>
+          <label title="As on the single-module stand: at 300 V one untrimmed reference pedestal, then pedestal_scan, vrefnoinv_scan and vrefinv_scan; every bias point then runs on the trimmed config (label ..._trimmed). About 3 minutes per module.">
+            <input type="checkbox" id="trimPEDS" {% if defaults.trimPEDS == '1' %}checked{% endif %}/>
+            trim pedestals at 300 V
+          </label>
+          <label title="Untick to skip the leakage check (serial and parallel). A short or a leaky sensor is then not caught before the bias scan: only the Keithley compliance protects the modules.">
+            <input type="checkbox" id="leakCHECK" {% if defaults.leakCHECK == '1' %}checked{% endif %}/>
+            leakage check
+          </label>
+          <span id="hvNote" class="hvnote">no Kria has HV on</span>
+          <span id="keithley" class="hvnote"></span>
+        </div>
+      </form>
+
+      <div class="gjs-row" id="allrow">
+        <span class="alltag">All Krias:</span>
+        <button type="button" class="ctrlbtn" onclick="allDo('init')">Initialize all</button>
+        <button type="button" class="ctrlbtn" onclick="allDo('submit')">Configure all</button>
+        <button type="button" class="ctrlbtn" onclick="allDo('run')">Run all</button>
+        <button type="button" class="ctrlbtn" onclick="allDo('stop')">Stop all</button>
+        <button type="button" class="ctrlbtn" onclick="allDo('clear')"
+                title="Stop, power the modules off, HV off, and reset every Kria so it can be initialized again">Clear all</button>
+        <span id="aggStatus"></span>
+      </div>
+
+      <datalist id="kriaList">
+        {% for host, name in krias %}<option value="{{host}}" label="{{name}}">{% endfor %}
+      </datalist>
+
+      <div class="lanes">
+        {% for L in lanes %}
+        <div class="lane" id="{{L.name}}-card">
+          <div class="lanehead">
+            <span class="lanename">{{L.label}}</span>
+            <input list="kriaList" id="{{L.name}}-kria" class="kriaInput" value="{{ L.kria }}" placeholder="Kria address"/>
+            <span class="kname" id="{{L.name}}-kname"></span>
+            <span class="port" title="this Kria's daq-client port on the client host">:{{L.port}}</span>
+            <label class="hvbox" title="Apply HV on this Kria. One Kria at a time: there is one Keithley.">
+              <input type="checkbox" id="{{L.name}}-hv" onchange="hvPicked('{{L.name}}')"/> HV
+            </label>
+            <span class="lanestatus" id="{{L.name}}-status">startup</span>
+          </div>
+          <div class="lanebtns">
+            <button type="button" id="{{L.name}}-init" onclick="laneDo('{{L.name}}','init')">Initialize</button>
+            <button type="button" id="{{L.name}}-submit" disabled onclick="laneDo('{{L.name}}','submit')">Configure</button>
+            <button type="button" id="{{L.name}}-run" disabled onclick="laneDo('{{L.name}}','run')">Run</button>
+            <button type="button" id="{{L.name}}-stop" disabled onclick="laneDo('{{L.name}}','stop')">Stop</button>
+            <button type="button" id="{{L.name}}-clear" disabled onclick="laneDo('{{L.name}}','clear')"
+                    title="Stop, power the modules off, HV off, and reset this Kria so it can be initialized again">Clear</button>
+          </div>
+
+          <!-- The cable pause: the job is blocked until Continue; HV is 0 V, output off. -->
+          <div class="pausePane" id="{{L.name}}-pause" hidden>
+            <div class="pauseText" id="{{L.name}}-pauseText"></div>
+            <button type="button" onclick="laneDo('{{L.name}}','continue')">Continue</button>
+          </div>
+
+          {% for S in slots %}
+          <div class="slotrow">
+            <span class="led" id="{{L.name}}-LED{{S}}"></span>
+            <label class="slotname">{{S}}</label>
+            <input type="text" placeholder="Module ID (empty = skip)" class="modid lanein"
+                   id="{{L.name}}-moduleID{{S}}" data-lane="{{L.name}}"/>
+            <select class="lanein" id="{{L.name}}-powerBoard{{S}}" data-lane="{{L.name}}" title="power distribution board">
+              <option value="auto" selected>auto</option>
+              <option value="fitted">fitted</option>
+              <option value="none">none</option>
+            </select>
+            <span class="leak" id="{{L.name}}-leak{{S}}"></span>
+          </div>
+          <div class="slotinfo">
+            <span class="boardhint" id="{{L.name}}-hint{{S}}"></span>
+            <span class="stage" id="{{L.name}}-stage{{S}}"></span>
+          </div>
+          {% endfor %}
+
+          <!-- Same terminal pane as the single-Kria page; open by default. -->
+          <details class="lanelog" open>
+            <summary>terminal output
+              <a class="fulllog" href="/task5/lane/{{L.name}}/log" target="_blank" id="{{L.name}}-loglink"
+                 title="the whole log of this lane's last command, in its own tab">full log &#8599;</a></summary>
+            <pre id="{{L.name}}-log">(the run log appears here)</pre>
+          </details>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="gjs-row" id="resultrow">
+        <div>Latest DAQ result: <span id="daqNewOpt"></span></div>
+        <select id="daqSelect">
+          <option value="">-- Select a run (K&lt;n&gt;_&lt;date&gt;_&lt;time&gt;) --</option>
+          {% for daqres in DAQres %}<option value="{{daqres}}">{{daqres}}</option>{% endfor %}
+        </select>
+        <button type="button" id="daqSummaryBtn">Check</button>
+      </div>
+      <div class="gjs-row" id="modrow">
+        <div>Module vs HV:</div>
+        <input list="moduleList" id="galSerial" placeholder="module ID" class="modid"/>
+        <datalist id="moduleList"></datalist>
+        <button type="button" onclick="openModule()">Gallery</button>
+        <span class="hvnote">every pedestal and noise hexmap of one module, one column per bias voltage</span>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const SLOTS = {{ slots|tojson }};
+    const LANES = {{ lanes|map(attribute='name')|list|tojson }};
+    const SHELF = L => String(L).replace(/^[KS](\d)$/, 'Shelf $1');   // display only, ids stay S8
+    const HVMAX = {{ hvmax }};
+    const KRIA_NAMES = Object.fromEntries({{ krias|tojson }});   // host -> name
+    const RELAY = {{ channels|tojson }};                          // "3C" -> Vitrek relay 8
+    const ROW = {{ lanes|map(attribute='hv_row')|list|tojson }};  // lane i -> tray row
+    const POS = { A: 'L', B: 'C', C: 'R' };
+    const relayOf = (L, S) => RELAY[ROW[LANES.indexOf(L)] + POS[S]];
+    let LAST = {};   // last snapshot per lane
+
+    const $ = id => document.getElementById(id);
+    const csrf = () => document.querySelector('meta[name="csrf_token"]').getAttribute('content');
+
+    // [init, configure, run, stop, clear, lane inputs]: true means disabled
+    const TABLE = {
+      startup:      [false, true,  true,  true,  true,  false],
+      initializing: [true,  true,  true,  true,  false, false],
+      initialized:  [true,  false, true,  true,  false, false],
+      configured:   [true,  false, false, true,  false, false],
+      running:      [true,  true,  true,  false, false, true ],
+      idle:         [true,  false, true,  true,  false, false],
+      stopping:     [true,  true,  true,  true,  false, true ],
+      stopped:      [true,  false, true,  true,  false, false],
+      destroying:   [true,  true,  true,  true,  true,  true ],
+      destroyed:    [false, true,  true,  true,  true,  false],
+      error:        [true,  true,  true,  true,  false, false]
+    };
+    const SHOWN = { destroyed: 'cleared', destroying: 'clearing' };
+
+    function paintLane(d) {
+      const L = d.name;
+      LAST[L] = d;
+      const row = TABLE[d.status] || TABLE.startup;
+      ['init', 'submit', 'run', 'stop', 'clear'].forEach((a, i) => { $(L + '-' + a).disabled = row[i]; });
+      const kIn = $(L + '-kria');
+      kIn.disabled = row[0];
+      if (kIn.disabled) kIn.value = d.kria;
+      document.querySelectorAll('.lanein[data-lane="' + L + '"]').forEach(el => { el.disabled = row[5]; });
+      $(L + '-hv').disabled = row[5];
+      $(L + '-status').innerText = (SHOWN[d.status] || d.status)
+        + (d.use_hv ? ' · HV' : '') + (d.probe ? ' · probe' : '');
+      const nm = KRIA_NAMES[kIn.value.trim()];
+      $(L + '-kname').innerText = nm && nm !== kIn.value.trim() ? nm : '';
+      $(L + '-card').classList.toggle('unused', !kIn.value.trim() && d.status === 'startup');
+      $(L + '-card').classList.toggle('hvlane', !!d.use_hv);
+
+      const pane = $(L + '-pause');
+      if (d.paused && d.paused.prompt) { $(L + '-pauseText').innerText = d.paused.prompt; pane.hidden = false; }
+      else { pane.hidden = true; }
+
+      SLOTS.forEach(S => {
+        const s = (d.slots || {})[S];
+        $(L + '-LED' + S).style.background = s ? s.led : 'gray';
+        $(L + '-stage' + S).innerText = s ? s.stage : '';
+        $(L + '-stage' + S).classList.toggle('alert', !!s && s.state === 'left-out');
+        $(L + '-leak' + S).innerText = (s && s.leak_uA !== null && s.leak_uA !== undefined)
+          ? (s.bv !== null && s.bv !== undefined ? s.bv + ' V, ' : '') + s.leak_uA + ' uA' : '';
+      });
+
+      $(L + '-loglink').href = '/task5/lane/' + L + '/log' + (d.logfile ? '?f=' + encodeURIComponent(d.logfile) : '');
+      const lp = $(L + '-log');
+      if (Array.isArray(d.log) && d.log.length) {
+        const atBottom = lp.scrollHeight - lp.scrollTop - lp.clientHeight < 40;
+        lp.textContent = d.log.join('\n');
+        if (atBottom) lp.scrollTop = lp.scrollHeight;
+      } else if (Array.isArray(d.log)) {
+        lp.textContent = '(the run log appears here)';   // cleared
+      }
+    }
+
+    async function updateStatus() {
+      let data;
+      try { data = await (await fetch('/task5/status')).json(); } catch (e) { return; }
+      if (data.jobmode !== '' && data.jobmode !== 'task5'
+          && data.status !== 'startup' && data.status !== 'destroyed') {
+        document.querySelectorAll('button, input, select').forEach(el => { el.disabled = true; });
+        $('aggStatus').innerText = 'server is running another task';
+        return;
+      }
+      $('aggStatus').innerText = '';
+      (data.lanes || []).forEach(paintLane);
+      hvNote();
+      $('keithley').innerText = data.keithley ? '· Keithley in use by ' + data.keithley : '';
+
+      // The server sends the whole list; rebuild when it changes (Initialize clears it).
+      const sel = $('daqSelect');
+      const have = [...sel.options].slice(1).map(o => o.value);
+      const want = data.DAQres || [];
+      if (have.join() !== want.join()) {
+        const keep = sel.value;
+        while (sel.options.length > 1) sel.remove(1);
+        want.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); });
+        if (want.includes(keep)) sel.value = keep;
+        const fresh = want.filter(v => !have.includes(v));
+        if (fresh.length && have.length) $('daqNewOpt').innerText = fresh[fresh.length - 1];
+      }
+    }
+
+    // The form a lane's Configure sends.
+    function sharedFields() {
+      const f = new FormData($('shared'));
+      const o = {};
+      f.forEach((v, k) => { o[k] = v; });
+      o.skipPROBE = $('skipPROBE').checked ? '1' : '0';
+      o.trimPEDS = $('trimPEDS').checked ? '1' : '0';
+      o.leakCHECK = $('leakCHECK').checked ? '1' : '0';
+      return o;
+    }
+
+    function laneForm(L) {
+      const o = sharedFields();
+      SLOTS.forEach(S => {
+        o['moduleID' + S] = $(L + '-moduleID' + S).value;
+        o['powerBoard' + S] = $(L + '-powerBoard' + S).value;
+      });
+      o.useHV = $(L + '-hv').checked ? '1' : '0';
+      return o;
+    }
+
+    function hasSerial(L) { return SLOTS.some(S => $(L + '-moduleID' + S).value.trim()); }
+
+    async function post(L, action, payload) {
+      const r = await fetch('/task5/lane/' + L + '/' + action, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf() },
+        body: JSON.stringify(payload || {})
+      });
+      let body = null;
+      try { body = await r.json(); } catch (e) { /* 204 or HTML */ }
+      if (r.status === 400 && !body) {
+        return { ok: false, text: SHELF(L) + ': the page is stale, most likely an expired CSRF token '
+                 + 'after the server restarted. Reload the page.' };
+      }
+      if (!r.ok) {
+        const why = body ? (body.message || JSON.stringify(body.errors)) : r.statusText;
+        return { ok: false, text: SHELF(L) + ': ' + why };
+      }
+      return { ok: true, text: body && body.message ? body.message : '' };
+    }
+
+    function payloadFor(L, action) {
+      if (action === 'init') return { kria: $(L + '-kria').value.trim() };
+      if (action === 'submit') return laneForm(L);
+      return {};
+    }
+
+    async function laneDo(L, action) {
+      if (action === 'run' && !confirmLV([L])) return;
+      if (action === 'run' && LAST[L] && LAST[L].use_hv && !confirmHV([L])) return;
+      if (action === 'init' && !$(L + '-kria').value.trim()) { alert(SHELF(L) + ': type a Kria address first'); return; }
+      const res = await post(L, action, payloadFor(L, action));
+      if (!res.ok || (action === 'submit' && res.text)) alert(res.text);
+      updateStatus();
+    }
+
+    // Which lanes an "all" button acts on, from the last snapshot.
+    const ELIGIBLE = {
+      init:   (L, d) => ['startup', 'destroyed'].includes(d.status) && $(L + '-kria').value.trim(),
+      submit: (L, d) => ['initialized', 'stopped', 'configured', 'idle'].includes(d.status) && hasSerial(L),
+      run:    (L, d) => d.status === 'configured',
+      stop:   (L, d) => d.status === 'running',
+      clear:  (L, d) => !['startup', 'destroyed', 'destroying'].includes(d.status)
+    };
+
+    async function allDo(action) {
+      const picked = LANES.filter(L => LAST[L] && ELIGIBLE[action](L, LAST[L]));
+      if (!picked.length) { alert('No Kria is ready for that.'); return; }
+      if (action === 'run') {
+        if (!confirmLV(picked)) return;
+        const hv = picked.filter(L => LAST[L].use_hv);
+        if (hv.length && !confirmHV(hv)) return;
+      }
+      if (action === 'clear' && !confirm('Clear ' + picked.map(SHELF).join(', ')
+          + '? This stops their runs and powers their modules off.')) return;
+      // in parallel: every lane has its own make, client session and Kria
+      const res = await Promise.all(picked.map(L => post(L, action, payloadFor(L, action))));
+      const text = res.filter(r => !r.ok || (action === 'submit' && r.text)).map(r => r.text);
+      if (text.length) alert(text.join('\n\n────────\n\n'));
+      updateStatus();
+    }
+
+    // Every Run, HV or not: the bring-up needs the modules' low voltage on.
+    function confirmLV(names) {
+      return confirm('The LV needs to be switched ON.\n\nIs the low-voltage supply ON for '
+                     + names.map(SHELF).join(', ') + '?\n\nOK starts the run, Cancel goes back.');
+    }
+
+    function confirmHV(names) {
+      return confirm('This applies high voltage on ' + names.map(SHELF).join(', ') + '. Is the HV cable on '
+                     + 'THIS bench, and is the single-module stand not using the Keithley?');
+    }
+
+    // Cable: one Kria has HV. Vitrek: any number; parallel bias biases them together.
+    const PARALLEL = {{ 'true' if parallel else 'false' }};
+    const cable = () => $('hvSwitch').value === 'none';
+    function hvPicked(L) {
+      if (cable() && $(L + '-hv').checked) LANES.forEach(M => { if (M !== L) $(M + '-hv').checked = false; });
+      hvNote();
+      refreshHints();
+    }
+    function hvLanes() { return LANES.filter(L => $(L + '-hv').checked); }
+    function hvLane() { return hvLanes()[0]; }
+    function hvNote() {
+      const on = hvLanes();
+      $('hvNote').innerText = !on.length ? 'no Kria has HV on'
+        : 'HV on ' + on.map(SHELF).join(', ') + (cable() ? ' (one cable, moved by hand)'
+            : PARALLEL ? ' (Vitrek, parallel bias: biased together, slot by slot)'
+                       : ' (Vitrek: they take turns on the Keithley)');
+      $('hvrow').classList.toggle('active', on.length > 0);
+    }
+    $('hvSwitch').addEventListener('change', () => {
+      if (cable()) hvLanes().slice(1).forEach(L => { $(L + '-hv').checked = false; });
+      hvNote();
+      refreshHints();
+    });
+  </script>
+
+  <script>
+    // Board hint: serial characters 5 and 6 set the config family, ROC count, power board
+    // and highest bias voltage. Same table the runner uses.
+    let BOARD_TABLE = {};
+    fetch('/task5/board_table').then(r => r.json()).then(t => { BOARD_TABLE = t; refreshHints(); });
+
+    function serialOf(L, S) {
+      return ($(L + '-moduleID' + S).value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    }
+    function rowFor(L, S) {
+      const raw = serialOf(L, S);
+      if (!/^320[A-Z0-9]{12}$/.test(raw)) return null;
+      return BOARD_TABLE[raw.slice(4, 6)] || null;
+    }
+    function hintFor(L, S) {
+      const raw = serialOf(L, S);
+      if (!raw) return '';
+      if (!/^320[A-Z0-9]{12}$/.test(raw)) return 'incomplete serial';
+      const row = BOARD_TABLE[raw.slice(4, 6)];
+      if (!row) return 'unknown type code "' + raw.slice(4, 6) + '"';
+      const override = $(L + '-powerBoard' + S).value;
+      const power = override === 'fitted' ? true : override === 'none' ? false : row.power;
+      const relay = ($(L + '-hv').checked && !cable())
+        ? ' · Vitrek relay ' + (relayOf(L, S) || 'NONE') : '';
+      return row.name + ' · ' + row.nrocs + ' ROCs · ' + (power ? 'power board' : 'external power')
+             + (row.power_measured ? '' : ' (not yet measured)') + relay;
+    }
+    function refreshHints() {
+      LANES.forEach(L => SLOTS.forEach(S => {
+        const h = $(L + '-hint' + S), text = hintFor(L, S);
+        h.innerText = text;
+        h.className = 'boardhint' + (text.startsWith('unknown') ? ' bad' : '');
+      }));
+      checkBias();
+    }
+    // Check the bias list against the HV Krias' slots as it is typed; the server checks again.
+    function checkBias() {
+      const el = $('biasVOLTS');
+      let cap = HVMAX;
+      hvLanes().forEach(L => SLOTS.forEach(S => { const r = rowFor(L, S); if (r) cap = Math.min(cap, r.maxv); }));
+      const bad = (el.value || '').split(',').map(s => s.trim()).filter(s => s !== '')
+                    .filter(s => !/^\d+$/.test(s) || parseInt(s, 10) > cap);
+      el.className = bad.length ? 'bad' : '';
+      el.title = bad.length ? ('above the ' + cap + ' V limit, or not a number: ' + bad.join(', '))
+                            : ('every point is within ' + cap + ' V');
+    }
+    document.querySelectorAll('.modid').forEach(input => input.addEventListener('input', function () {
+      this.value = this.value.toUpperCase().replace(/[^A-Z0-9\-]/g, '').slice(0, 20);
+      refreshHints();
+    }));
+    document.querySelectorAll('select.lanein').forEach(s => s.addEventListener('change', refreshHints));
+    document.querySelectorAll('.kriaInput').forEach(k => k.addEventListener('input', updateStatus));
+    $('biasVOLTS').addEventListener('input', checkBias);
+
+    $('daqSummaryBtn').addEventListener('click', function () {
+      const v = $('daqSelect').value;
+      if (!v) { alert('Please select a DAQ result first.'); return; }
+      window.open('/daqsummary/gallery/' + encodeURIComponent(v), '_blank');
+    });
+
+    // Module gallery: serials that have archived hexmaps, plus the ones typed in.
+    async function loadModules() {
+      let list = [];
+      try { list = await (await fetch('/daqsummary/modules.json')).json(); } catch (e) { return; }
+      $('moduleList').innerHTML = '';
+      list.forEach(m => { const o = document.createElement('option'); o.value = m.serial;
+                          o.label = m.n + ' runs'; $('moduleList').appendChild(o); });
+    }
+    function openModule() {
+      let v = $('galSerial').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (!v) { const f = document.querySelector('.modid.lanein'); v = f ? f.value.trim() : ''; }
+      if (!v) { alert('Type a module ID first.'); return; }
+      window.open('/daqsummary/module/' + encodeURIComponent(v), '_blank');
+    }
+    loadModules();
+
+    setInterval(updateStatus, 1000);
+    window.onload = updateStatus;
+  </script>
+</body>
+
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .container-width { width: 96%; max-width: 1500px; margin: 0 auto; }
+  .flex-sect { padding: 24px 0; font-family: Helvetica, serif; }
+  .flex-title { font-size: 2em; text-align: center; font-weight: 700; padding: 5px; }
+  .subtitle { text-align: center; color: #555; margin-bottom: 12px; }
+  .cards { padding: 6px 0; }
+  .gjs-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 18px; padding: 6px 8px; }
+  .optrow label { font-size: 0.95em; }
+  #nRUNS, #bringupTRIES { width: 60px; }
+  #label { width: 100px; }
+  #biasVOLTS { width: 170px; }
+  #biasVOLTS.bad { border: 2px solid #b00; }
+  #temperature, #humidity { width: 70px; }
+  .condat { font-size: 0.85em; color: #777; }
+  .fulllog { margin-left: 12px; font-size: 0.95em; }
+  #hvrow { border: 1px dashed #bbb; border-radius: 8px; opacity: 0.6; }
+  #hvrow.active { border: 2px solid #d29800; background: #fff8e6; opacity: 1; }
+  .hvtag, .alltag { font-weight: 700; }
+  .hvnote { font-size: 0.9em; color: #6b4a00; }
+  #allrow { border-bottom: 1px solid #ddd; padding-bottom: 12px; margin-bottom: 8px; }
+  .ctrlbtn { height: 30px; padding: 0 14px; }
+  #aggStatus { font-weight: 700; color: #b00; }
+
+  .lanes { display: grid; grid-template-columns: repeat(auto-fill, minmax(560px, 1fr)); gap: 12px; }
+  .lane { border: 1px solid #ccc; border-radius: 8px; padding: 8px 10px; background: #fafafa; }
+  .lane.unused { opacity: 0.55; }
+  .lane.hvlane { border: 2px solid #d29800; }
+  .lanehead { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .lanename { font-weight: 700; font-size: 1.15em; white-space: nowrap; flex: none; }
+  .kriaInput { width: 210px; }
+  .kname { font-weight: 700; color: #0b4a8b; }
+  .port { color: #666; font-size: 0.9em; font-family: ui-monospace, Menlo, monospace; }
+  .hvbox { font-weight: 700; color: #6b4a00; }
+  .lanestatus { margin-left: auto; font-weight: 700; }
+  .lanebtns { display: flex; gap: 6px; margin: 6px 0; }
+  .lanebtns button { flex: 1; height: 28px; }
+
+  .pausePane { display: flex; align-items: center; gap: 12px; margin: 6px 0; padding: 10px;
+               background: #fff4d6; border: 2px solid #d29800; border-radius: 8px; }
+  /* the hidden attribute loses to a class rule's display without this */
+  .pausePane[hidden] { display: none !important; }
+  .pauseText { flex: 1; font-weight: 700; color: #6b4a00; }
+
+  .slotrow { display: flex; align-items: center; gap: 8px; padding: 3px 0 0 0; }
+  .slotinfo { display: flex; gap: 10px; padding: 0 0 3px 34px; font-size: 0.85em; min-height: 1.2em; }
+  .led { display: inline-block; flex: 0 0 12px; width: 12px; height: 12px; border-radius: 6px; background: gray; }
+  .slotname { width: 14px; font-weight: 700; }
+  .modid { width: 190px; }
+  .boardhint { color: #444; }
+  .boardhint.bad { color: #b00; font-weight: 700; }
+  .stage { color: #036; }
+  .stage.alert { color: #fff; background: #c00; font-weight: bold; padding: 0 4px; border-radius: 3px; }
+  .leak { font-size: 0.9em; color: #063; }
+
+  .lanelog summary { cursor: pointer; color: #555; font-size: 0.9em; }
+  .lanelog pre { height: 360px; overflow: auto; resize: vertical; background: #0b1020; color: #e7ecff;
+                 font-family: ui-monospace, Menlo, monospace; font-size: 12px;
+                 padding: 10px; border-radius: 8px; white-space: pre-wrap; margin: 4px 0; }
+  #resultrow { margin-top: 12px; }
+  #modrow { margin-top: 4px; }
+  @media (max-width: 640px) {
+    .lanes { grid-template-columns: 1fr; }
+    .modid { width: 140px; }
+  }
+</style>
+</html>

@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Multi Pedestal Run</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+</head>
+<body>
+  <section class="flex-sect">
+    <div class="container-width" id="t4main">
+      <div class="flex-title">Multi pedestal run</div>
+
+      <div class="gjs-row" id="ctrlrow">
+        <div class="gjs-cell" id="ctrlcell">
+          <button type="button" id="initBtn"          class="ctrlbtn" onclick="initJob()">Initialize</button>
+          <button type="button" id="confBtn" disabled class="ctrlbtn"                    >Configure</button>
+          <button type="button" id="execBtn" disabled class="ctrlbtn" onclick="execJob()">Run</button>
+          <button type="button" id="stopBtn" disabled class="ctrlbtn" onclick="stopJob()">Stop</button>
+          <button type="button" id="exitBtn" disabled class="ctrlbtn" onclick="exitJob()">Destroy</button>
+        </div>
+        <!-- The Kria to drive: pick from MMTS_bench.krias or type one; fixed at Initialize. -->
+        <div class="gjs-cell" id="kriacell">
+          <label>Kria
+            <input list="kriaList" id="kriaInput" value="{{ kria }}" placeholder="client default"/>
+          </label>
+          <datalist id="kriaList">
+            {% for k in krias %}
+            <option value="{{k}}">
+            {% endfor %}
+          </datalist>
+        </div>
+        <div class="gjs-cell" id="statuscell">
+          <div id="statusText">startup</div>
+        </div>
+      </div>
+
+      <form method="POST" id="pymodule_configurations" action="/task4/submit">
+        <meta name="csrf_token" type="hidden" content="{{ csrf_token() }}"/>
+
+        <div class="cards" id="radioContainer">
+          <div class="gjs-row">
+            <div class="gjs-cell"><div>Module Status:</div></div>
+            <div class="gjs-cell">
+              <input list="inspectors" name="inspector" id="inspectorInput">
+              <datalist id="inspectors">
+                {% for inspector in inspectors %}
+                <option value="{{inspector}}">
+                {% endfor %}
+              </datalist>
+              <div>inspector:</div>
+            </div>
+          </div>
+          <div class="gjs-row statusrow">
+            <label><input type="radio" name="moduleSTATUS" value="Untaped"/> Untaped</label>
+            <label><input type="radio" name="moduleSTATUS" value="Taped"/> Taped</label>
+            <label><input type="radio" name="moduleSTATUS" value="Assembled"/> Assembled</label>
+            <label><input type="radio" name="moduleSTATUS" value="Bonds Reworked"/> Bonds Reworked</label>
+            <label><input type="radio" name="moduleSTATUS" value="Bolted"/> Bolted</label>
+          </div>
+          <div class="gjs-row statusrow">
+            <label><input type="radio" name="moduleSTATUS" value="Backside Bonded"/> Backside Bonded</label>
+            <label><input type="radio" name="moduleSTATUS" value="Backside Encapsulated"/> Backside Encapsulated</label>
+            <label><input type="radio" name="moduleSTATUS" value="Completely Bonded"/> Completely Bonded</label>
+            <label><input type="radio" name="moduleSTATUS" value="Completely Encapsulated"/> Completely Encapsulated</label>
+          </div>
+        </div>
+
+        <!-- One row per mux slot. An empty serial skips that slot. -->
+        <div class="cards" id="slotCards">
+          {% for S in slots %}
+          <div class="slotrow" id="row{{S}}">
+            <button type="button" class="statusModuleID" id="LED{{S}}"></button>
+            <label class="labelModuleID">{{S}}</label>
+            <input type="text" placeholder="Module ID (empty = skip)" name="moduleID{{S}}"
+                   class="inputModuleID" id="moduleID{{S}}"/>
+            <span class="boardhint" id="hint{{S}}">&nbsp;</span>
+            <label class="powerlbl">power:
+              <select name="powerBoard{{S}}" id="powerBoard{{S}}">
+                <option value="auto" selected>auto</option>
+                <option value="fitted">fitted</option>
+                <option value="none">none</option>
+              </select>
+            </label>
+            <span class="stage" id="stage{{S}}">&nbsp;</span>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="gjs-row optrow">
+          <label>pedestals per slot
+            <input type="number" name="nRUNS" id="nRUNS" min="1" max="20"
+                   value="{{ defaults.get('nRUNS', '5') }}"/>
+          </label>
+          <label>bring-up tries
+            <input type="number" name="bringupTRIES" id="bringupTRIES" min="1" max="40"
+                   value="{{ defaults.get('bringupTRIES', '4') }}"/>
+          </label>
+          <label>label
+            <input type="text" name="label" id="label" value="{{ defaults.get('label', 'ped') }}"/>
+          </label>
+          <label title="A 12+12 probe poisons the bring-up it runs in, so run_slot.sh pays for a second one.">
+            <input type="checkbox" name="skipPROBE" id="skipPROBE"
+                   {% if defaults.get('skipPROBE', '1') == '1' %}checked{% endif %}/>
+            skip the 12+12 probe
+          </label>
+        </div>
+      </form>
+
+      <div class="gjs-row" id="resultrow">
+        <div class="gjs-cell">
+          <div>Latest DAQ Result:</div>
+          <div id="daqNewOpt"><br/></div>
+        </div>
+        <div class="gjs-cell">
+          <button type="button" id="daqSummaryBtn"> Check </button>
+          <select type="text" id="daqSelect" name="daqResult">
+            <option value="">-- Select an option --</option>
+            {% for daqres in DAQres %}
+            <option value="{{daqres}}"> {{daqres}} </option>
+            {% endfor %}
+          </select>
+          <div>DAQ Result:</div>
+        </div>
+      </div>
+
+      <pre id="logPane">(the run log appears here)</pre>
+    </div>
+  </section>
+
+  <script>
+    // LED colors (gray queued, yellow bring-up, green running or done, red failed) come from /task4/status.
+    const SLOTS = {{ slots|tojson }};
+
+    function setLED(S, colour) {
+      const el = document.getElementById('LED' + S);
+      if (el) el.style.background = colour || 'gray';
+    }
+
+    function setControls(data) {
+      const b = {
+        init: document.getElementById('initBtn'),
+        conf: document.getElementById('confBtn'),
+        exec: document.getElementById('execBtn'),
+        stop: document.getElementById('stopBtn'),
+        exit: document.getElementById('exitBtn')
+      };
+      // [init, conf, exec, stop, exit, inputs]: true means disabled
+      const table = {
+        startup:      [false, true,  true,  true,  true,  false],
+        initializing: [true,  true,  true,  true,  false, false],
+        initialized:  [true,  false, true,  true,  false, false],
+        configured:   [true,  false, false, true,  false, false],
+        running:      [true,  true,  true,  false, false, true ],
+        idle:         [true,  false, true,  true,  false, false],
+        stopping:     [true,  true,  true,  true,  false, false],
+        stopped:      [true,  false, true,  true,  false, false],
+        destroying:   [true,  true,  true,  true,  true,  false],
+        destroyed:    [false, true,  true,  true,  true,  false],
+        error:        [true,  true,  true,  true,  false, false]
+      };
+      const row = table[data.status];
+      if (!row) return;
+      b.init.disabled = row[0]; b.conf.disabled = row[1]; b.exec.disabled = row[2];
+      b.stop.disabled = row[3]; b.exit.disabled = row[4];
+      document.getElementById('kriaInput').disabled = row[0];
+      document.querySelectorAll('#pymodule_configurations input, #pymodule_configurations select')
+        .forEach(input => { input.disabled = row[5]; });
+    }
+
+    async function updateStatus() {
+      const response = await fetch('/task4/status');
+      const data = await response.json();
+
+      if (data.jobmode !== "" && data.jobmode !== "task4") {
+        if (data.status !== "startup" && data.status !== "destroyed") {
+          ['initBtn','confBtn','execBtn','stopBtn','exitBtn']
+            .forEach(id => document.getElementById(id).disabled = true);
+          document.querySelectorAll('#pymodule_configurations input, #pymodule_configurations select')
+            .forEach(input => { input.disabled = true; });
+          document.getElementById('statusText').innerText = "server is running other task";
+          return;
+        }
+      }
+      document.getElementById('statusText').innerText = data.status;
+      const kIn = document.getElementById('kriaInput');
+      if (kIn.disabled && typeof data.kria === 'string') kIn.value = data.kria;
+      setControls(data);
+
+      // per-slot LED and stage
+      SLOTS.forEach(S => {
+        const d = (data.slots || {})[S];
+        setLED(S, d ? d.led : 'gray');
+        const st = document.getElementById('stage' + S);
+        if (st) st.innerText = d ? d.stage : '';
+      });
+
+      // the run log
+      if (Array.isArray(data.log) && data.log.length) {
+        const pane = document.getElementById('logPane');
+        const atBottom = pane.scrollHeight - pane.scrollTop - pane.clientHeight < 40;
+        pane.textContent = data.log.join('\n');
+        if (atBottom) pane.scrollTop = pane.scrollHeight;
+      }
+
+      const daqSelect = document.getElementById('daqSelect');
+      if (daqSelect && daqSelect.options.length < 100 && Array.isArray(data.DAQres)) {
+        data.DAQres.forEach(value => {
+          let exists = false;
+          for (let i = 0; i < daqSelect.options.length; i++) {
+            if (daqSelect.options[i].value === value) { exists = true; break; }
+          }
+          if (!exists) {
+            const opt = document.createElement("option");
+            opt.value = value; opt.textContent = value;
+            daqSelect.appendChild(opt);
+            document.getElementById('daqNewOpt').innerText = value;
+          }
+        });
+      }
+    }
+
+    async function execjob(varname, payload) {
+      const csrfToken = document.querySelector('meta[name="csrf_token"]').getAttribute('content');
+      await fetch('/task4/' + varname, {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+        body: JSON.stringify(payload || {})
+      });
+      updateStatus();
+    }
+
+    async function initJob() {
+      execjob('init', { kria: document.getElementById('kriaInput').value.trim() });
+      document.getElementById('daqSelect').options.length = 1;
+      document.getElementById('daqNewOpt').innerText = "";
+    }
+    async function execJob() { execjob('run'); }
+    async function stopJob() { execjob('stop'); }
+    async function exitJob() { execjob('destroy'); }
+
+    setInterval(updateStatus, 1000);
+    window.onload = updateStatus;
+  </script>
+
+  <script>
+    // Board hint: serial characters 5 and 6 set the config family, ROC count and power board.
+    // Same table the runner uses, served from /task4/board_table.
+    let BOARD_TABLE = {};
+    fetch('/task4/board_table').then(r => r.json()).then(t => { BOARD_TABLE = t; refreshHints(); });
+
+    function hintFor(S) {
+      const raw = (document.getElementById('moduleID' + S).value || '')
+                    .toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (!raw) return '';
+      if (!/^320[A-Z0-9]{12}$/.test(raw)) return 'incomplete serial';
+      const row = BOARD_TABLE[raw.slice(4, 6)];
+      if (!row) return 'unknown type code "' + raw.slice(4, 6) + '"';
+      const override = document.getElementById('powerBoard' + S).value;
+      const power = override === 'fitted' ? true : override === 'none' ? false : row.power;
+      return row.name + ' · ' + row.nrocs + ' ROCs · '
+             + (power ? 'power board' : 'external power')
+             + (row.power_measured ? '' : ' (not yet measured)');
+    }
+
+    function refreshHints() {
+      SLOTS.forEach(S => {
+        const h = document.getElementById('hint' + S);
+        const text = hintFor(S);
+        h.innerText = text || ' ';
+        h.className = 'boardhint' + (text.startsWith('unknown') ? ' bad' : '');
+      });
+    }
+
+    SLOTS.forEach(S => {
+      const input = document.getElementById('moduleID' + S);
+      input.addEventListener('input', function () {
+        this.value = this.value.toUpperCase().replace(/[^A-Z0-9\-]/g, '').slice(0, 20);
+        refreshHints();
+      });
+      document.getElementById('powerBoard' + S).addEventListener('change', refreshHints);
+    });
+  </script>
+
+  <script>
+    document.getElementById('confBtn').addEventListener('click', function () {
+      document.getElementById('pymodule_configurations')
+        .dispatchEvent(new Event('submit', { cancelable: true }));
+    });
+    document.getElementById('pymodule_configurations').addEventListener('submit', function (e) {
+      if (!this.checkValidity()) { e.preventDefault(); this.reportValidity(); return; }
+      e.preventDefault();
+
+      const formData = new FormData(this);
+      const csrfToken = document.querySelector('meta[name="csrf_token"]').getAttribute('content');
+      const obj = {};
+      formData.forEach((value, key) => { obj[key] = value; });
+      // an unchecked checkbox is absent from FormData
+      obj['skipPROBE'] = document.getElementById('skipPROBE').checked ? '1' : '0';
+
+      fetch('/task4/submit', {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+        body: JSON.stringify(obj)
+      })
+        .then(response => {
+          if (!response.ok) return response.json().then(err => Promise.reject(err));
+          return response.json();
+        })
+        .then(data => {
+          if (data.status === 'success') { alert(data.message); }
+          else { alert('Error: ' + JSON.stringify(data.errors)); }
+        })
+        // A non-JSON 400 is almost always an expired CSRF token after a server reload.
+        .catch(error => {
+          if (error instanceof Error) {
+            alert('Submission failed: the page is stale, most likely an expired '
+                  + 'CSRF token after the server restarted. Reload the page and '
+                  + 'press Configure again.\n\n(' + error.message + ')');
+          } else {
+            alert('Submission failed: ' + JSON.stringify(error));
+          }
+        });
+    });
+  </script>
+
+  <script>
+    document.getElementById('daqSummaryBtn').addEventListener('click', function () {
+      const selectedValue = document.getElementById('daqSelect').value;
+      if (!selectedValue) { alert("Please select a DAQ result first."); return; }
+      window.open(`/daqsummary/gallery/${encodeURIComponent(selectedValue)}`, "_blank");
+    });
+  </script>
+</body>
+
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .container-width { width: 90%; max-width: 1150px; margin: 0 auto; }
+  .flex-sect { padding: 40px 0; font-family: Helvetica, serif; }
+  .flex-title { margin-bottom: 15px; font-size: 2em; text-align: center; font-weight: 700; padding: 5px; }
+  .cards { padding: 12px 0; }
+  .gjs-row { display: flex; justify-content: flex-start; align-items: center; flex-wrap: wrap; padding: 8px; }
+  .gjs-cell { flex-grow: 1; flex-basis: 50%; }
+  #ctrlcell { flex-basis: 50%; }
+  #kriacell { flex-basis: 25%; }
+  #kriaInput { width: 190px; }
+  #statuscell { flex-basis: 25%; }
+  .ctrlbtn { width: 18%; height: 30px; margin: 5px; }
+  #statusText { padding: 10px; font-weight: 700; }
+  .statusrow label { width: 230px; padding: 4px; }
+
+  .slotrow { display: flex; align-items: center; gap: 10px; padding: 6px 8px; }
+  .statusModuleID { width: 12px; height: 12px; padding: 0; min-height: 0; border-radius: 6px; background: gray; }
+  .labelModuleID { width: 14px; font-weight: 700; }
+  .inputModuleID { width: 190px; }
+  .boardhint { width: 300px; font-size: 0.9em; color: #444; }
+  .boardhint.bad { color: #b00; font-weight: 700; }
+  .powerlbl { font-size: 0.9em; }
+  .stage { font-size: 0.9em; color: #036; min-width: 200px; }
+
+  .optrow label { margin-right: 20px; font-size: 0.95em; }
+  #nRUNS { width: 60px; }
+  #bringupTRIES { width: 60px; }
+  #label { width: 100px; }
+
+  #logPane {
+    height: 260px; overflow: auto; background: #0b1020; color: #e7ecff;
+    font-family: ui-monospace, Menlo, monospace; font-size: 12px;
+    padding: 10px; border-radius: 8px; margin: 10px 8px; white-space: pre-wrap;
+  }
+  @media (max-width: 768px) { .slotrow { flex-wrap: wrap; } }
+</style>
+</html>
