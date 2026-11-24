@@ -245,7 +245,7 @@ client "\"\$MM/register_boards.py\"$REG" \
 step_note() {    # step_note BV TAG: " (BV300_2)", " (trim)" or nothing
     case "$2" in TRIM) echo " (trim)";; "BV$1") ;; *) echo " ($2)";; esac
 }
-void_note() { case "$1" in 8) echo ", the trims did not reach the chips";; 9) echo ", chips out of time: check EdgeSel_T1";; esac; }
+void_note() { case "$1" in 8) echo ", the trims did not reach the chips";; 9) echo ", chips out of time: check EdgeSel_T1";; 10) echo ", no data: the links lost alignment";; esac; }
 
 # trim_point S BV LEAK_UA (HV already at BV): reference pedestal, trim_run.sh, SLOT_*
 # to the trimmed config. A failed trim runs untrimmed; returns 1 only if the reference failed.
@@ -278,16 +278,32 @@ EXPECT roc_s0.sc.ReferenceVoltage.0.Inv_vref=400"
     else
         say "$S: TRIMMING FAILED ($(printf '%s\n' "$out" | sed -n 's/^TRIM-FAILED //p' | tail -1)) -- the bias scan runs untrimmed"
     fi
+    # the trim's many starts can leave a link unaligned: bring up again
+    SLOT_FRESH=1
     return 0
 }
 
 # ped_run.sh, not run_slot.sh: the slot is already up; a second bring-up re-rolls it.
 # Trim state rides in SLOT_CFG (empty = slot file), SLOT_EXPECT and SLOT_LBL.
-SLOT_CFG=""; SLOT_EXPECT=""; SLOT_SFX=""; SLOT_LBL="$LABEL"
+# A bring-up cycles the module LV, so only at a bias of LOWBIAS_V or less.
+LOWBIAS_V=10
+SLOT_CFG=""; SLOT_EXPECT=""; SLOT_SFX=""; SLOT_LBL="$LABEL"; SLOT_FRESH=0
 pedestals_at() {
     local S="$1" TAG="$2" FAMILY="$3" BOARD="$4" EXT="$5" N="${6:-$NRUNS}"     # TAG: BV300, BV300_2
+    local bv="${TAG#BV}" low=0 first=0
+    bv="${bv%%_*}"
+    case "$bv" in ''|*[!0-9]*) ;; *) [ "$bv" -le "$LOWBIAS_V" ] && low=1 ;; esac
+    if [ "$SLOT_FRESH" = 1 ]; then
+        if [ "$low" = 1 ]; then
+            first=1; SLOT_FRESH=0
+            echo "---- fresh bring-up before these pedestals (after the trim, bias ${bv} V)"
+        else
+            echo "---- no fresh bring-up at ${bv} V: it cycles the module LV under bias"
+        fi
+    fi
     client "
     set -u
+    export PED_BRINGUP_FIRST=$first PED_RETRY_BRINGUP=$low
     slot=$S; fam=$FAMILY; board=$BOARD; ext='$EXT'; n=$N
     dut=Mux${S}_${SLOT_LBL}_${TAG}; lab=${SLOT_LBL}_${TAG}
     trimcfg='$SLOT_CFG'; expect='$SLOT_EXPECT'
@@ -301,9 +317,9 @@ pedestals_at() {
         "$MM/ped_run.sh" "$slot" "$n" "$lab" 10000 | tee "$tmp"
     rc=${PIPESTATUS[0]}
     void=$(grep -c "VOID:" "$tmp"); rm -f "$tmp"
-    [ "$rc" -eq 0 ] || exit "$rc"
     # the readback disagrees with the trimmed config: the trims are not on the chips
     [ "$void" -eq 0 ] || { echo "TRIMS NOT ON THE CHIPS: the ROC readback disagrees with the trimmed config"; exit 8; }
+    [ "$rc" -eq 0 ] || exit "$rc"
     runs="$RESULTS_DIR/$serial/$dut/pedestal_run"
     echo "--- finder header positions (23 everywhere = right edge)"
     "$MM/finder_positions.sh" "$runs"/run_* 2>/dev/null | tail -3
@@ -345,7 +361,7 @@ for S in $FILLED; do
     fi
 
     say "$S: params $FAMILY $BOARD $NROCS ${POWERFLAG:---external-power}  ($SERIAL: $DESC)"
-    SLOT_CFG=""; SLOT_EXPECT=""; SLOT_SFX=""; SLOT_LBL="$LABEL"
+    SLOT_CFG=""; SLOT_EXPECT=""; SLOT_SFX=""; SLOT_LBL="$LABEL"; SLOT_FRESH=0
 
     # bring-up + gate, no pedestal. $MM stays literal: the client exports it.
     say "$S: bring-up and gate"
