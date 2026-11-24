@@ -121,6 +121,7 @@ except FileNotFoundError as e:
 ### intrinsic configuration would be defined in flask server instead of user input
 INTRINSIC_CONF = [ ]
 APP_CONFS = [
+        'batch',
         'inspector',
         'cycleCOUNT',
         'moduleID1L',
@@ -369,6 +370,7 @@ alphanumeric_validator = Regexp(r"^[a-zA-Z0-9-]*$", message="Only letters and nu
 class ConfigForm(FlaskForm):
     inspector = StringField("inspector", validators=[InputRequired(message='Inspector Missing')])
     cycleCOUNT = IntegerField("cycleCOUNT", validators=[InputRequired(message='Fill number of cycles'), NumberRange(min=2,max=1000, message='range from 2 to 1000')])
+    forcedBATCH = StringField("forcedBATCH")
 
     moduleID1L = StringField("moduleID1L", validators=[alphanumeric_validator])
     moduleID1C = StringField("moduleID1C", validators=[alphanumeric_validator])
@@ -402,6 +404,18 @@ class ConfigForm(FlaskForm):
 
 
 
+
+def judgeBatchName_task2(forced_batchname: str = ''):
+    """
+    task2 runs one full thermal cycle per Run -- there's no "continue the previous
+    batch" case like task3's repeated single-IV presses, so this just auto-generates
+    a fresh timestamp batch_name unless the user explicitly forces one.
+    """
+    forced_batchname = (forced_batchname or '').strip()
+    if forced_batchname:
+        return forced_batchname, f'Forced batch_name "{forced_batchname}".'
+    new_batchname = datetime.now().strftime('%Y%m%d-%H%M%S')
+    return new_batchname, 'Use new batch_name for this automatic thermal-cycle run.'
 
 @app.route('/submit', methods=['POST','GET'])
 def Configure():
@@ -455,7 +469,9 @@ def Configure():
             clean_val = ''
         shared_state.SetConfig(varname, clean_val)
 
-
+    ### fill_batchname
+    batchname, batchname_message = judgeBatchName_task2(forced_batchname=form.forcedBATCH.data)
+    shared_state.SetConfig('batch', batchname)
 
 
 
