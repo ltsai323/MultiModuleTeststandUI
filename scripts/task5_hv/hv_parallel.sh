@@ -1,7 +1,6 @@
 # hv_parallel.sh (sourced by run_slots_hv.sh): parallel bias, one Keithley for
 # every lane's slot (MMTS_bench.hv.parallel_bias). The first lane on the roster
-# leads: all modules together first (pass if the sum is within both limits), else
-# per module alone, relay + HV on + leakage check + HV off; leakiest left
+# leads: per module alone, relay + HV on + leakage check + HV off; leakiest left
 # out until the sum fits parallel_sum_uA; then all relays closed, HV on once, and
 # per BV every lane takes pedestals. Followers never touch the Keithley or Vitrek;
 # stopping the LEADER ramps the whole round down. Relays move only with output off.
@@ -62,37 +61,6 @@ parallel_lead() {
         done
         passed="$members"
     else
-    # All together first: a module's current is at most the sum, so a passing sum passes everyone.
-    local together=0 nall rlall cap
-    nall=$(echo $members | wc -w | tr -d ' ')
-    cap=$(python3 -c "print('%g' % min(float('$MAXLEAK'), float('$PAR_SUM_UA')))")
-    if [ "$nall" -gt 1 ]; then
-        rlall=$(for m in $members; do printf '%s,' "${m##*:}"; done); rlall="${rlall%,}"
-        say "$S: leakage check of all $nall modules together at ${LEAKV} V (relays $rlall), passes at ${cap} uA or less"
-        if python3 "$SWITCH" vitrek --relays "$rlall" && hv on --limit-ua "$LIMIT_UA"; then
-            out=$(hv leakcheck $LEAKV --limit-ua "$LIMIT_UA" --abort-ua "$cap" --settle "$SETTLE" 2>&1); lrc=$?
-            printf '%s\n' "$out"
-            line=$(printf '%s\n' "$out" | grep -E '^HV leakcheck ok ' | tail -1)
-            # every reading, 500 V included, within the cap
-            [ $lrc -eq 0 ] && [ -n "$line" ] && python3 -c 'import json, sys
-r = json.loads(sys.argv[1][sys.argv[1].index("{"):]).get("readings") or {}
-sys.exit(0 if r and max(abs(float(v)) for v in r.values()) * 1e6 <= float(sys.argv[2]) else 1)' "$line" "$cap" \
-                && together=1
-        fi
-        hv off --limit-ua "$LIMIT_UA" || echo "WARNING: hv.py off failed after the joint leakage check"
-        if [ "$together" = 1 ]; then
-            echo "---- parallel bias: all $nall modules pass together, no per-module checks needed"
-            for m in $members; do
-                lane="${m%%:*}"
-                par leak "$rid" "$lane" pass --json "$line"
-                [ "$lane" = "$HV_ME" ] && mine=1 || followers="$followers,$lane"
-            done
-            passed="$members"
-        else
-            echo "---- parallel bias: together over ${cap} uA or the check failed: one module at a time"
-        fi
-    fi
-    if [ "$together" = 0 ]; then
     # One module at a time: the per-module leakage the shared bias cannot give.
     for m in $members; do
         lane="${m%%:*}"; r="${m##*:}"
@@ -150,7 +118,6 @@ sys.exit(0 if r and max(abs(float(v)) for v in r.values()) * 1e6 <= float(sys.ar
         esac
     done
     passed="$keep"
-    fi
     fi
     rm -rf "$ptmp"
     followers="${followers#,}"
