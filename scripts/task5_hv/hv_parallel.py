@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """hv_parallel.py: one Keithley biasing every lane's module at once (parallel bias).
 
-Lanes gate the same slot, meet here, and the leader drives the Keithley while each
-lane takes its own pedestals. Lanes meet through files under <dir> (members/, rounds/<S>.<N>/;
-mkdir and rename are atomic). A round closes when no live member is still coming or
-parallel_wait_s has passed; a dead pid counts as gone.
+Lanes meet here after their gate, whatever the slot, and the leader drives the Keithley
+while each lane takes its own pedestals. Lanes meet through files under <dir> (members/,
+rounds/P.<N>/; mkdir and rename are atomic). A round closes when no live member is still
+coming or parallel_wait_s has passed; a dead pid, or a lane biasing in another round, counts
+as not coming.
 
 Commands (all take --lane, --pid): join, leave, at, done, enter, leak, wait-leak,
 point, wait-point, pdone, quit, wait-pdone, finish, status. Exit 4 = timed out or cut short.
@@ -88,24 +89,24 @@ def rdir(rid):
     return os.path.join(gdir(), "rounds", rid)
 
 
-def rounds_of(slot):
+def rounds_of(prefix="P"):
     d = os.path.join(gdir(), "rounds")
     out = []
     for f in os.listdir(d) if os.path.isdir(d) else []:
-        m = re.fullmatch(rf"{slot}\.(\d+)", f)
+        m = re.fullmatch(rf"{prefix}\.(\d+)", f)
         if m:
             out.append(int(m.group(1)))
     return sorted(out)
 
 
-def open_round(slot):
-    """The open round for slot, or a new one. Race-safe: mkdir decides."""
+def open_round():
+    """The open round, or a new one; any slot may join. Race-safe: mkdir decides."""
     while True:
-        ns = rounds_of(slot)
+        ns = rounds_of()
         for n in reversed(ns):
-            if not os.path.isdir(os.path.join(rdir(f"{slot}.{n}"), "closed")):
-                return f"{slot}.{n}"
-        rid = f"{slot}.{(ns[-1] + 1) if ns else 1}"
+            if not os.path.isdir(os.path.join(rdir(f"P.{n}"), "closed")):
+                return f"P.{n}"
+        rid = f"P.{(ns[-1] + 1) if ns else 1}"
         try:
             os.makedirs(os.path.join(gdir(), "rounds"), exist_ok=True)
             os.mkdir(rdir(rid))
@@ -126,18 +127,34 @@ def ready_of(rid):
     return out
 
 
-def pending(rid, slot):
-    """Live members still on their way to this slot."""
-    rdy = ready_of(rid)
+def busy_lanes():
+    """Lanes biasing in a closed, unfinished round: they will not come soon."""
+    d = os.path.join(gdir(), "rounds")
+    out = set()
+    for f in os.listdir(d) if os.path.isdir(d) else []:
+        r = os.path.join(d, f)
+        if not os.path.isdir(os.path.join(r, "closed")) or os.path.exists(os.path.join(r, "finished.json")):
+            continue
+        q = os.path.join(r, "quit")
+        quit_ = set(os.listdir(q)) if os.path.isdir(q) else set()
+        for m in (read_json(os.path.join(r, "roster.json")) or {}).get("members", []):
+            if alive(m.get("pid")) and m["lane"] not in quit_:
+                out.add(m["lane"])
+    return out
+
+
+def pending(rid):
+    """Live members with a slot still to do, on their way (not biasing elsewhere)."""
+    rdy, busy = ready_of(rid), busy_lanes()
     return sorted((n for n, m in members().items()
-                   if slot in m.get("slots", []) and slot not in m.get("done", []) and n not in rdy),
+                   if set(m.get("slots", [])) - set(m.get("done", [])) and n not in rdy and n not in busy),
                   key=lane_key)
 
 
-def try_close(rid, slot, wait_s):
+def try_close(rid, wait_s):
     """Close the round if nobody is on the way or the wait is over."""
     opened = (read_json(os.path.join(rdir(rid), "opened.json")) or {}).get("t", time.time())
-    late = pending(rid, slot)
+    late = pending(rid)
     if late and time.time() - opened < wait_s:
         return False, late
     try:
@@ -146,8 +163,9 @@ def try_close(rid, slot, wait_s):
         return True, late       # someone else closed it; their roster stands
     rdy = ready_of(rid)
     names = sorted(rdy, key=lane_key)
-    roster = {"rid": rid, "slot": slot, "leader": names[0] if names else "",
-              "members": [{"lane": n, "pid": rdy[n]["pid"], "relay": rdy[n]["relay"]} for n in names],
+    roster = {"rid": rid, "leader": names[0] if names else "",
+              "members": [{"lane": n, "pid": rdy[n]["pid"], "relay": rdy[n]["relay"],
+                           "slot": rdy[n].get("slot", "")} for n in names],
               "dropped": late, "closed_at": time.time()}
     write_json(os.path.join(rdir(rid), "roster.json"), roster)
     return True, late
@@ -156,12 +174,12 @@ def try_close(rid, slot, wait_s):
 def cmd_enter(a):
     mark_done_before(a.lane, a.slot)
     while True:
-        rid = open_round(a.slot)
+        rid = open_round()
         write_json(os.path.join(rdir(rid), "ready", f"{a.lane}.json"),
-                   {"pid": a.pid, "relay": a.relay, "t": time.time()})
+                   {"pid": a.pid, "relay": a.relay, "slot": a.slot, "t": time.time()})
         last = None
         while True:
-            closed, late = try_close(rid, a.slot, a.wait)
+            closed, late = try_close(rid, a.wait)
             if closed:
                 break
             if late != last:
