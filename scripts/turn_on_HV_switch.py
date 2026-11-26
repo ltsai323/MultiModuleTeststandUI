@@ -24,6 +24,9 @@ mmtsPOSmap__ = {
         '6L': 4, '6C': 5, '6R': 6,
         '7L': 4, '7C': 5, '7R': 6,
         '8L': 4, '8C': 5, '8R': 6,
+        ### the three multiplexer-board slots (task5); the live channel numbers
+        ### come from MMTS_channel_config, these only widen --position's choices
+        'A': 25, 'B': 26, 'C': 27,
         }
 def GetHVChannel(mmtsPOSITION:str, mmtsPOSmap:dict):
     HV_channel = mmtsPOSmap.get(mmtsPOSITION, 0)

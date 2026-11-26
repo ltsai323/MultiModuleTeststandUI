@@ -1,0 +1,68 @@
+##### Multi Pedestal Run: three hexaboards on one Kria through the mux board,
+##### measured one slot at a time. See README.task4.md.
+SHELL := /bin/bash
+BASE_DIR :=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+T4 := scripts/task4_mmts_pedestal
+
+### the form's inputs; every one of them has a working default
+runTAG      ?= testrun
+nRUNS       ?= 5
+label       ?= ped
+skipPROBE   ?= 1
+bringupTRIES ?= 4
+moduleIDA   ?=
+moduleIDB   ?=
+moduleIDC   ?=
+powerBoardA ?= auto
+powerBoardB ?= auto
+powerBoardC ?= auto
+### kept for parity with task1 and a later database upload; the bench ignores them
+moduleSTATUS ?=
+inspector    ?=
+
+argline1 = \n\t\t[moduleIDA][moduleIDB][moduleIDC]
+argline2 = \n\t\t[nRUNS=5][label=ped][skipPROBE=1][runTAG=run1][bringupTRIES=4]
+argline3 = \n\t\t[powerBoardA=auto|fitted|none][powerBoardB=..][powerBoardC=..]
+
+RUN_ENV = \
+	moduleIDA='$(moduleIDA)'     moduleIDB='$(moduleIDB)'     moduleIDC='$(moduleIDC)' \
+	powerBoardA='$(powerBoardA)' powerBoardB='$(powerBoardB)' powerBoardC='$(powerBoardC)' \
+	nRUNS='$(nRUNS)' label='$(label)' skipPROBE='$(skipPROBE)' runTAG='$(runTAG)' \
+	bringupTRIES='$(bringupTRIES)'
+
+initialize: ## read-only bench checks; no power, no bring-up
+	bash $(T4)/preflight.sh
+
+run: ## every filled slot, one at a time [moduleIDA=..][nRUNS=5][label=ped][runTAG=run1]
+	$(RUN_ENV) bash $(T4)/run_slots.sh
+
+### Stop reaches the client host and the Kria (killing the local make leaves the
+### ssh child running). Brackets in every pattern keep pkill -f off its own command.
+### pedestal_run.py and delay_scan.py are shared with the SINGLE-module stand, so
+### match them only WITH $KRIA_IP. Never daq-client: there it is the other
+### stand's service, for the operator to stop with systemctl.
+stop: ## stop the run on the GUI host, the client host and the Kria
+	-bash $(T4)/on_client.sh 'pkill -f "[r]un_slots.sh"; pkill -f "[r]un_slot.sh"; \
+		pkill -f "[p]ed_run.sh"; pkill -f "[d]elay_scan.sh"; \
+		pkill -f "[p]edestal_run.py.*$$KRIA_IP"; pkill -f "[d]elay_scan.py.*$$KRIA_IP"; \
+		pkill -f "[u]p_verified.sh"; true'
+	-bash $(T4)/on_client.sh 'ssh -o BatchMode=yes -o ConnectTimeout=10 "$${KRIA_USER:-daq}@$$KRIA_IP" \
+		"pkill -f \"[u]p_verified.sh\"; pkill -f \"[m]mts_bringup.sh\"; sudo kconn_pwr off; true"'
+	@echo "[STOPPED] payload power is off, so the module is unloaded. A failed or"
+	@echo "          interrupted run needs daq-server and the puller restarted; the next"
+	@echo "          bring-up does both, so there is nothing else to restore here."
+
+destroy: stop ## stop everything and drop payload power on the Kria
+	-bash $(T4)/on_client.sh 'ssh -o BatchMode=yes -o ConnectTimeout=10 "$${KRIA_USER:-daq}@$$KRIA_IP" \
+		"pkill -f \"[z]mq_server\"; sudo kconn_pwr off; true"'
+
+test: ## one LD Full in slot A, one pedestal
+	$(MAKE) -f $(MAKEFILE_LIST) run moduleIDA=320XLF4CQH00443 nRUNS=1 runTAG=testrun
+
+IN_ARGS = $(argline1)$(argline2)$(argline3)
+
+help:  ## Display this help
+	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make \033[32m<command>\033[0m $(IN_ARGS)\n\nCommands:\n\033[36m\033[0m\n"} /^[0-9a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+.DEFAULT_GOAL := help
+.PHONY: initialize run stop destroy test help
